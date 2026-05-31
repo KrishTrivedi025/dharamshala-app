@@ -267,8 +267,8 @@ export const getAnnualRituals = async (req, res) => {
   try {
     const year = parseInt(req.params.year)
 
-    // Get all active users (members of the samaj)
-    const allUsers = await User.find({ isActive: true })
+    // Get all active non-admin users (members of the samaj)
+    const allUsers = await User.find({ isActive: true, role: 'user' })
       .select('name email phone')
       .sort({ name: 1 })
 
