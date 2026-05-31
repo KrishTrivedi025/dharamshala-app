@@ -32,3 +32,45 @@ body {
   background: #FF6B35;
   border-radius: 10px;
 }
+
+/* ============================================================
+   MOBILE-ONLY FIXES — max-width 1023px
+   Desktop / web styles are completely unaffected
+   ============================================================ */
+
+/* Hide desktop nav links on mobile, show hamburger */
+@media (max-width: 1023px) {
+  .desktop-nav-links {
+    display: none !important;
+  }
+
+  /* Hero: stack into a single column */
+  .hero-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0 !important;
+    padding: 60px 20px 48px !important;
+  }
+
+  /* Hide the right info card — left content is enough on mobile */
+  .hero-right-panel {
+    display: none !important;
+  }
+
+  /* Tighten hero stats row */
+  .hero-stats {
+    gap: 20px !important;
+    margin-top: 28px !important;
+  }
+
+  /* Make hero buttons full-width on mobile */
+  .hero-cta-row {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .hero-cta-row button {
+    width: 100% !important;
+    padding: 14px 20px !important;
+    font-size: 15px !important;
+  }
+}
