@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Dharamshala Hall</string>
+    <string name="title_activity_main">Dharamshala Hall</string>
+    <string name="package_name">com.dharamshala.app</string>
+    <string name="custom_url_scheme">com.dharamshala.app</string>
+</resources>
