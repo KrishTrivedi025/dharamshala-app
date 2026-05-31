@@ -466,6 +466,7 @@ function RitualPaymentModal({ isOpen, onClose, ritualStatus, onPaymentSuccess })
                             cursor: 'pointer', textAlign: 'left',
                             background: paymentMode === m.key ? 'rgba(139,26,26,0.04)' : 'white',
                             transition: 'all 0.2s',
+                            position: 'relative',
                           }}
                         >
                           <div style={{ fontSize: 24, marginBottom: 6 }}>{m.icon}</div>
