@@ -128,7 +128,7 @@ function Home() {
           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
         />
 
-        <div style={{
+        <div className="hero-grid" style={{
           maxWidth: 1200, margin: '0 auto', padding: '100px 32px 80px',
           width: '100%', position: 'relative', zIndex: 10,
           display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 60, alignItems: 'center',
@@ -154,7 +154,7 @@ function Home() {
               Book our beautiful community hall for your most special occasions — weddings, celebrations, meetings and more.
             </motion.p>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
-              style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              className="hero-cta-row" style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
               <motion.button
                 whileHover={{ scale: 1.05, boxShadow: '0 20px 50px rgba(255,107,53,0.6)' }}
                 whileTap={{ scale: 0.97 }}
@@ -181,7 +181,7 @@ function Home() {
               </motion.button>
             </motion.div>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
-              style={{ display: 'flex', gap: 36, marginTop: 48, flexWrap: 'wrap' }}>
+              className="hero-stats" style={{ display: 'flex', gap: 36, marginTop: 48, flexWrap: 'wrap' }}>
               {[{ n: '500+', l: 'Members' }, { n: '200+', l: 'Events Hosted' }, { n: '10+', l: 'Years Service' }, { n: '5★', l: 'Rating' }].map((s, i) => (
                 <div key={i}>
                   <div style={{ fontSize: 26, fontWeight: 900, color: '#F7C948' }}>{s.n}</div>
@@ -191,7 +191,7 @@ function Home() {
             </motion.div>
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }}
+          <motion.div className="hero-right-panel" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.9, delay: 0.2 }}
             style={{ display: 'flex', justifyContent: 'center' }}>
             <div style={{

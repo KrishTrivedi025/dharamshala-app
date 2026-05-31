@@ -123,7 +123,7 @@ function Navbar() {
           </Link>
 
           {/* ── Desktop Nav Links ── */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <div className="desktop-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             {navLinks.map((link) => {
               const active = isActive(link.path)
               return (

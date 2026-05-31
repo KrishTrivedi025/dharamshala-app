@@ -18,7 +18,12 @@ const app = express()
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:5173', 'http://localhost:4173']
+  : [
+      'http://localhost:5173',
+      'http://localhost:4173',
+      'https://localhost',        // Capacitor Android (androidScheme: https)
+      'capacitor://localhost',    // Capacitor iOS fallback
+    ]
 
 app.use(cors({
   origin: (origin, callback) => {
