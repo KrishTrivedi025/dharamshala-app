@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"C:\\\\Users\\\\Krrish Trivedi\\\\\" | findstr -i \"dharamshala\\\\|master\\\\|plan\")",
+      "Bash(ls \"C:\\\\Users\\\\Krrish Trivedi\\\\dharamshala-app\\\\\" | findstr -i \"\\\\.md\\\\|master\\\\|plan\")",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Krrish Trivedi\\\\dharamshala-app\" -File | Where-Object { $_.Name -match \"\\\\.md$|master|plan\" })",
+      "PowerShell(cd \"C:\\\\Users\\\\Krrish Trivedi\\\\dharamshala-app\\\\frontend\"; $proc = Start-Process -FilePath \"npm\" -ArgumentList \"run\",\"dev\",\"--\",\"--port\",\"5174\" -PassThru -WindowStyle Hidden; Start-Sleep -Seconds 8; $proc.Kill\\(\\); Write-Host \"Dev server started OK \\(PID $\\($proc.Id\\)\\)\")"
+    ]
+  }
+}
