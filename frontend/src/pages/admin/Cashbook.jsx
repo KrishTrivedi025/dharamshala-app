@@ -178,8 +178,8 @@ function Cashbook() {
   const openAdd = () => {
     setEditEntry(null)
     setFormData({
-      entryDate: new Date().toISOString().split('T')[0],
-      paymentDate: new Date().toISOString().split('T')[0],
+      entryDate: String(CURRENT_YEAR),
+      paymentDate: String(CURRENT_YEAR),
       name:'', phone:'', category:'', paymentMode:'cash',
       type:'credit', amount:'', status:'completed', description:''
     })
@@ -189,8 +189,8 @@ function Cashbook() {
   const openEdit = (entry) => {
     setEditEntry(entry)
     setFormData({
-      entryDate: entry.entryDate ? new Date(entry.entryDate).toISOString().split('T')[0] : '',
-      paymentDate: entry.paymentDate ? new Date(entry.paymentDate).toISOString().split('T')[0] : '',
+      entryDate: entry.entryDate ? String(new Date(entry.entryDate).getFullYear()) : String(CURRENT_YEAR),
+      paymentDate: entry.paymentDate ? String(new Date(entry.paymentDate).getFullYear()) : '',
       name: entry.name, phone: entry.phone || '', category: entry.category,
       paymentMode: entry.paymentMode, type: entry.type,
       amount: entry.amount, status: entry.status, description: entry.description || ''
@@ -204,10 +204,15 @@ function Cashbook() {
     }
     try {
       setSaving(true); setError(null)
+      const payload = {
+        ...formData,
+        entryDate: formData.entryDate ? `${formData.entryDate}-01-01` : '',
+        paymentDate: formData.paymentDate ? `${formData.paymentDate}-01-01` : ''
+      }
       if (editEntry) {
-        await cashbookAPI.updateEntry(editEntry._id, formData)
+        await cashbookAPI.updateEntry(editEntry._id, payload)
       } else {
-        await cashbookAPI.createEntry(formData)
+        await cashbookAPI.createEntry(payload)
       }
       setShowModal(false); await fetchData()
     } catch (err) { setError(err.message) }
@@ -791,13 +796,20 @@ function Cashbook() {
                     { label:'Name *', key:'name', type:'text', full:false },
                     { label:'Phone', key:'phone', type:'text', full:false },
                     { label:'Category *', key:'category', type:'text', full:true },
-                    { label:'Entry Date', key:'entryDate', type:'date', full:false },
-                    { label:'Payment Date', key:'paymentDate', type:'date', full:false },
+                    { label:'Entry Date', key:'entryDate', type:'year', full:false },
+                    { label:'Payment Date', key:'paymentDate', type:'year', full:false },
                     { label:'Amount (₹) *', key:'amount', type:'number', full:false },
                   ].map(f=>(
                     <div key={f.key} style={{ gridColumn: f.full ? '1/-1' : 'auto' }}>
                       <label style={{ display:'block', fontSize:11, fontWeight:700, color:'#9ca3af', marginBottom:4, textTransform:'uppercase' }}>{f.label}</label>
-                      <input type={f.type} value={formData[f.key]||''} onChange={e=>setFormData({...formData,[f.key]:e.target.value})} style={inputStyle} />
+                      {f.type === 'year' ? (
+                        <select value={formData[f.key]||''} onChange={e=>setFormData({...formData,[f.key]:e.target.value})} style={inputStyle}>
+                          {f.key === 'paymentDate' && <option value="">—</option>}
+                          {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                        </select>
+                      ) : (
+                        <input type={f.type} value={formData[f.key]||''} onChange={e=>setFormData({...formData,[f.key]:e.target.value})} style={inputStyle} />
+                      )}
                     </div>
                   ))}
                   <div>
