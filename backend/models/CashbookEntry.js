@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import Settings from './Settings.js'
 
 const cashbookEntrySchema = new mongoose.Schema({
   entryDate: {
@@ -120,8 +121,8 @@ cashbookEntrySchema.pre('save', function () {
   }
 })
 
-// Static method: generate next receipt number for a given year
-cashbookEntrySchema.statics.generateReceiptNumber = async function (year) {
+// Internal helper: compute the next auto-incremented receipt number from existing entries
+cashbookEntrySchema.statics._computeAutoReceiptNumber = async function (year) {
   const lastEntry = await this.findOne(
     { receiptNumber: new RegExp(`^DH-${year}-`) },
     { receiptNumber: 1 },
@@ -135,6 +136,28 @@ cashbookEntrySchema.statics.generateReceiptNumber = async function (year) {
   }
 
   return `DH-${year}-${String(serial).padStart(4, '0')}`
+}
+
+// Static method: peek at the next receipt number without consuming any manual override
+// (safe to call repeatedly, e.g. for UI preview/refresh)
+cashbookEntrySchema.statics.peekNextReceiptNumber = async function (year) {
+  const override = await Settings.get(`nextReceiptNumber_${year}`, null)
+  if (override) return override
+  return this._computeAutoReceiptNumber(year)
+}
+
+// Static method: generate the next receipt number for a given year, consuming
+// (clearing) any manual override so it only applies once. Use only when an
+// entry is actually being created/saved.
+cashbookEntrySchema.statics.generateReceiptNumber = async function (year) {
+  const overrideKey = `nextReceiptNumber_${year}`
+  const override = await Settings.get(overrideKey, null)
+  if (override) {
+    await Settings.set(overrideKey, null)
+    return override
+  }
+
+  return this._computeAutoReceiptNumber(year)
 }
 
 const CashbookEntry = mongoose.model('CashbookEntry', cashbookEntrySchema)

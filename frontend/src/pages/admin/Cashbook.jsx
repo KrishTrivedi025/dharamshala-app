@@ -95,6 +95,10 @@ const TYPES = ['All','credit','debit']
 const SOURCES = ['All','booking','daan_peti','annual_ritual','manual']
 const SOURCE_LABELS = { booking:'Hall Booking', daan_peti:'Daan Peti', annual_ritual:'Annual Ritual', manual:'Manual' }
 const STATUS_OPTS = ['completed','pending']
+const yearRange = (dateStr) => {
+  const yr = new Date(dateStr).getFullYear()
+  return `${yr}-${yr + 1}`
+}
 
 const cardStyle = {
   borderRadius: 20, padding: '24px',
@@ -112,14 +116,20 @@ const btnPrimary = {
   background:'linear-gradient(135deg,#FF6B35,#8B1A1A)',
 }
 
+const LEDGER_FILTERS_KEY = 'cashbookLedgerFilters'
+const loadSavedLedgerFilters = () => {
+  try { return JSON.parse(localStorage.getItem(LEDGER_FILTERS_KEY) || '{}') } catch { return {} }
+}
+
 function Cashbook() {
+  const savedFilters = loadSavedLedgerFilters()
   const [entries, setEntries] = useState([])
   const [summary, setSummary] = useState({ totalIncome:0, totalExpense:0, balance:0 })
   const [loading, setLoading] = useState(true)
-  const [year, setYear] = useState(CURRENT_YEAR)
-  const [month, setMonth] = useState(0)
-  const [typeFilter, setTypeFilter] = useState('All')
-  const [sourceFilter, setSourceFilter] = useState('All')
+  const [year, setYear] = useState(savedFilters.year ?? CURRENT_YEAR)
+  const [month, setMonth] = useState(savedFilters.month ?? 0)
+  const [typeFilter, setTypeFilter] = useState(savedFilters.typeFilter ?? 'All')
+  const [sourceFilter, setSourceFilter] = useState(savedFilters.sourceFilter ?? 'All')
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editEntry, setEditEntry] = useState(null)
@@ -146,11 +156,24 @@ function Cashbook() {
   const [exportRange, setExportRange] = useState({ from: '', to: '' })
   const [exporting, setExporting] = useState(false)
   const [ritualSearch, setRitualSearch] = useState('')
+  // Next receipt number editor state
+  const [nextReceiptNo, setNextReceiptNo] = useState('')
+  const [showReceiptModal, setShowReceiptModal] = useState(false)
+  const [newReceiptNo, setNewReceiptNo] = useState('')
+  const [receiptNoSaving, setReceiptNoSaving] = useState(false)
+
+  const fetchNextReceipt = async () => {
+    try {
+      const res = await cashbookAPI.getNextReceipt(year > 0 ? year : CURRENT_YEAR)
+      setNextReceiptNo(res.data?.receiptNumber || '')
+    } catch { /* non-critical */ }
+  }
 
   const fetchData = async () => {
     try {
       setLoading(true)
-      const params = { year, sort: 'entryDate' }
+      const params = { sort: 'entryDate' }
+      if (year > 0) params.year = year
       if (month > 0) params.month = month
       if (typeFilter !== 'All') params.type = typeFilter
       if (sourceFilter !== 'All') params.source = sourceFilter
@@ -159,7 +182,7 @@ function Cashbook() {
 
       const [entriesRes, summaryRes] = await Promise.all([
         cashbookAPI.getEntries(params),
-        cashbookAPI.getSummary({ year, ...(month > 0 ? { month } : {}) })
+        cashbookAPI.getSummary({ ...(year > 0 ? { year } : {}), ...(month > 0 ? { month } : {}) })
       ])
       setEntries(entriesRes.data || [])
       setSummary(summaryRes.data || { totalIncome:0, totalExpense:0, balance:0 })
@@ -170,18 +193,45 @@ function Cashbook() {
   }
 
   useEffect(() => { fetchData() }, [year, month, typeFilter, sourceFilter])
+  useEffect(() => { fetchNextReceipt() }, [year])
+  useEffect(() => {
+    localStorage.setItem(LEDGER_FILTERS_KEY, JSON.stringify({ year, month, typeFilter, sourceFilter }))
+  }, [year, month, typeFilter, sourceFilter])
 
   const handleSearch = (e) => {
     if (e.key === 'Enter') fetchData()
   }
 
-  const openAdd = () => {
+  const openReceiptModal = () => {
+    setNewReceiptNo(nextReceiptNo)
+    setShowReceiptModal(true)
+  }
+
+  const handleReceiptNoUpdate = async () => {
+    if (!newReceiptNo.trim()) { setError('Please enter a valid receipt number'); return }
+    try {
+      setReceiptNoSaving(true); setError(null)
+      const receiptYear = year > 0 ? year : CURRENT_YEAR
+      await settingsAPI.update(`nextReceiptNumber_${receiptYear}`, newReceiptNo.trim(), `Manual override for next cashbook receipt number (${receiptYear})`)
+      setShowReceiptModal(false)
+      await fetchNextReceipt()
+    } catch (err) { setError(err.message) }
+    finally { setReceiptNoSaving(false) }
+  }
+
+  const openAdd = async () => {
     setEditEntry(null)
+    let nextReceipt = ''
+    try {
+      const res = await cashbookAPI.getNextReceipt(CURRENT_YEAR)
+      nextReceipt = res.data?.receiptNumber || ''
+    } catch { /* leave blank, backend will auto-generate if not provided */ }
     setFormData({
       entryDate: String(CURRENT_YEAR),
-      paymentDate: String(CURRENT_YEAR),
+      paymentDate: '',
       name:'', phone:'', category:'', paymentMode:'cash',
-      type:'credit', amount:'', status:'completed', description:''
+      type:'credit', amount:'', status:'completed', description:'',
+      receiptNumber: nextReceipt
     })
     setShowModal(true)
   }
@@ -190,10 +240,11 @@ function Cashbook() {
     setEditEntry(entry)
     setFormData({
       entryDate: entry.entryDate ? String(new Date(entry.entryDate).getFullYear()) : String(CURRENT_YEAR),
-      paymentDate: entry.paymentDate ? String(new Date(entry.paymentDate).getFullYear()) : '',
+      paymentDate: entry.paymentDate ? new Date(entry.paymentDate).toISOString().split('T')[0] : '',
       name: entry.name, phone: entry.phone || '', category: entry.category,
       paymentMode: entry.paymentMode, type: entry.type,
-      amount: entry.amount, status: entry.status, description: entry.description || ''
+      amount: entry.amount, status: entry.status, description: entry.description || '',
+      receiptNumber: entry.receiptNumber || ''
     })
     setShowModal(true)
   }
@@ -204,17 +255,20 @@ function Cashbook() {
     }
     try {
       setSaving(true); setError(null)
+      const source = /annual\s*ritual/i.test(formData.category || '')
+        ? 'annual_ritual'
+        : (editEntry ? editEntry.source : 'manual')
       const payload = {
         ...formData,
         entryDate: formData.entryDate ? `${formData.entryDate}-01-01` : '',
-        paymentDate: formData.paymentDate ? `${formData.paymentDate}-01-01` : ''
+        source
       }
       if (editEntry) {
         await cashbookAPI.updateEntry(editEntry._id, payload)
       } else {
         await cashbookAPI.createEntry(payload)
       }
-      setShowModal(false); await fetchData()
+      setShowModal(false); await fetchData(); await fetchNextReceipt()
     } catch (err) { setError(err.message) }
     finally { setSaving(false) }
   }
@@ -355,7 +409,7 @@ function Cashbook() {
         if (exportTarget === 'ledger') {
           head = [['Date','Name','Category','Payment Date','Receipt No.','Mode','Type','Amount','Status','Balance']]
           rows = dataToExport.map(e => [
-            new Date(e.entryDate).toLocaleDateString('en-IN'),
+            yearRange(e.entryDate),
             e.name,
             e.category,
             e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '-',
@@ -393,7 +447,7 @@ function Cashbook() {
         if (exportTarget === 'ledger') {
           html += `<table><tr><th>Date</th><th>Name</th><th>Category</th><th>Payment Date</th><th>Receipt No.</th><th>Mode</th><th>Type</th><th>Amount</th><th>Status</th><th>Balance</th></tr>`
           dataToExport.forEach(e => {
-            html += `<tr><td>${new Date(e.entryDate).toLocaleDateString('en-IN')}</td><td>${e.name}</td><td>${e.category}</td><td>${e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${e.receiptNumber}</td><td>${e.paymentMode}</td><td>${e.type}</td><td>Rs.${e.amount.toLocaleString()}</td><td>${e.status}</td><td>Rs.${e.runningBalance.toLocaleString()}</td></tr>`
+            html += `<tr><td>${yearRange(e.entryDate)}</td><td>${e.name}</td><td>${e.category}</td><td>${e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${e.receiptNumber}</td><td>${e.paymentMode}</td><td>${e.type}</td><td>Rs.${e.amount.toLocaleString()}</td><td>${e.status}</td><td>Rs.${e.runningBalance.toLocaleString()}</td></tr>`
           })
         } else {
           html += `<table><tr><th>Name</th><th>Phone</th><th>Amount</th><th>Status</th><th>Payment Date</th><th>Mode</th><th>Receipt No.</th></tr>`
@@ -411,7 +465,7 @@ function Cashbook() {
         let contentHtml = ''
         
         if (exportTarget === 'ledger') {
-          let rowsHtml = dataToExport.map(e => `<tr><td>${new Date(e.entryDate).toLocaleDateString('en-IN')}</td><td>${e.name}</td><td>${e.category}</td><td>${e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${e.receiptNumber}</td><td>${e.paymentMode}</td><td>${e.type}</td><td>Rs.${e.amount.toLocaleString()}</td><td>${e.status}</td><td>Rs.${e.runningBalance.toLocaleString()}</td></tr>`).join('')
+          let rowsHtml = dataToExport.map(e => `<tr><td>${yearRange(e.entryDate)}</td><td>${e.name}</td><td>${e.category}</td><td>${e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${e.receiptNumber}</td><td>${e.paymentMode}</td><td>${e.type}</td><td>Rs.${e.amount.toLocaleString()}</td><td>${e.status}</td><td>Rs.${e.runningBalance.toLocaleString()}</td></tr>`).join('')
           contentHtml = `<table><tr><th>Date</th><th>Name</th><th>Category</th><th>Payment Date</th><th>Receipt No.</th><th>Mode</th><th>Type</th><th>Amount</th><th>Status</th><th>Balance</th></tr>${rowsHtml}</table>`
         } else {
           let rowsHtml = dataToExport.map(m => `<tr><td>${m.name}</td><td>${m.phone||'-'}</td><td>Rs.${(m.amount||annualFee).toLocaleString()}</td><td>${m.status}</td><td>${m.paymentDate ? new Date(m.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${m.paymentMode||'-'}</td><td>${m.receiptNumber||'-'}</td></tr>`).join('')
@@ -506,8 +560,8 @@ function Cashbook() {
                 <CustomSelect
                   value={year}
                   onChange={v => setYear(+v)}
-                  options={YEARS.map(y => ({ value: y, label: String(y) }))}
-                  minWidth={100}
+                  options={[{ value: 0, label: 'All Years' }, ...YEARS.map(y => ({ value: y, label: String(y) }))]}
+                  minWidth={120}
                 />
                 <CustomSelect
                   value={month}
@@ -532,6 +586,16 @@ function Cashbook() {
                   style={{ ...inputStyle, width:'auto', minWidth:180 }} />
                 <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
                   onClick={fetchData} style={{ ...btnPrimary, padding:'10px 16px' }}>🔍</motion.button>
+                <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 14px', borderRadius:10, background:'rgba(139,26,26,0.05)' }}>
+                  <span style={{ fontSize:12, fontWeight:600, color:'#6b7280', whiteSpace:'nowrap' }}>Next Receipt No:</span>
+                  <span style={{ fontSize:14, fontWeight:800, color:'var(--maroon)', fontFamily:'monospace', whiteSpace:'nowrap' }}>{nextReceiptNo || '—'}</span>
+                  <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
+                    onClick={openReceiptModal}
+                    style={{ padding:'4px 10px', borderRadius:8, border:'1.5px solid rgba(139,26,26,0.2)',
+                      fontSize:11, fontWeight:700, color:'#8B1A1A', background:'white', cursor:'pointer' }}>
+                    ✏️ Edit
+                  </motion.button>
+                </div>
                 <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
                   <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
                     onClick={openAdd} style={btnPrimary}>➕ Add Entry</motion.button>
@@ -573,7 +637,7 @@ function Cashbook() {
                     <tbody>
                       {entriesWithBalance.map((e,i)=>(
                         <tr key={e._id} style={{ borderBottom:'1px solid #f5ede0', background: i%2===0 ? 'white' : 'rgba(255,107,53,0.02)' }}>
-                          <td style={{ padding:'10px', whiteSpace:'nowrap' }}>{new Date(e.entryDate).toLocaleDateString('en-IN')}</td>
+                          <td style={{ padding:'10px', whiteSpace:'nowrap' }}>{yearRange(e.entryDate)}</td>
                           <td style={{ padding:'10px', fontWeight:600, color:'var(--maroon)' }}>{e.name}</td>
                           <td style={{ padding:'10px', maxWidth:160, overflow:'hidden', textOverflow:'ellipsis' }}>{e.category}</td>
                           <td style={{ padding:'10px', whiteSpace:'nowrap' }}>{e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '—'}</td>
@@ -791,24 +855,31 @@ function Cashbook() {
                 <h3 style={{ fontSize:20, fontWeight:800, color:'var(--maroon)', marginBottom:20 }}>
                   {editEntry ? '✏️ Edit Entry' : '➕ New Cashbook Entry'}
                 </h3>
+                <datalist id="cashbookCategoryOptions">
+                  <option value="Annual Ritual Payment (Pooja Shulk)" />
+                  <option value="Hall Booking" />
+                  <option value="Daan Peti Donation" />
+                  <option value="Maintenance" />
+                  <option value="Donation" />
+                </datalist>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                   {[
                     { label:'Name *', key:'name', type:'text', full:false },
                     { label:'Phone', key:'phone', type:'text', full:false },
-                    { label:'Category *', key:'category', type:'text', full:true },
-                    { label:'Entry Date', key:'entryDate', type:'year', full:false },
-                    { label:'Payment Date', key:'paymentDate', type:'year', full:false },
+                    { label:'Category *', key:'category', type:'text', full:true, list:'cashbookCategoryOptions' },
+                    { label:'Receipt No.', key:'receiptNumber', type:'text', full:false },
+                    { label:'Entry Date (Year)', key:'entryDate', type:'year', full:false },
+                    { label:'Payment Date', key:'paymentDate', type:'date', full:false },
                     { label:'Amount (₹) *', key:'amount', type:'number', full:false },
                   ].map(f=>(
                     <div key={f.key} style={{ gridColumn: f.full ? '1/-1' : 'auto' }}>
                       <label style={{ display:'block', fontSize:11, fontWeight:700, color:'#9ca3af', marginBottom:4, textTransform:'uppercase' }}>{f.label}</label>
                       {f.type === 'year' ? (
                         <select value={formData[f.key]||''} onChange={e=>setFormData({...formData,[f.key]:e.target.value})} style={inputStyle}>
-                          {f.key === 'paymentDate' && <option value="">—</option>}
-                          {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                          {YEARS.map(y => <option key={y} value={y}>{y}-{y+1}</option>)}
                         </select>
                       ) : (
-                        <input type={f.type} value={formData[f.key]||''} onChange={e=>setFormData({...formData,[f.key]:e.target.value})} style={inputStyle} />
+                        <input type={f.type} list={f.list} value={formData[f.key]||''} onChange={e=>setFormData({...formData,[f.key]:e.target.value})} style={inputStyle} />
                       )}
                     </div>
                   ))}
@@ -888,6 +959,45 @@ function Cashbook() {
                     onClick={handleFeeUpdate}
                     style={{ flex:1, padding:13, borderRadius:12, border:'none', cursor:'pointer', fontSize:14, fontWeight:700, color:'white', background: feeSaving?'#ccc':'linear-gradient(135deg,#FF6B35,#8B1A1A)' }}>
                     {feeSaving ? 'Saving...' : '✅ Update Fee'}
+                  </motion.button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Receipt Number Edit Modal */}
+        <AnimatePresence>
+          {showReceiptModal && (
+            <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+              style={{ position:'fixed', inset:0, zIndex:1000, background:'rgba(0,0,0,0.5)',
+                backdropFilter:'blur(4px)', display:'flex', alignItems:'center', justifyContent:'center', padding:24 }}
+              onClick={()=>!receiptNoSaving&&setShowReceiptModal(false)}>
+              <motion.div initial={{scale:0.9,opacity:0}} animate={{scale:1,opacity:1}} exit={{scale:0.9,opacity:0}}
+                onClick={e=>e.stopPropagation()}
+                style={{ borderRadius:24, padding:32, background:'white', maxWidth:420, width:'100%', boxShadow:'0 40px 100px rgba(0,0,0,0.3)' }}>
+                <div style={{ textAlign:'center', marginBottom:24 }}>
+                  <div style={{ fontSize:48, marginBottom:8 }}>🧾</div>
+                  <h3 style={{ fontSize:20, fontWeight:800, color:'var(--maroon)', marginBottom:4 }}>Update Next Receipt No.</h3>
+                  <p style={{ fontSize:13, color:'#9ca3af' }}>This will apply to the next entry created for {year > 0 ? year : CURRENT_YEAR}; numbering continues automatically after that.</p>
+                </div>
+                <div style={{ marginBottom:20 }}>
+                  <label style={{ display:'block', fontSize:11, fontWeight:700, color:'#9ca3af', marginBottom:6, textTransform:'uppercase' }}>Next Receipt Number</label>
+                  <input type="text" value={newReceiptNo} onChange={e=>setNewReceiptNo(e.target.value)}
+                    style={{ ...inputStyle, fontSize:18, fontWeight:800, textAlign:'center', color:'var(--maroon)', fontFamily:'monospace' }}
+                    placeholder="e.g. DH-2026-0050"
+                  />
+                </div>
+                <div style={{ display:'flex', gap:12 }}>
+                  <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}} disabled={receiptNoSaving}
+                    onClick={()=>setShowReceiptModal(false)}
+                    style={{ flex:1, padding:13, borderRadius:12, border:'2px solid #ede8e0', cursor:'pointer', fontSize:14, fontWeight:700, color:'#6b7280', background:'white' }}>
+                    Cancel
+                  </motion.button>
+                  <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}} disabled={receiptNoSaving}
+                    onClick={handleReceiptNoUpdate}
+                    style={{ flex:1, padding:13, borderRadius:12, border:'none', cursor:'pointer', fontSize:14, fontWeight:700, color:'white', background: receiptNoSaving?'#ccc':'linear-gradient(135deg,#FF6B35,#8B1A1A)' }}>
+                    {receiptNoSaving ? 'Saving...' : '✅ Update'}
                   </motion.button>
                 </div>
               </motion.div>

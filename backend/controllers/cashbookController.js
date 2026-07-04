@@ -70,7 +70,7 @@ export const createEntry = async (req, res) => {
     const {
       entryDate, paymentDate, name, phone, userId,
       category, paymentMode, type, amount,
-      status, description, source
+      status, description, source, receiptNumber: customReceiptNumber
     } = req.body
 
     if (!name || !category || !paymentMode || !type || !amount) {
@@ -82,7 +82,9 @@ export const createEntry = async (req, res) => {
 
     const dateObj = entryDate ? new Date(entryDate) : new Date()
     const yr = dateObj.getFullYear()
-    const receiptNumber = await CashbookEntry.generateReceiptNumber(yr)
+    const receiptNumber = customReceiptNumber?.trim()
+      ? customReceiptNumber.trim()
+      : await CashbookEntry.generateReceiptNumber(yr)
 
     const entry = await CashbookEntry.create({
       entryDate: dateObj,
@@ -112,6 +114,9 @@ export const createEntry = async (req, res) => {
       data: entry
     })
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: 'Receipt number already exists. Please use a different one.' })
+    }
     console.error('Create cashbook entry error:', error)
     res.status(500).json({ success: false, message: 'Server error while creating cashbook entry' })
   }
@@ -130,7 +135,8 @@ export const updateEntry = async (req, res) => {
 
     const allowedUpdates = [
       'name', 'phone', 'category', 'paymentMode', 'type',
-      'amount', 'status', 'description', 'entryDate', 'paymentDate'
+      'amount', 'status', 'description', 'entryDate', 'paymentDate',
+      'receiptNumber', 'source'
     ]
 
     allowedUpdates.forEach(field => {
@@ -139,6 +145,8 @@ export const updateEntry = async (req, res) => {
           entry[field] = req.body[field] ? new Date(req.body[field]) : null
         } else if (field === 'amount') {
           entry[field] = parseFloat(req.body[field])
+        } else if (field === 'receiptNumber') {
+          entry[field] = req.body[field].trim()
         } else {
           entry[field] = req.body[field]
         }
@@ -163,6 +171,9 @@ export const updateEntry = async (req, res) => {
       data: entry
     })
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: 'Receipt number already exists. Please use a different one.' })
+    }
     console.error('Update cashbook entry error:', error)
     res.status(500).json({ success: false, message: 'Server error while updating cashbook entry' })
   }
@@ -248,7 +259,7 @@ export const getSummary = async (req, res) => {
 export const getNextReceipt = async (req, res) => {
   try {
     const year = req.query.year || new Date().getFullYear()
-    const receiptNumber = await CashbookEntry.generateReceiptNumber(parseInt(year))
+    const receiptNumber = await CashbookEntry.peekNextReceiptNumber(parseInt(year))
 
     res.status(200).json({
       success: true,
