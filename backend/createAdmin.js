@@ -1,13 +1,21 @@
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
 import dotenv from 'dotenv'
+import crypto from 'crypto'
 
 dotenv.config()
 
-const ADMIN_NAME = 'Super Admin'
-const ADMIN_EMAIL = 'admin@dharamshala.com'
-const ADMIN_PASSWORD = 'REDACTED'
-const ADMIN_PHONE = '9000000000'
+const ADMIN_NAME = process.env.ADMIN_NAME || 'Super Admin'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL
+const ADMIN_PHONE = process.env.ADMIN_PHONE || '9000000000'
+// Generate a random password if ADMIN_PASSWORD isn't provided — never ship a
+// hardcoded default here, this account gets full admin access.
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || crypto.randomBytes(12).toString('base64url')
+
+if (!ADMIN_EMAIL) {
+  console.error('❌ Set ADMIN_EMAIL (and ideally ADMIN_PASSWORD) in your .env before running this script.')
+  process.exit(1)
+}
 
 const userSchema = new mongoose.Schema({
   name: String,

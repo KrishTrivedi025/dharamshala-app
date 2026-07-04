@@ -4,3 +4,12 @@ node_modules
 .env.production
 *.log
 dist
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Android build/signing (kept out even if generated at repo root by tooling)
+*.jks
+*.keystore
+key.properties
