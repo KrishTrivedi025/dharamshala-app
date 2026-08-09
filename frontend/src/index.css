@@ -7,17 +7,100 @@
 }
 
 :root {
+  /* ── Brand / Accent ─────────────────────────────────── */
   --primary: #FF6B35;
+  --primary-hover: #e05a28;
+  --primary-active: #c94d20;
+  --primary-subtle: rgba(255, 107, 53, 0.08);
+  --primary-border: rgba(255, 107, 53, 0.25);
+
   --secondary: #F7C948;
-  --background: #FDF8F0;
   --maroon: #8B1A1A;
+  --maroon-subtle: rgba(139, 26, 26, 0.08);
+
+  /* ── Neutral Scale ──────────────────────────────────── */
+  --neutral-50:  #FAFAF9;
+  --neutral-100: #F5F0E8;
+  --neutral-200: #EDE8E0;
+  --neutral-300: #D9D0C4;
+  --neutral-400: #B5A99A;
+  --neutral-500: #8C7F72;
+  --neutral-600: #5D5248;
+  --neutral-700: #3D342C;
+  --neutral-800: #2D2D2D;
+  --neutral-900: #1A1410;
+
+  /* ── Page / Surface ─────────────────────────────────── */
+  --background: #FDF8F0;
+  --surface: rgba(255, 255, 255, 0.92);
+  --surface-solid: #FFFFFF;
+
+  /* ── Text ───────────────────────────────────────────── */
   --text: #2D2D2D;
+  --text-secondary: #5D5248;
+  --text-muted: #8C7F72;
+
+  /* ── Border ─────────────────────────────────────────── */
+  --border: #EDE8E0;
+  --border-strong: #D9D0C4;
+  --border-accent: rgba(255, 107, 53, 0.25);
+
+  /* ── Semantic State ─────────────────────────────────── */
+  --success:       #059669;
+  --success-subtle: #ecfdf5;
+  --success-text:  #065f46;
+
+  --warning:       #d97706;
+  --warning-subtle: #fffbeb;
+  --warning-text:  #92400e;
+
+  --error:         #dc2626;
+  --error-subtle:  #fef2f2;
+  --error-text:    #991b1b;
+
+  --info:          #2563eb;
+  --info-subtle:   #eff6ff;
+  --info-text:     #1e40af;
+
+  /* ── Radius Scale ───────────────────────────────────── */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   16px;
+  --radius-xl:   24px;
+  --radius-full: 9999px;
+
+  /* ── Shadow Scale (warm-tinted) ─────────────────────── */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(139, 26, 26, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 8px 32px rgba(255, 107, 53, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
+  --shadow-xl: 0 20px 60px rgba(255, 107, 53, 0.15), 0 8px 16px rgba(0, 0, 0, 0.08);
+
+  /* ── Type Scale ─────────────────────────────────────── */
+  --text-xs:   0.75rem;    /* 12px */
+  --text-sm:   0.8125rem;  /* 13px */
+  --text-base: 0.9375rem;  /* 15px */
+  --text-md:   1rem;       /* 16px */
+  --text-lg:   1.125rem;   /* 18px */
+  --text-xl:   1.25rem;    /* 20px */
+  --text-2xl:  1.5rem;     /* 24px */
+  --text-3xl:  1.875rem;   /* 30px */
+  --text-4xl:  2.25rem;    /* 36px */
+
+  /* ── Z-Index Scale ──────────────────────────────────── */
+  --z-nav:          100;
+  --z-dropdown:     200;
+  --z-modal:        300;
+  --z-floating-cta: 400;
+  --z-toast:        500;
 }
 
 body {
   background-color: var(--background);
   color: var(--text);
-  font-family: 'Segoe UI', sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: var(--text-base);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 ::-webkit-scrollbar {
@@ -25,52 +108,13 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #FDF8F0;
+  background: var(--background);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #FF6B35;
-  border-radius: 10px;
+  background: var(--primary);
+  border-radius: var(--radius-full);
 }
 
-/* ============================================================
-   MOBILE-ONLY FIXES — max-width 1023px
-   Desktop / web styles are completely unaffected
-   ============================================================ */
-
-/* Hide desktop nav links on mobile, show hamburger */
-@media (max-width: 1023px) {
-  .desktop-nav-links {
-    display: none !important;
-  }
-
-  /* Hero: stack into a single column */
-  .hero-grid {
-    grid-template-columns: 1fr !important;
-    gap: 0 !important;
-    padding: 60px 20px 48px !important;
-  }
-
-  /* Hide the right info card — left content is enough on mobile */
-  .hero-right-panel {
-    display: none !important;
-  }
-
-  /* Tighten hero stats row */
-  .hero-stats {
-    gap: 20px !important;
-    margin-top: 28px !important;
-  }
-
-  /* Make hero buttons full-width on mobile */
-  .hero-cta-row {
-    flex-direction: column !important;
-    gap: 12px !important;
-  }
-
-  .hero-cta-row button {
-    width: 100% !important;
-    padding: 14px 20px !important;
-    font-size: 15px !important;
-  }
-}
+/* ── Navbar link hover ── */
+.nav-link-item:hover span { color: var(--primary); }

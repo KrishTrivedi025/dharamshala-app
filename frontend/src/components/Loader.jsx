@@ -2,32 +2,37 @@ import { motion } from 'framer-motion'
 
 function Loader({ message = 'Loading...' }) {
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: 'var(--background)',
-      gap: 24,
-    }}>
+    <div
+      role="status"
+      aria-label={message}
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'var(--background)',
+        gap: 24,
+      }}
+    >
       <motion.div
         animate={{ rotate: 360 }}
         transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
         style={{
-          width: 56,
-          height: 56,
+          width: 48,
+          height: 48,
           borderRadius: '50%',
-          border: '4px solid rgba(255,107,53,0.15)',
-          borderTop: '4px solid var(--primary)',
+          border: '3px solid var(--primary-subtle)',
+          borderTop: '3px solid var(--primary)',
         }}
       />
-      <motion.div
+      <motion.p
         animate={{ opacity: [0.5, 1, 0.5] }}
         transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-        style={{ fontSize: 14, color: '#9ca3af', fontWeight: 500 }}>
+        style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', fontWeight: 500, margin: 0 }}
+      >
         {message}
-      </motion.div>
+      </motion.p>
     </div>
   )
 }

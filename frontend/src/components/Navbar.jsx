@@ -25,7 +25,6 @@ function Navbar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handler = (e) => {
       if (langRef.current && !langRef.current.contains(e.target)) setLangOpen(false)
@@ -35,7 +34,7 @@ function Navbar() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // Close mobile menu on route change
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setMenuOpen(false) }, [location.pathname])
 
   const navLinks = [
@@ -78,7 +77,7 @@ function Navbar() {
   ]
 
   const handleLogout = async () => {
-    try { await authAPI.logout() } catch (_) {}
+    try { await authAPI.logout() } catch { /* ignore */ }
     logout()
     navigate('/')
     setUserMenuOpen(false)
@@ -90,31 +89,36 @@ function Navbar() {
       <motion.nav
         initial={{ y: -80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
+        transition={{ duration: 0.45, ease: [0.4, 0, 0.2, 1] }}
         style={{
-          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
+          position: 'fixed', top: 0, left: 0, right: 0,
+          zIndex: 'var(--z-nav)',
           background: 'rgba(253,248,240,0.97)',
-          backdropFilter: 'blur(24px)',
-          borderBottom: scrolled ? '1px solid rgba(139,26,26,0.12)' : '1px solid rgba(139,26,26,0.07)',
-          boxShadow: scrolled ? '0 2px 20px rgba(139,26,26,0.08)' : 'none',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: scrolled
+            ? '1px solid var(--border-strong)'
+            : '1px solid var(--border)',
+          boxShadow: scrolled ? 'var(--shadow-md)' : 'none',
           transition: 'box-shadow 0.3s ease, border-color 0.3s ease',
-        }}>
+        }}
+      >
         <div style={{
           maxWidth: 1200, margin: '0 auto', padding: '0 28px',
           height: 66, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}>
 
-          {/* ── Logo (text only, no emoji) ── */}
-          <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 0 }}>
+          {/* ── Logo ── */}
+          <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
             <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
               <span style={{
-                fontSize: 19, fontWeight: 900, color: 'var(--maroon)',
+                fontSize: 'var(--text-xl)', fontWeight: 900, color: 'var(--maroon)',
                 letterSpacing: '-0.5px',
               }}>
                 Dharamshala
               </span>
               <span style={{
-                fontSize: 9.5, fontWeight: 700, color: 'var(--primary)',
+                fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--primary)',
                 letterSpacing: '2.5px', textTransform: 'uppercase', marginTop: 2,
               }}>
                 Booking
@@ -122,17 +126,17 @@ function Navbar() {
             </div>
           </Link>
 
-          {/* ── Desktop Nav Links ── */}
-          <div className="desktop-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {/* ── Desktop Nav Links — hidden on mobile, flex on lg ── */}
+          <div className="hidden lg:flex items-center" style={{ gap: 2 }}>
             {navLinks.map((link) => {
               const active = isActive(link.path)
               return (
                 <Link key={link.path} to={link.path} style={{ textDecoration: 'none' }}>
-                  <div style={{ position: 'relative', padding: '8px 15px', cursor: 'pointer' }}
-                    className="nav-link-item">
+                  <div className="nav-link-item" style={{ position: 'relative', padding: '8px 15px', cursor: 'pointer' }}>
                     <span style={{
-                      fontSize: 13.5, fontWeight: active ? 700 : 500,
-                      color: active ? 'var(--primary)' : '#4a4a4a',
+                      fontSize: 'var(--text-sm)',
+                      fontWeight: active ? 700 : 500,
+                      color: active ? 'var(--primary)' : 'var(--text-secondary)',
                       letterSpacing: active ? '0' : '0.1px',
                       transition: 'color 0.2s ease',
                     }}>
@@ -143,8 +147,8 @@ function Navbar() {
                         layoutId="navUnderline"
                         style={{
                           position: 'absolute', bottom: 0, left: 15, right: 15,
-                          height: 2, borderRadius: 99,
-                          background: 'linear-gradient(90deg, #FF6B35, #8B1A1A)',
+                          height: 2, borderRadius: 'var(--radius-full)',
+                          background: 'var(--primary)',
                         }}
                       />
                     )}
@@ -157,9 +161,9 @@ function Navbar() {
               <Link to="/admin" style={{ textDecoration: 'none' }}>
                 <div style={{ position: 'relative', padding: '8px 15px', cursor: 'pointer' }}>
                   <span style={{
-                    fontSize: 13.5,
+                    fontSize: 'var(--text-sm)',
                     fontWeight: location.pathname.startsWith('/admin') ? 700 : 500,
-                    color: location.pathname.startsWith('/admin') ? 'var(--maroon)' : '#4a4a4a',
+                    color: location.pathname.startsWith('/admin') ? 'var(--maroon)' : 'var(--text-secondary)',
                     transition: 'color 0.2s ease',
                   }}>
                     Admin Panel
@@ -169,8 +173,8 @@ function Navbar() {
                       layoutId="navUnderline"
                       style={{
                         position: 'absolute', bottom: 0, left: 15, right: 15,
-                        height: 2, borderRadius: 99,
-                        background: 'linear-gradient(90deg, #8B1A1A, #c94a1a)',
+                        height: 2, borderRadius: 'var(--radius-full)',
+                        background: 'var(--maroon)',
                       }}
                     />
                   )}
@@ -186,19 +190,22 @@ function Navbar() {
             <div ref={langRef} style={{ position: 'relative' }}>
               <button
                 onClick={() => { setLangOpen(v => !v); setUserMenuOpen(false) }}
+                aria-label="Select language"
+                aria-expanded={langOpen}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '7px 12px', borderRadius: 8,
-                  border: '1px solid rgba(139,26,26,0.14)',
-                  background: langOpen ? 'rgba(139,26,26,0.05)' : 'transparent',
+                  padding: '7px 12px', borderRadius: 'var(--radius-sm)',
+                  border: `1px solid ${langOpen ? 'var(--primary-border)' : 'var(--border)'}`,
+                  background: langOpen ? 'var(--primary-subtle)' : 'transparent',
                   cursor: 'pointer', transition: 'all 0.18s ease',
-                }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--maroon)', letterSpacing: '0.5px' }}>
+                }}
+              >
+                <span style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--maroon)', letterSpacing: '0.5px' }}>
                   {languages.find(l => l.code === language)?.short}
                 </span>
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
                   style={{ transform: langOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease', opacity: 0.4 }}>
-                  <path d="M2 3.5L5 6.5L8 3.5" stroke="#2D2D2D" strokeWidth="1.5" strokeLinecap="round"/>
+                  <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                 </svg>
               </button>
 
@@ -211,20 +218,24 @@ function Navbar() {
                     transition={{ duration: 0.15, ease: 'easeOut' }}
                     style={{
                       position: 'absolute', top: 'calc(100% + 10px)', right: 0,
-                      background: 'white', borderRadius: 14, padding: '6px',
-                      minWidth: 158,
+                      background: 'var(--surface-solid)', borderRadius: 'var(--radius-lg)',
+                      padding: '6px', minWidth: 158,
                       boxShadow: '0 4px 6px rgba(0,0,0,0.04), 0 12px 40px rgba(0,0,0,0.10)',
-                      border: '1px solid rgba(0,0,0,0.07)', zIndex: 200,
-                    }}>
-                    {/* Dropdown arrow tip */}
+                      border: '1px solid var(--border)', zIndex: 'var(--z-dropdown)',
+                    }}
+                  >
                     <div style={{
                       position: 'absolute', top: -5, right: 16,
-                      width: 10, height: 10, background: 'white',
-                      border: '1px solid rgba(0,0,0,0.07)',
+                      width: 10, height: 10, background: 'var(--surface-solid)',
+                      border: '1px solid var(--border)',
                       borderBottom: 'none', borderRight: 'none',
                       transform: 'rotate(45deg)',
                     }} />
-                    <div style={{ fontSize: 10, fontWeight: 700, color: '#aaa', letterSpacing: '1px', padding: '6px 12px 4px', textTransform: 'uppercase' }}>
+                    <div style={{
+                      fontSize: 'var(--text-xs)', fontWeight: 700,
+                      color: 'var(--text-muted)', letterSpacing: '1px',
+                      padding: '6px 12px 4px', textTransform: 'uppercase',
+                    }}>
                       Language
                     </div>
                     {languages.map((lang) => {
@@ -234,21 +245,20 @@ function Navbar() {
                           onClick={() => { changeLanguage(lang.code); setLangOpen(false) }}
                           style={{
                             width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            padding: '9px 12px', borderRadius: 9, border: 'none',
-                            background: active ? 'rgba(255,107,53,0.07)' : 'transparent',
+                            padding: '9px 12px', borderRadius: 'var(--radius-sm)', border: 'none',
+                            background: active ? 'var(--primary-subtle)' : 'transparent',
                             cursor: 'pointer', transition: 'background 0.15s ease',
+                            fontFamily: 'inherit',
                           }}
-                          onMouseEnter={e => { if (!active) e.currentTarget.style.background = '#f7f3ef' }}
+                          onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--neutral-100)' }}
                           onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
                         >
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                            <span style={{ fontSize: 13.5, fontWeight: active ? 700 : 500, color: active ? 'var(--primary)' : '#2d2d2d' }}>
-                              {lang.label}
-                            </span>
-                          </div>
+                          <span style={{ fontSize: 'var(--text-sm)', fontWeight: active ? 700 : 500, color: active ? 'var(--primary)' : 'var(--text)' }}>
+                            {lang.label}
+                          </span>
                           {active && (
                             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                              <path d="M2.5 7L5.5 10L11.5 4" stroke="#FF6B35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <path d="M2.5 7L5.5 10L11.5 4" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
                           )}
                         </button>
@@ -266,30 +276,30 @@ function Navbar() {
                   onClick={() => { setUserMenuOpen(v => !v); setLangOpen(false) }}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 9,
-                    padding: '5px 12px 5px 5px', borderRadius: 99,
-                    border: `1.5px solid ${userMenuOpen ? 'rgba(255,107,53,0.4)' : 'rgba(139,26,26,0.15)'}`,
-                    background: userMenuOpen ? 'rgba(255,107,53,0.04)' : 'white',
+                    padding: '5px 12px 5px 5px', borderRadius: 'var(--radius-full)',
+                    border: `1.5px solid ${userMenuOpen ? 'var(--primary-border)' : 'var(--border)'}`,
+                    background: userMenuOpen ? 'var(--primary-subtle)' : 'var(--surface-solid)',
                     cursor: 'pointer', transition: 'all 0.2s ease',
-                  }}>
-                  {/* Avatar */}
+                  }}
+                >
                   <div style={{
                     width: 30, height: 30, borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #FF6B35 0%, #8B1A1A 100%)',
+                    background: 'linear-gradient(135deg, var(--primary) 0%, var(--maroon) 100%)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 12, fontWeight: 800, color: 'white', flexShrink: 0,
+                    fontSize: 'var(--text-sm)', fontWeight: 800, color: 'white', flexShrink: 0,
                     letterSpacing: '-0.3px',
                   }}>
                     {user?.name?.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <span style={{
-                    fontSize: 13.5, fontWeight: 600, color: '#2d2d2d',
+                    fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)',
                     maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
                     {user?.name?.split(' ')[0] || 'User'}
                   </span>
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
                     style={{ transform: userMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease', opacity: 0.35, flexShrink: 0 }}>
-                    <path d="M2 3.5L5 6.5L8 3.5" stroke="#2D2D2D" strokeWidth="1.5" strokeLinecap="round"/>
+                    <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                   </svg>
                 </button>
 
@@ -302,39 +312,36 @@ function Navbar() {
                       transition={{ duration: 0.15, ease: 'easeOut' }}
                       style={{
                         position: 'absolute', top: 'calc(100% + 10px)', right: 0,
-                        background: 'white', borderRadius: 16, padding: '6px',
-                        minWidth: 220,
+                        background: 'var(--surface-solid)', borderRadius: 'var(--radius-lg)',
+                        padding: '6px', minWidth: 220,
                         boxShadow: '0 4px 6px rgba(0,0,0,0.04), 0 16px 48px rgba(0,0,0,0.12)',
-                        border: '1px solid rgba(0,0,0,0.07)', zIndex: 200,
-                      }}>
-                      {/* Arrow tip */}
+                        border: '1px solid var(--border)', zIndex: 'var(--z-dropdown)',
+                      }}
+                    >
                       <div style={{
                         position: 'absolute', top: -5, right: 20,
-                        width: 10, height: 10, background: 'white',
-                        border: '1px solid rgba(0,0,0,0.07)',
+                        width: 10, height: 10, background: 'var(--surface-solid)',
+                        border: '1px solid var(--border)',
                         borderBottom: 'none', borderRight: 'none',
                         transform: 'rotate(45deg)',
                       }} />
 
                       {/* User info header */}
-                      <div style={{
-                        padding: '10px 14px 12px', marginBottom: 4,
-                        borderBottom: '1px solid #f0ebe3',
-                      }}>
+                      <div style={{ padding: '10px 14px 12px', marginBottom: 4, borderBottom: '1px solid var(--border)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <div style={{
                             width: 36, height: 36, borderRadius: '50%',
-                            background: 'linear-gradient(135deg, #FF6B35, #8B1A1A)',
+                            background: 'linear-gradient(135deg, var(--primary), var(--maroon))',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: 15, fontWeight: 800, color: 'white', flexShrink: 0,
+                            fontSize: 'var(--text-md)', fontWeight: 800, color: 'white', flexShrink: 0,
                           }}>
                             {user?.name?.charAt(0).toUpperCase() || 'U'}
                           </div>
                           <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: 13.5, fontWeight: 700, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {user?.name}
                             </div>
-                            <div style={{ fontSize: 11.5, color: '#999', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {user?.email}
                             </div>
                           </div>
@@ -342,19 +349,18 @@ function Navbar() {
                         {isAdmin && (
                           <div style={{
                             display: 'inline-flex', alignItems: 'center', gap: 5,
-                            marginTop: 8, padding: '3px 10px', borderRadius: 6,
-                            background: 'rgba(139,26,26,0.07)',
+                            marginTop: 8, padding: '3px 10px', borderRadius: 'var(--radius-sm)',
+                            background: 'var(--maroon-subtle)',
                             border: '1px solid rgba(139,26,26,0.12)',
                           }}>
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8B1A1A" strokeWidth="2.5">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--maroon)" strokeWidth="2.5">
                               <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                             </svg>
-                            <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--maroon)', letterSpacing: '0.3px' }}>Administrator</span>
+                            <span style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--maroon)', letterSpacing: '0.3px' }}>Administrator</span>
                           </div>
                         )}
                       </div>
 
-                      {/* Menu items */}
                       <div style={{ padding: '2px 0' }}>
                         {userMenuItems.map((item) => (
                           <Link key={item.path} to={item.path} style={{ textDecoration: 'none' }}
@@ -362,22 +368,22 @@ function Navbar() {
                             <div
                               style={{
                                 display: 'flex', alignItems: 'center', gap: 10,
-                                padding: '9px 14px', borderRadius: 10, cursor: 'pointer',
-                                color: item.admin ? 'var(--maroon)' : '#2d2d2d',
+                                padding: '9px 14px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                                color: item.admin ? 'var(--maroon)' : 'var(--text)',
                                 transition: 'background 0.15s ease',
                               }}
-                              onMouseEnter={e => e.currentTarget.style.background = item.admin ? 'rgba(139,26,26,0.05)' : '#f7f3ef'}
+                              onMouseEnter={e => e.currentTarget.style.background = item.admin ? 'var(--maroon-subtle)' : 'var(--neutral-100)'}
                               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                             >
-                              <span style={{ color: item.admin ? 'var(--maroon)' : '#888', flexShrink: 0 }}>
+                              <span style={{ color: item.admin ? 'var(--maroon)' : 'var(--text-muted)', flexShrink: 0 }}>
                                 {item.icon}
                               </span>
-                              <span style={{ fontSize: 13.5, fontWeight: 500 }}>{item.label}</span>
+                              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500 }}>{item.label}</span>
                               {item.admin && (
                                 <span style={{
-                                  marginLeft: 'auto', fontSize: 9.5, fontWeight: 700,
-                                  padding: '2px 7px', borderRadius: 5,
-                                  background: 'rgba(139,26,26,0.08)', color: 'var(--maroon)',
+                                  marginLeft: 'auto', fontSize: 'var(--text-xs)', fontWeight: 700,
+                                  padding: '2px 7px', borderRadius: 'var(--radius-sm)',
+                                  background: 'var(--maroon-subtle)', color: 'var(--maroon)',
                                 }}>
                                   ADMIN
                                 </span>
@@ -387,24 +393,23 @@ function Navbar() {
                         ))}
                       </div>
 
-                      {/* Logout */}
-                      <div style={{ padding: '4px 0 2px', borderTop: '1px solid #f0ebe3', marginTop: 4 }}>
+                      <div style={{ padding: '4px 0 2px', borderTop: '1px solid var(--border)', marginTop: 4 }}>
                         <div
                           onClick={handleLogout}
                           style={{
                             display: 'flex', alignItems: 'center', gap: 10,
-                            padding: '9px 14px', borderRadius: 10, cursor: 'pointer',
+                            padding: '9px 14px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
                             transition: 'background 0.15s ease',
                           }}
-                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(220,38,38,0.05)'}
+                          onMouseEnter={e => e.currentTarget.style.background = 'var(--error-subtle)'}
                           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                         >
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--error)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                             <polyline points="16 17 21 12 16 7"/>
                             <line x1="21" y1="12" x2="9" y2="12"/>
                           </svg>
-                          <span style={{ fontSize: 13.5, fontWeight: 500, color: '#DC2626' }}>
+                          <span style={{ fontSize: 'var(--text-sm)', fontWeight: 500, color: 'var(--error-text)' }}>
                             {t.nav.logout}
                           </span>
                         </div>
@@ -418,32 +423,32 @@ function Navbar() {
                 <Link to="/login" style={{ textDecoration: 'none' }}>
                   <button
                     style={{
-                      padding: '8px 18px', borderRadius: 9,
-                      border: '1.5px solid rgba(255,107,53,0.35)',
+                      padding: '8px 18px', borderRadius: 'var(--radius-sm)',
+                      border: '1.5px solid var(--primary-border)',
                       background: 'transparent', cursor: 'pointer',
-                      fontSize: 13.5, fontWeight: 600, color: 'var(--primary)',
-                      transition: 'all 0.18s ease',
+                      fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--primary)',
+                      transition: 'all 0.18s ease', fontFamily: 'inherit',
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,107,53,0.05)' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--primary-subtle)' }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
                   >
                     {t.nav.login}
                   </button>
                 </Link>
                 <Link to="/signup" style={{ textDecoration: 'none' }}>
-                  <button
+                  <motion.button
+                    whileHover={{ scale: 1.03, boxShadow: '0 6px 20px var(--primary-border)' }}
+                    whileTap={{ scale: 0.97 }}
                     style={{
-                      padding: '8px 18px', borderRadius: 9, border: 'none',
-                      background: 'linear-gradient(135deg, #FF6B35 0%, #8B1A1A 100%)',
-                      cursor: 'pointer', fontSize: 13.5, fontWeight: 700, color: 'white',
-                      boxShadow: '0 2px 8px rgba(255,107,53,0.3)',
-                      transition: 'all 0.18s ease',
+                      padding: '8px 18px', borderRadius: 'var(--radius-sm)', border: 'none',
+                      background: 'linear-gradient(135deg, var(--primary) 0%, var(--maroon) 100%)',
+                      cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 700, color: 'white',
+                      boxShadow: '0 2px 8px var(--primary-border)',
+                      transition: 'box-shadow 0.18s ease', fontFamily: 'inherit',
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(255,107,53,0.45)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-                    onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(255,107,53,0.3)'; e.currentTarget.style.transform = 'translateY(0)' }}
                   >
                     {t.nav.signup}
-                  </button>
+                  </motion.button>
                 </Link>
               </div>
             )}
@@ -451,15 +456,18 @@ function Navbar() {
             {/* Mobile Hamburger */}
             <button
               onClick={() => { setMenuOpen(v => !v); setLangOpen(false); setUserMenuOpen(false) }}
+              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={menuOpen}
               className="lg:hidden"
               style={{
-                width: 38, height: 38, borderRadius: 9,
-                border: '1px solid rgba(139,26,26,0.15)',
-                background: menuOpen ? 'rgba(139,26,26,0.06)' : 'transparent',
+                width: 38, height: 38, borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border)',
+                background: menuOpen ? 'var(--neutral-100)' : 'transparent',
                 cursor: 'pointer', display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center', gap: 5,
                 transition: 'background 0.2s ease',
-              }}>
+              }}
+            >
               {[0, 1, 2].map((i) => (
                 <motion.div key={i}
                   animate={{
@@ -468,7 +476,7 @@ function Navbar() {
                     opacity: menuOpen && i === 1 ? 0 : 1,
                   }}
                   transition={{ duration: 0.2 }}
-                  style={{ width: 18, height: 1.5, backgroundColor: 'var(--maroon)', borderRadius: 99 }}
+                  style={{ width: 18, height: 1.5, backgroundColor: 'var(--maroon)', borderRadius: 'var(--radius-full)' }}
                 />
               ))}
             </button>
@@ -485,12 +493,12 @@ function Navbar() {
               transition={{ duration: 0.25, ease: 'easeInOut' }}
               style={{
                 overflow: 'hidden',
-                borderTop: '1px solid rgba(139,26,26,0.08)',
-                background: '#fff',
-              }}>
+                borderTop: '1px solid var(--border)',
+                background: 'var(--surface-solid)',
+              }}
+            >
               <div style={{ padding: '12px 20px 20px' }}>
 
-                {/* Nav links */}
                 <div style={{ marginBottom: 12 }}>
                   {navLinks.map((link, i) => {
                     const active = isActive(link.path)
@@ -498,18 +506,18 @@ function Navbar() {
                       <motion.div key={link.path}
                         initial={{ opacity: 0, x: -12 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.05 }}>
-                        <Link to={link.path} onClick={() => setMenuOpen(false)}
-                          style={{ textDecoration: 'none' }}>
+                        transition={{ delay: i * 0.05 }}
+                      >
+                        <Link to={link.path} onClick={() => setMenuOpen(false)} style={{ textDecoration: 'none' }}>
                           <div style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            padding: '11px 14px', borderRadius: 10, marginBottom: 2,
-                            background: active ? 'rgba(255,107,53,0.07)' : 'transparent',
+                            padding: '11px 14px', borderRadius: 'var(--radius-md)', marginBottom: 2,
+                            background: active ? 'var(--primary-subtle)' : 'transparent',
                             transition: 'background 0.15s ease',
                           }}>
                             <span style={{
-                              fontSize: 14.5, fontWeight: active ? 700 : 500,
-                              color: active ? 'var(--primary)' : '#2d2d2d',
+                              fontSize: 'var(--text-base)', fontWeight: active ? 700 : 500,
+                              color: active ? 'var(--primary)' : 'var(--text)',
                             }}>
                               {link.label}
                             </span>
@@ -526,15 +534,16 @@ function Navbar() {
                     <Link to="/admin" onClick={() => setMenuOpen(false)} style={{ textDecoration: 'none' }}>
                       <div style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '11px 14px', borderRadius: 10, marginBottom: 2,
-                        background: location.pathname.startsWith('/admin') ? 'rgba(139,26,26,0.06)' : 'transparent',
+                        padding: '11px 14px', borderRadius: 'var(--radius-md)', marginBottom: 2,
+                        background: location.pathname.startsWith('/admin') ? 'var(--maroon-subtle)' : 'transparent',
                       }}>
-                        <span style={{ fontSize: 14.5, fontWeight: 600, color: 'var(--maroon)' }}>
+                        <span style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--maroon)' }}>
                           Admin Panel
                         </span>
                         <span style={{
-                          fontSize: 9.5, fontWeight: 700, padding: '2px 7px', borderRadius: 5,
-                          background: 'rgba(139,26,26,0.08)', color: 'var(--maroon)',
+                          fontSize: 'var(--text-xs)', fontWeight: 700, padding: '2px 7px',
+                          borderRadius: 'var(--radius-sm)',
+                          background: 'var(--maroon-subtle)', color: 'var(--maroon)',
                         }}>
                           ADMIN
                         </span>
@@ -543,41 +552,43 @@ function Navbar() {
                   )}
                 </div>
 
-                <div style={{ height: 1, background: '#f0ebe3', marginBottom: 14 }} />
+                <div style={{ height: 1, background: 'var(--border)', marginBottom: 14 }} />
 
                 {isLoggedIn ? (
                   <div>
-                    {/* User info */}
                     <div style={{
                       display: 'flex', alignItems: 'center', gap: 12,
-                      padding: '10px 14px', borderRadius: 12,
-                      background: '#faf7f3',
-                      border: '1px solid rgba(139,26,26,0.08)',
+                      padding: '10px 14px', borderRadius: 'var(--radius-md)',
+                      background: 'var(--neutral-100)',
+                      border: '1px solid var(--border)',
                       marginBottom: 10,
                     }}>
                       <div style={{
                         width: 36, height: 36, borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #FF6B35, #8B1A1A)',
+                        background: 'linear-gradient(135deg, var(--primary), var(--maroon))',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 14, fontWeight: 800, color: 'white', flexShrink: 0,
+                        fontSize: 'var(--text-md)', fontWeight: 800, color: 'white', flexShrink: 0,
                       }}>
                         {user?.name?.charAt(0).toUpperCase() || 'U'}
                       </div>
                       <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>{user?.name}</div>
-                        <div style={{ fontSize: 11.5, color: '#999', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</div>
+                        <div style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--text)' }}>{user?.name}</div>
+                        <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</div>
                       </div>
                     </div>
 
                     <button onClick={handleLogout}
                       style={{
-                        width: '100%', padding: '11px 14px', borderRadius: 10,
+                        width: '100%', padding: '11px 14px', borderRadius: 'var(--radius-md)',
                         border: '1px solid rgba(220,38,38,0.2)',
-                        background: 'rgba(220,38,38,0.04)',
-                        cursor: 'pointer', fontSize: 14, fontWeight: 600,
-                        color: '#DC2626', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 8,
-                      }}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        background: 'var(--error-subtle)',
+                        cursor: 'pointer', fontSize: 'var(--text-base)', fontWeight: 600,
+                        color: 'var(--error-text)', textAlign: 'left',
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--error)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                         <polyline points="16 17 21 12 16 7"/>
                         <line x1="21" y1="12" x2="9" y2="12"/>
@@ -589,18 +600,20 @@ function Navbar() {
                   <div style={{ display: 'flex', gap: 10 }}>
                     <Link to="/login" style={{ flex: 1, textDecoration: 'none' }} onClick={() => setMenuOpen(false)}>
                       <button style={{
-                        width: '100%', padding: '11px', borderRadius: 10,
-                        border: '1.5px solid rgba(255,107,53,0.3)', background: 'transparent',
-                        cursor: 'pointer', fontSize: 14, fontWeight: 600, color: 'var(--primary)',
+                        width: '100%', padding: '11px', borderRadius: 'var(--radius-md)',
+                        border: '1.5px solid var(--primary-border)', background: 'transparent',
+                        cursor: 'pointer', fontSize: 'var(--text-base)', fontWeight: 600,
+                        color: 'var(--primary)', fontFamily: 'inherit',
                       }}>
                         {t.nav.login}
                       </button>
                     </Link>
                     <Link to="/signup" style={{ flex: 1, textDecoration: 'none' }} onClick={() => setMenuOpen(false)}>
                       <button style={{
-                        width: '100%', padding: '11px', borderRadius: 10,
-                        border: 'none', background: 'linear-gradient(135deg, #FF6B35, #8B1A1A)',
-                        cursor: 'pointer', fontSize: 14, fontWeight: 700, color: 'white',
+                        width: '100%', padding: '11px', borderRadius: 'var(--radius-md)', border: 'none',
+                        background: 'linear-gradient(135deg, var(--primary), var(--maroon))',
+                        cursor: 'pointer', fontSize: 'var(--text-base)', fontWeight: 700,
+                        color: 'white', fontFamily: 'inherit',
                       }}>
                         {t.nav.signup}
                       </button>
@@ -615,11 +628,6 @@ function Navbar() {
 
       {/* Spacer */}
       <div style={{ height: 66 }} />
-
-      {/* Hover styles injected globally */}
-      <style>{`
-        .nav-link-item:hover span { color: var(--primary) !important; }
-      `}</style>
     </>
   )
 }
