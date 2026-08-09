@@ -193,114 +193,146 @@ function BookingRequests() {
               </p>
             </motion.div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {paginated.map((booking, i) => {
                 const statusStyle = STATUS_COLORS[booking.status] || STATUS_COLORS.pending
                 return (
                   <motion.div key={booking._id || i}
-                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.07 }}
-                    whileHover={{ y: -3, boxShadow: 'var(--shadow-xl)' }}
-                    style={{ ...cardStyleSolid, padding: '24px 28px', transition: 'box-shadow 0.3s ease' }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
-                      <div style={{ flex: 1, minWidth: 200 }}>
-                        <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--maroon)', marginBottom: 4 }}>
+                    initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.06 }}
+                    style={{ background: 'white', borderRadius: 18, overflow: 'hidden',
+                      border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)',
+                      transition: 'box-shadow 0.2s ease' }}>
+
+                    {/* ── ZONE 1: Event name + status + booker ── */}
+                    <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', flex: 1, lineHeight: 1.35 }}>
                           {booking.eventName}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)', marginBottom: 2 }}>
-                          <User size={13} /> {booking.user?.name}
-                          <span style={{ marginLeft: 4 }}>•</span>
-                          <Phone size={13} /> {booking.contactPhone}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)', marginBottom: 2 }}>
-                          <CalendarBlank size={13} />
-                          {new Date(booking.eventDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
-                          {booking.additionalDates?.length > 0 && (
-                            <span style={{ color: 'var(--warning-text)', fontWeight: 600 }}>
-                              {' '}+ {booking.additionalDates.length} more date{booking.additionalDates.length > 1 ? 's' : ''}
+                        <div style={{ display: 'flex', gap: 5, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                          <span style={{ padding: '4px 11px', borderRadius: 99, fontSize: 11, fontWeight: 700,
+                            background: statusStyle.bg, color: statusStyle.text }}>
+                            {statusStyle.label}
+                          </span>
+                          {booking.status === 'approved' && (
+                            <span style={{ padding: '4px 11px', borderRadius: 99, fontSize: 11, fontWeight: 700,
+                              background: booking.paymentStatus === 'paid' ? 'var(--success-subtle)' : 'var(--warning-subtle)',
+                              color: booking.paymentStatus === 'paid' ? 'var(--success-text)' : 'var(--warning-text)' }}>
+                              {booking.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}
                             </span>
                           )}
-                          <span style={{ marginLeft: 4 }}>•</span>
-                          <Clock size={13} /> {to12h(booking.startTime)} - {to12h(booking.endTime)}
                         </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
+                        <User size={11} weight="duotone" color="var(--primary)" />
+                        <span style={{ fontWeight: 600 }}>{booking.user?.name}</span>
+                        <span style={{ color: 'var(--border-strong)' }}>·</span>
+                        <Phone size={11} weight="duotone" color="var(--text-muted)" />
+                        <span>{booking.contactPhone}</span>
+                      </div>
+                    </div>
+
+                    {/* ── ZONE 2: When — date + time on one line ── */}
+                    <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <CalendarBlank size={12} weight="duotone" color="var(--maroon)" />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
+                          {new Date(booking.eventDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </span>
                         {booking.additionalDates?.length > 0 && (
-                          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>
-                            {booking.additionalDates.map((d, idx) => (
-                              <span key={idx} style={{
-                                padding: '2px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600,
-                                background: 'var(--warning-subtle)', color: 'var(--warning-text)',
-                              }}>
-                                {new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                              </span>
-                            ))}
-                          </div>
+                          <span style={{ padding: '2px 7px', borderRadius: 6, fontSize: 10, fontWeight: 700,
+                            background: 'var(--warning-subtle)', color: 'var(--warning-text)' }}>
+                            +{booking.additionalDates.length} more
+                          </span>
                         )}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-muted)' }}>
-                          <Users size={13} /> {booking.expectedGuests} guests
-                          <span style={{ marginLeft: 4 }}>•</span>
-                          <Confetti size={13} /> {booking.eventType}
+                        <span style={{ color: 'var(--border-strong)', fontSize: 11 }}>·</span>
+                        <Clock size={11} weight="duotone" color="var(--text-muted)" />
+                        <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                          {to12h(booking.startTime)} – {to12h(booking.endTime)}
+                        </span>
+                      </div>
+                      {booking.additionalDates?.length > 0 && (
+                        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 6 }}>
+                          {booking.additionalDates.map((d, idx) => (
+                            <span key={idx} style={{ padding: '2px 9px', borderRadius: 8, fontSize: 10, fontWeight: 600,
+                              background: 'var(--warning-subtle)', color: 'var(--warning-text)' }}>
+                              {new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                            </span>
+                          ))}
                         </div>
-                        {booking.totalAmount > 0 && (
-                          <div style={{ fontSize: 13, color: 'var(--success-text)', fontWeight: 700, marginTop: 4 }}>
+                      )}
+                    </div>
+
+                    {/* ── ZONE 3: What — event type + guest count ── */}
+                    <div style={{ padding: '9px 16px', borderBottom: '1px solid var(--border)',
+                      display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <Confetti size={12} weight="duotone" color="var(--primary)" />
+                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
+                          {booking.eventType}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <Users size={12} weight="duotone" color="var(--text-muted)" />
+                        <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                          {booking.expectedGuests} {booking.expectedGuests === 1 ? 'guest' : 'guests'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* ── ZONE 4: Footer — amount + submitted + action ── */}
+                    <div style={{ padding: '11px 16px 13px', background: 'var(--neutral-50)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <div>
+                        {booking.totalAmount > 0 ? (
+                          <div style={{ fontSize: 19, fontWeight: 900, color: 'var(--success-text)', lineHeight: 1 }}>
                             ₹{booking.totalAmount.toLocaleString()}
                           </div>
+                        ) : (
+                          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)' }}>Price TBD</div>
                         )}
-                        {booking.rejectionReason && (
-                          <div style={{ fontSize: 12, color: 'var(--error-text)', marginTop: 4 }}>
-                            Rejection reason: {booking.rejectionReason}
-                          </div>
-                        )}
+                        <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 3 }}>
+                          Submitted {new Date(booking.createdAt).toLocaleDateString('en-IN')}
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                          <div style={{
-                            padding: '5px 14px', borderRadius: 99,
-                            background: statusStyle.bg, color: statusStyle.text,
-                            fontSize: 12, fontWeight: 700,
-                          }}>
-                            {statusStyle.label}
-                          </div>
-                          {booking.status === 'approved' && (
-                            <div style={{
-                              padding: '5px 14px', borderRadius: 99,
-                              background: booking.paymentStatus === 'paid' ? 'var(--success-subtle)' : 'var(--warning-subtle)',
-                              color: booking.paymentStatus === 'paid' ? 'var(--success-text)' : 'var(--warning-text)',
-                              fontSize: 12, fontWeight: 700,
-                            }}>
-                              {booking.paymentStatus === 'paid' ? 'Paid' : 'Payment Pending'}
-                            </div>
-                          )}
-                        </div>
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                          {new Date(booking.createdAt).toLocaleDateString('en-IN')}
-                        </div>
+                      <div style={{ flexShrink: 0 }}>
                         {booking.status === 'pending' && (
-                          <motion.button
-                            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}
+                          <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
                             onClick={() => openModal(booking)}
-                            style={{
-                              padding: '8px 18px', borderRadius: 10, border: 'none',
-                              cursor: 'pointer', fontSize: 13, fontWeight: 700, color: 'white',
+                            style={{ padding: '9px 20px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                              fontSize: 13, fontWeight: 700, color: 'white', fontFamily: 'inherit',
                               background: 'linear-gradient(135deg, var(--primary), var(--maroon))',
-                            }}>
+                              boxShadow: '0 2px 10px rgba(255,107,53,0.28)' }}>
                             Review
                           </motion.button>
                         )}
                         {booking.status === 'approved' && (!booking.totalAmount || booking.totalAmount <= 0) && booking.paymentStatus !== 'paid' && (
-                          <motion.button
-                            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}
+                          <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
                             onClick={() => openModal(booking, 'setPrice')}
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: 6,
-                              padding: '8px 18px', borderRadius: 10, border: 'none',
-                              cursor: 'pointer', fontSize: 13, fontWeight: 700, color: 'white',
-                              background: 'linear-gradient(135deg, var(--success), #166534)',
-                            }}>
-                            <CurrencyCircleDollar size={14} /> Set Price
+                            style={{ display: 'flex', alignItems: 'center', gap: 5,
+                              padding: '9px 16px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                              fontSize: 13, fontWeight: 700, color: 'white', fontFamily: 'inherit',
+                              background: 'linear-gradient(135deg, var(--success), #166534)' }}>
+                            <CurrencyCircleDollar size={13} /> Set Price
                           </motion.button>
                         )}
                       </div>
                     </div>
+
+                    {/* ── Rejection reason (conditional) ── */}
+                    {booking.rejectionReason && (
+                      <div style={{ padding: '8px 16px', background: 'var(--error-subtle)',
+                        borderTop: '1px solid rgba(220,38,38,0.12)' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                          <X size={12} weight="bold" color="var(--error-text)" style={{ marginTop: 2, flexShrink: 0 }} />
+                          <div>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--error-text)' }}>Reason: </span>
+                            <span style={{ fontSize: 11, color: 'var(--error-text)', opacity: 0.85 }}>{booking.rejectionReason}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </motion.div>
                 )
               })}
