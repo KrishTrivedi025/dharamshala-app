@@ -152,20 +152,14 @@ function Notifications() {
                     initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
                     whileHover={{ y: -2, boxShadow: 'var(--shadow-lg)' }}
                     style={{
-                      borderRadius: 'var(--radius-lg)', padding: '16px 20px',
+                      borderRadius: 'var(--radius-lg)', padding: '14px 16px',
                       background: notif.read ? 'var(--surface-solid)' : 'var(--primary-subtle)',
                       border: notif.read ? '1px solid var(--border)' : '1px solid var(--primary-border)',
-                      boxShadow: 'var(--shadow-sm)', display: 'flex', alignItems: 'flex-start', gap: 14,
+                      boxShadow: 'var(--shadow-sm)', display: 'flex', alignItems: 'flex-start', gap: 10,
                       transition: 'box-shadow 0.2s', cursor: 'pointer',
                     }}>
-                    <div style={{
-                      width: 42, height: 42, borderRadius: 'var(--radius-md)', flexShrink: 0,
-                      background: `${type.color}10`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      border: `1px solid ${type.color}20`, color: type.color,
-                    }}>
-                      {type.icon}
-                    </div>
+                    {/* Colored type dot instead of large icon box */}
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: type.color, flexShrink: 0, marginTop: 5 }} />
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--maroon)', marginBottom: 3 }}>{notif.title}</div>
                       <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', lineHeight: 1.55 }}>{notif.message}</div>

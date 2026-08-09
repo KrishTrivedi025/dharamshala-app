@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
+import { useIsMobile } from '../pages/admin/AdminDashboard'
 import {
   MapPin, Phone, Envelope, Globe, FacebookLogo, InstagramLogo,
   ArrowRight,
@@ -10,6 +11,7 @@ function Footer() {
   const currentYear = new Date().getFullYear()
   const { isLoggedIn } = useAuth()
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
 
   const quickLinks = [
     { path: '/', label: 'Home' },
@@ -42,13 +44,13 @@ function Footer() {
   return (
     <footer style={{
       background: 'linear-gradient(160deg, #1a0000 0%, #5a0e0e 50%, var(--maroon) 100%)',
-      color: 'white', paddingTop: 64,
+      color: 'white', paddingTop: isMobile ? 36 : 64,
     }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 32px' }}>
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: 48, paddingBottom: 48,
+          gap: isMobile ? 28 : 48, paddingBottom: isMobile ? 28 : 48,
           borderBottom: '1px solid rgba(255,255,255,0.08)',
         }}>
 

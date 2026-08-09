@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useIsMobile } from './admin/AdminDashboard'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   PencilLine, CalendarBlank, Phone, CheckCircle,
@@ -42,6 +43,7 @@ const STEP_ICONS = [
 ]
 
 function Booking() {
+  const isMobile = useIsMobile()
   const navigate = useNavigate()
   const { user } = useAuth()
   const [step, setStep] = useState(0)
@@ -152,37 +154,55 @@ function Booking() {
       </div>
 
       {/* Progress steps */}
-      <div style={{ backgroundColor: 'var(--surface-solid)', borderBottom: '1px solid var(--border)', padding: '0 24px' }}>
-        <div style={{ maxWidth: 860, margin: '0 auto', display: 'flex', overflowX: 'auto' }}>
-          {STEPS.map((s, i) => (
-            <div key={i} style={{ flex: 1, minWidth: 110, display: 'flex', alignItems: 'center' }}>
-              <div style={{
-                padding: '16px 0', display: 'flex', alignItems: 'center', gap: 8,
-                borderBottom: `3px solid ${i === step ? 'var(--primary)' : i < step ? 'var(--success)' : 'transparent'}`,
-                width: '100%',
-              }}>
-                <div style={{
-                  width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: i < step ? 'var(--success)' : i === step ? 'var(--primary)' : 'var(--neutral-200)',
-                  color: i <= step ? 'white' : 'var(--text-muted)',
-                }}>
-                  {i < step ? <CheckCircle size={14} weight="fill" /> : STEP_ICONS[i]}
-                </div>
-                <span style={{
-                  fontSize: 'var(--text-xs)', fontWeight: i === step ? 700 : 500,
-                  color: i === step ? 'var(--primary)' : i < step ? 'var(--success)' : 'var(--text-muted)',
-                  whiteSpace: 'nowrap',
-                }}>{s}</span>
-              </div>
-              {i < STEPS.length - 1 && <div style={{ width: 16, height: 1, background: 'var(--border)', flexShrink: 0 }} />}
+      <div style={{ backgroundColor: 'var(--surface-solid)', borderBottom: '1px solid var(--border)', padding: isMobile ? '12px 16px' : '0 24px' }}>
+        {isMobile ? (
+          /* Mobile: compact progress bar + step label */
+          <div style={{ maxWidth: 860, margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 7 }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)' }}>Step {step + 1} of {STEPS.length}</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--maroon)' }}>{STEPS[step]}</span>
             </div>
-          ))}
-        </div>
+            <div style={{ height: 6, borderRadius: 99, background: 'var(--neutral-200)', overflow: 'hidden' }}>
+              <motion.div
+                animate={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+                style={{ height: '100%', borderRadius: 99, background: 'linear-gradient(135deg, var(--primary), var(--maroon))' }}
+              />
+            </div>
+          </div>
+        ) : (
+          /* Desktop: full labeled stepper — untouched */
+          <div style={{ maxWidth: 860, margin: '0 auto', display: 'flex', overflowX: 'auto' }}>
+            {STEPS.map((s, i) => (
+              <div key={i} style={{ flex: 1, minWidth: 110, display: 'flex', alignItems: 'center' }}>
+                <div style={{
+                  padding: '16px 0', display: 'flex', alignItems: 'center', gap: 8,
+                  borderBottom: `3px solid ${i === step ? 'var(--primary)' : i < step ? 'var(--success)' : 'transparent'}`,
+                  width: '100%',
+                }}>
+                  <div style={{
+                    width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: i < step ? 'var(--success)' : i === step ? 'var(--primary)' : 'var(--neutral-200)',
+                    color: i <= step ? 'white' : 'var(--text-muted)',
+                  }}>
+                    {i < step ? <CheckCircle size={14} weight="fill" /> : STEP_ICONS[i]}
+                  </div>
+                  <span style={{
+                    fontSize: 'var(--text-xs)', fontWeight: i === step ? 700 : 500,
+                    color: i === step ? 'var(--primary)' : i < step ? 'var(--success)' : 'var(--text-muted)',
+                    whiteSpace: 'nowrap',
+                  }}>{s}</span>
+                </div>
+                {i < STEPS.length - 1 && <div style={{ width: 16, height: 1, background: 'var(--border)', flexShrink: 0 }} />}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Form body */}
-      <div style={{ maxWidth: 860, margin: '0 auto', padding: '36px 24px 72px' }}>
+      <div style={{ maxWidth: 860, margin: '0 auto', padding: isMobile ? '20px 14px 56px' : '36px 24px 72px' }}>
         {error && (
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
             style={{
@@ -215,7 +235,7 @@ function Booking() {
                   <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)', marginBottom: 7 }}>
                     Event Type <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span>
                   </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(118px, 1fr))', gap: 9 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(auto-fill, minmax(118px, 1fr))', gap: 9 }}>
                     {EVENT_TYPES.map(et => (
                       <motion.div key={et.value} whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}
                         onClick={() => set('eventType', form.eventType === et.value ? '' : et.value)}
@@ -234,7 +254,7 @@ function Booking() {
                     ))}
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 20 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 20 }}>
                   <div>
                     <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)', marginBottom: 7 }}>
                       Expected Guests <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span>
@@ -352,7 +372,7 @@ function Booking() {
                     placeholder="Full name of the contact person" style={fieldStyle('contactName')} />
                   <ErrMsg field="contactName" />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 18 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14, marginBottom: 18 }}>
                   <div>
                     <label style={{ display: 'block', fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text)', marginBottom: 7 }}>Phone Number *</label>
                     <input type="tel" name="contactPhone" value={form.contactPhone} onChange={e => set('contactPhone', e.target.value)}

@@ -544,7 +544,7 @@ function Home() {
 
       {isLoggedIn && (
         <>
-          <RitualFloatingIcon ritualStatus={ritualStatus} onClick={() => setShowRitualModal(true)} />
+          {!showRitualModal && <RitualFloatingIcon ritualStatus={ritualStatus} onClick={() => setShowRitualModal(true)} />}
           <RitualPaymentModal
             isOpen={showRitualModal}
             onClose={() => setShowRitualModal(false)}

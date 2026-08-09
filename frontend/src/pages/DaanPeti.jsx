@@ -10,6 +10,7 @@ import {
   LockSimple, Receipt, User, Heart,
 } from '@phosphor-icons/react'
 import { cardStyleSolid, inputStyle as themeInput } from '../styles/theme'
+import { useIsMobile } from './admin/AdminDashboard'
 
 const PRESET_AMOUNTS = [101, 251, 501, 1001, 2100, 5001]
 
@@ -27,6 +28,7 @@ const labelStyle = {
 }
 
 function DaanPeti() {
+  const isMobile = useIsMobile()
   const { user } = useAuth()
 
   const [form, setForm] = useState({
@@ -198,7 +200,7 @@ function DaanPeti() {
             {step === 'form' && (
               <motion.div key="form"
                 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-                style={{ ...cardStyleSolid, padding: '36px', boxShadow: 'var(--shadow-xl)' }}>
+                style={{ ...cardStyleSolid, padding: isMobile ? '20px 16px' : '36px', boxShadow: 'var(--shadow-xl)' }}>
 
                 <h2 style={{ fontSize: 20, fontWeight: 900, color: 'var(--maroon)', marginBottom: 24 }}>
                   Make a Donation
@@ -224,7 +226,7 @@ function DaanPeti() {
                 </AnimatePresence>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12 }}>
                     <div>
                       <label style={labelStyle}>Full Name *</label>
                       <input

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useIsMobile } from './admin/AdminDashboard'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import html2canvas from 'html2canvas'
@@ -42,6 +43,7 @@ const _to12h = (t) => {
 }
 
 function MyBookings() {
+  const isMobile = useIsMobile()
   const { t } = useLanguage()
   const [activeFilter, setActiveFilter] = useState('All')
   const [bookings, setBookings] = useState([])
@@ -146,7 +148,7 @@ function MyBookings() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '28px 28px 60px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '20px 14px 48px' : '28px 28px 60px' }}>
 
         {/* Filter tabs */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}

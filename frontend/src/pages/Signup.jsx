@@ -9,6 +9,7 @@ import { useLanguage } from '../context/LanguageContext'
 import { useAuth } from '../context/AuthContext'
 import { authAPI } from '../utils/api'
 import AuthLayout from '../components/AuthLayout'
+import { useIsMobile } from './admin/AdminDashboard'
 
 const inputBase = (focused, hasError) => ({
   width: '100%',
@@ -37,6 +38,7 @@ const BENEFITS = [
 ]
 
 function Signup() {
+  const isMobile = useIsMobile()
   const { t } = useLanguage()
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -185,7 +187,7 @@ function Signup() {
         {/* Card */}
         <div style={{
           borderRadius: 'var(--radius-xl)',
-          padding: '36px',
+          padding: isMobile ? '24px 18px' : '36px',
           background: 'var(--surface-solid)',
           border: '1px solid var(--border)',
           boxShadow: 'var(--shadow-xl)',

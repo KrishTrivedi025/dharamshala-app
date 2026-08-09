@@ -4,8 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Building, ClipboardText, Bell, UserCircle,
   Hourglass, CheckCircle, XCircle, DownloadSimple,
-  CreditCard, ArrowRight,
+  CreditCard, ArrowRight, X,
 } from '@phosphor-icons/react'
+import { useIsMobile } from './admin/AdminDashboard'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { useAuth } from '../context/AuthContext'
@@ -17,11 +18,13 @@ import { STATUS_COLORS, cardStyle } from '../styles/theme'
 function Dashboard() {
   const { user } = useAuth()
   const { t } = useLanguage()
+  const isMobile = useIsMobile()
   const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 })
   const [recentBookings, setRecentBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [ritualStatus, setRitualStatus] = useState(null)
   const [showRitualModal, setShowRitualModal] = useState(false)
+  const [bannerDismissed, setBannerDismissed] = useState(false)
 
   const quickActions = [
     { icon: <Building size={24} weight="duotone" />, label: t.dashboard.book_hall, desc: t.dashboard.book_hall_desc, path: '/booking', color: 'var(--primary)', colorRaw: '#FF6B35' },
@@ -78,7 +81,7 @@ function Dashboard() {
 
       {/* Ritual banner */}
       <AnimatePresence>
-        {ritualStatus && (
+        {ritualStatus && !bannerDismissed && (
           <motion.div
             initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -50 }}
             style={{
@@ -87,44 +90,85 @@ function Dashboard() {
                 : ritualStatus.isPending
                 ? 'linear-gradient(135deg, #92400e, var(--warning))'
                 : 'linear-gradient(135deg, #1a0000, var(--maroon))',
-              padding: '13px 28px',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12,
+              padding: isMobile ? '12px 16px' : '13px 28px',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 22 }}>
-                {ritualStatus.hasPaid ? '✓' : ritualStatus.isPending ? '' : '🪔'}
-              </span>
+            {isMobile ? (
+              /* Mobile: two-row stacked layout */
               <div>
-                <div style={{ fontSize: 'var(--text-base)', fontWeight: 800, color: 'white' }}>
-                  {ritualStatus.hasPaid ? `Annual Paid! (${ritualStatus.year})` : ritualStatus.isPending ? 'Cash Payment Pending Admin Approval' : `Annual Ritual Payment Due — ${ritualStatus.year}`}
+                {/* Row 1: icon + text + dismiss */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
+                  <span style={{ fontSize: 20, flexShrink: 0, marginTop: 2 }}>
+                    {ritualStatus.hasPaid ? '✓' : ritualStatus.isPending ? '⏳' : '🪔'}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: 'white', lineHeight: 1.3 }}>
+                      {ritualStatus.hasPaid ? `Annual Paid! (${ritualStatus.year})` : ritualStatus.isPending ? 'Cash Payment Pending' : `Annual Ritual Due — ${ritualStatus.year}`}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>
+                      {ritualStatus.hasPaid ? 'Payment confirmed.' : ritualStatus.isPending ? 'Awaiting admin approval.' : `₹${(ritualStatus.fee || 1200).toLocaleString()} — Pooja Shulk`}
+                    </div>
+                  </div>
+                  {/* Dismiss button */}
+                  <motion.button whileTap={{ scale: 0.9 }} onClick={() => setBannerDismissed(true)}
+                    style={{ flexShrink: 0, width: 28, height: 28, borderRadius: '50%', border: 'none',
+                      background: 'rgba(255,255,255,0.15)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: 4 }}>
+                    <X size={14} color="white" weight="bold" />
+                  </motion.button>
                 </div>
-                <div style={{ fontSize: 'var(--text-sm)', color: 'rgba(255,255,255,0.65)' }}>
-                  {ritualStatus.hasPaid ? 'Payment confirmed! Download your receipt below.' : ritualStatus.isPending ? 'Your cash payment request is being reviewed.' : `₹${(ritualStatus.fee || 1200).toLocaleString()} — Pooja Shulk for ${ritualStatus.year}`}
-                </div>
+                {/* Row 2: full-width action button */}
+                {!ritualStatus.isPending && !ritualStatus.hasPaid && (
+                  <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowRitualModal(true)}
+                    style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius-md)', border: 'none',
+                      cursor: 'pointer', fontSize: 13, fontWeight: 800, color: 'var(--maroon)',
+                      background: 'var(--secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, fontFamily: 'inherit' }}>
+                    <CreditCard size={15} weight="bold" /> Pay Now
+                  </motion.button>
+                )}
+                {ritualStatus.hasPaid && (
+                  <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowRitualModal(true)}
+                    style={{ width: '100%', padding: '10px', borderRadius: 'var(--radius-md)', border: 'none',
+                      cursor: 'pointer', fontSize: 13, fontWeight: 800, color: '#064e3b',
+                      background: '#a7f3d0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, fontFamily: 'inherit' }}>
+                    <DownloadSimple size={15} weight="bold" /> Download Receipt
+                  </motion.button>
+                )}
               </div>
-            </div>
-            {!ritualStatus.isPending && !ritualStatus.hasPaid && (
-              <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                onClick={() => setShowRitualModal(true)}
-                style={{
-                  padding: '9px 20px', borderRadius: 'var(--radius-full)', border: 'none',
-                  cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 800, color: 'var(--maroon)',
-                  background: 'var(--secondary)', display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'inherit',
-                }}>
-                <CreditCard size={15} weight="bold" /> Pay Now
-              </motion.button>
-            )}
-            {ritualStatus.hasPaid && (
-              <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                onClick={() => setShowRitualModal(true)}
-                style={{
-                  padding: '9px 20px', borderRadius: 'var(--radius-full)', border: 'none',
-                  cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 800, color: '#064e3b',
-                  background: '#a7f3d0', display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'inherit',
-                }}>
-                <DownloadSimple size={15} weight="bold" /> Download Receipt
-              </motion.button>
+            ) : (
+              /* Desktop: original single-row layout */
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 22 }}>
+                    {ritualStatus.hasPaid ? '✓' : ritualStatus.isPending ? '' : '🪔'}
+                  </span>
+                  <div>
+                    <div style={{ fontSize: 'var(--text-base)', fontWeight: 800, color: 'white' }}>
+                      {ritualStatus.hasPaid ? `Annual Paid! (${ritualStatus.year})` : ritualStatus.isPending ? 'Cash Payment Pending Admin Approval' : `Annual Ritual Payment Due — ${ritualStatus.year}`}
+                    </div>
+                    <div style={{ fontSize: 'var(--text-sm)', color: 'rgba(255,255,255,0.65)' }}>
+                      {ritualStatus.hasPaid ? 'Payment confirmed! Download your receipt below.' : ritualStatus.isPending ? 'Your cash payment request is being reviewed.' : `₹${(ritualStatus.fee || 1200).toLocaleString()} — Pooja Shulk for ${ritualStatus.year}`}
+                    </div>
+                  </div>
+                </div>
+                {!ritualStatus.isPending && !ritualStatus.hasPaid && (
+                  <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+                    onClick={() => setShowRitualModal(true)}
+                    style={{ padding: '9px 20px', borderRadius: 'var(--radius-full)', border: 'none',
+                      cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 800, color: 'var(--maroon)',
+                      background: 'var(--secondary)', display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'inherit' }}>
+                    <CreditCard size={15} weight="bold" /> Pay Now
+                  </motion.button>
+                )}
+                {ritualStatus.hasPaid && (
+                  <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+                    onClick={() => setShowRitualModal(true)}
+                    style={{ padding: '9px 20px', borderRadius: 'var(--radius-full)', border: 'none',
+                      cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 800, color: '#064e3b',
+                      background: '#a7f3d0', display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'inherit' }}>
+                    <DownloadSimple size={15} weight="bold" /> Download Receipt
+                  </motion.button>
+                )}
+              </div>
             )}
           </motion.div>
         )}
@@ -152,14 +196,14 @@ function Dashboard() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '36px 32px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '20px 16px' : '36px 32px' }}>
 
         {/* Stat cards */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 18, marginBottom: 32 }}>
+          style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fit, minmax(200px, 1fr))', gap: isMobile ? 10 : 18, marginBottom: isMobile ? 20 : 32 }}>
           {statCards.map((card, i) => (
             <motion.div key={i} whileHover={{ y: -4, boxShadow: 'var(--shadow-lg)' }}
-              style={{ ...cardStyle, glass: false, transition: 'box-shadow 0.25s ease, transform 0.25s ease' }}>
+              style={{ ...cardStyle, glass: false, padding: isMobile ? '14px 16px' : '28px', transition: 'box-shadow 0.25s ease, transform 0.25s ease' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <div style={{ width: 48, height: 48, borderRadius: 'var(--radius-md)', background: card.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: card.color }}>
                   {card.icon}
