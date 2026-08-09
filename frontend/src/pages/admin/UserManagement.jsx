@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { AdminSidebar } from './AdminDashboard'
+import { AdminLayout } from './AdminDashboard'
 import { adminAPI } from '../../utils/api'
 import { MagnifyingGlass, Users, Crown, User } from '@phosphor-icons/react'
 import { cardStyleSolid, adminCardStyle } from '../../styles/theme'
@@ -45,9 +45,9 @@ function UserManagement() {
   )
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: 'var(--background)' }}>
-      <AdminSidebar />
-      <div style={{ flex: 1, padding: '40px 36px', height: '100vh', overflowY: 'auto' }}>
+    <AdminLayout>
+      
+      <div style={{ padding: '40px 36px' }}>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 32 }}>
           <h1 style={{ fontSize: 28, fontWeight: 900, color: 'var(--maroon)', marginBottom: 6 }}>User Management</h1>
@@ -166,7 +166,7 @@ function UserManagement() {
           </div>
         )}
       </div>
-    </div>
+  </AdminLayout>
   )
 }
 

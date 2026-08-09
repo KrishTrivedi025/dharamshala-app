@@ -1,14 +1,24 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
 import { adminAPI } from '../../utils/api'
 import {
   ChartBar, ClipboardText, CalendarBlank, LockSimple, Users,
   CurrencyCircleDollar, BookOpen, House, HourglassMedium,
-  CheckCircle, Building, Tray,
+  CheckCircle, Building, Tray, List, X,
 } from '@phosphor-icons/react'
 import { cardStyleSolid, STATUS_COLORS } from '../../styles/theme'
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+  return isMobile
+}
 
 const adminLinks = [
   { path: '/admin',              label: 'Dashboard',        Icon: ChartBar },
@@ -20,24 +30,34 @@ const adminLinks = [
   { path: '/admin/cashbook',    label: 'Cashbook',         Icon: BookOpen },
 ]
 
-function AdminSidebar() {
+function AdminSidebarContent({ onClose, isMobile }) {
   const location = useLocation()
   return (
     <div style={{
       width: 260, flexShrink: 0,
       background: 'linear-gradient(160deg, #1a0000 0%, #5a0e0e 60%, #8B1A1A 100%)',
       height: '100vh', overflowY: 'auto', padding: '32px 16px',
+      display: 'flex', flexDirection: 'column',
     }}>
-      <div style={{ marginBottom: 36, paddingLeft: 12 }}>
-        <div style={{ fontSize: 28, marginBottom: 6 }}>🛕</div>
-        <div style={{ fontSize: 16, fontWeight: 800, color: 'white' }}>Admin Panel</div>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>Dharamshala Booking</div>
+      <div style={{ marginBottom: 36, paddingLeft: 12, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+        <div>
+          <div style={{ fontSize: 28, marginBottom: 6 }}>🛕</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: 'white' }}>Admin Panel</div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>Dharamshala Booking</div>
+        </div>
+        {isMobile && (
+          <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+            onClick={onClose}
+            style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0, marginTop: 4 }}>
+            <X size={16} weight="bold" />
+          </motion.button>
+        )}
       </div>
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {adminLinks.map(({ path, label, Icon }) => {
           const active = location.pathname === path
           return (
-            <Link key={path} to={path} style={{ textDecoration: 'none' }}>
+            <Link key={path} to={path} style={{ textDecoration: 'none' }} onClick={isMobile ? onClose : undefined}>
               <motion.div
                 whileHover={{ x: 4, backgroundColor: 'rgba(255,255,255,0.1)' }}
                 style={{
@@ -47,41 +67,90 @@ function AdminSidebar() {
                   border: active ? '1px solid rgba(255,107,53,0.3)' : '1px solid transparent',
                   transition: 'all 0.2s ease', cursor: 'pointer',
                 }}>
-                <Icon
-                  size={20}
-                  weight={active ? 'fill' : 'regular'}
-                  color={active ? '#F7C948' : 'rgba(255,255,255,0.6)'}
-                />
-                <span style={{
-                  fontSize: 14, fontWeight: active ? 700 : 500,
-                  color: active ? '#F7C948' : 'rgba(255,255,255,0.7)',
-                }}>
+                <Icon size={20} weight={active ? 'fill' : 'regular'} color={active ? '#F7C948' : 'rgba(255,255,255,0.6)'} />
+                <span style={{ fontSize: 14, fontWeight: active ? 700 : 500, color: active ? '#F7C948' : 'rgba(255,255,255,0.7)' }}>
                   {label}
                 </span>
-                {active && (
-                  <div style={{
-                    marginLeft: 'auto', width: 6, height: 6,
-                    borderRadius: '50%', background: '#F7C948',
-                  }} />
-                )}
+                {active && <div style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: '#F7C948' }} />}
               </motion.div>
             </Link>
           )
         })}
       </nav>
       <Link to="/" style={{ textDecoration: 'none', marginTop: 'auto', display: 'block', paddingTop: 32 }}>
-        <motion.div
-          whileHover={{ x: 4, backgroundColor: 'rgba(255,255,255,0.08)' }}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            padding: '12px 16px', borderRadius: 12,
-            border: '1px solid transparent',
-            transition: 'all 0.2s ease', cursor: 'pointer',
-          }}>
+        <motion.div whileHover={{ x: 4, backgroundColor: 'rgba(255,255,255,0.08)' }}
+          style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 12, border: '1px solid transparent', transition: 'all 0.2s ease', cursor: 'pointer' }}>
           <House size={20} color="rgba(255,255,255,0.5)" />
           <span style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.5)' }}>Back to Site</span>
         </motion.div>
       </Link>
+    </div>
+  )
+}
+
+export function AdminLayout({ children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const isMobile = useIsMobile()
+  const location = useLocation()
+
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false)
+  }, [location.pathname, isMobile])
+
+  return (
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: 'var(--background)', position: 'relative' }}>
+
+      {/* Mobile overlay backdrop */}
+      <AnimatePresence>
+        {isMobile && sidebarOpen && (
+          <motion.div
+            key="overlay"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setSidebarOpen(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)', zIndex: 49 }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Sidebar */}
+      <motion.div
+        animate={{ x: isMobile ? (sidebarOpen ? 0 : -260) : 0 }}
+        transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+        style={{ position: isMobile ? 'fixed' : 'static', top: 0, left: 0, bottom: 0, zIndex: 50, flexShrink: 0 }}
+      >
+        <AdminSidebarContent onClose={() => setSidebarOpen(false)} isMobile={isMobile} />
+      </motion.div>
+
+      {/* Main content column */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+
+        {/* Mobile top bar */}
+        {isMobile && (
+          <div style={{
+            height: 52, flexShrink: 0,
+            background: 'linear-gradient(135deg, #1a0000 0%, #5a0e0e 100%)',
+            display: 'flex', alignItems: 'center', padding: '0 16px', gap: 12,
+            borderBottom: '1px solid rgba(255,107,53,0.2)',
+          }}>
+            <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.93 }}
+              onClick={() => setSidebarOpen(true)}
+              style={{
+                background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: 8, width: 36, height: 36, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+              }}>
+              <List size={20} color="white" weight="bold" />
+            </motion.button>
+            <span style={{ fontSize: 28, lineHeight: 1 }}>🛕</span>
+            <span style={{ fontSize: 15, fontWeight: 800, color: 'white' }}>Admin Panel</span>
+          </div>
+        )}
+
+        {/* Scrollable page content */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {children}
+        </div>
+      </div>
     </div>
   )
 }
@@ -132,9 +201,8 @@ function AdminDashboard() {
   const statValues = [statsData.total, statsData.pending, statsData.approved, statsData.totalUsers]
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: 'var(--background)' }}>
-      <AdminSidebar />
-      <div style={{ flex: 1, padding: '40px 36px', height: '100vh', overflowY: 'auto' }}>
+    <AdminLayout>
+      <div style={{ padding: '40px 36px' }}>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -300,9 +368,8 @@ function AdminDashboard() {
           )}
         </motion.div>
       </div>
-    </div>
+    </AdminLayout>
   )
 }
 
-export { AdminSidebar }
 export default AdminDashboard

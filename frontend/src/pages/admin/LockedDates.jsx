@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AdminSidebar } from './AdminDashboard'
+import { AdminLayout } from './AdminDashboard'
 import { adminAPI } from '../../utils/api'
 import { LockSimple, LockOpen, Clock } from '@phosphor-icons/react'
 import { cardStyleSolid, adminCardStyle, modalOverlay, modalContent, inputStyle as themeInput } from '../../styles/theme'
@@ -61,9 +61,9 @@ function LockedDates() {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: 'var(--background)' }}>
-      <AdminSidebar />
-      <div style={{ flex: 1, padding: '40px 36px', height: '100vh', overflowY: 'auto' }}>
+    <AdminLayout>
+      
+      <div style={{ padding: '40px 36px' }}>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -265,7 +265,7 @@ function LockedDates() {
           )}
         </AnimatePresence>
       </div>
-    </div>
+  </AdminLayout>
   )
 }
 

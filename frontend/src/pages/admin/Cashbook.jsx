@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AdminSidebar } from './AdminDashboard'
+import { AdminLayout } from './AdminDashboard'
 import {
   BookOpen, ChartBar, CurrencyCircleDollar, ArrowUp, Wallet,
   Plus, DownloadSimple, Printer, PencilSimple, Trash,
@@ -397,9 +397,9 @@ function Cashbook() {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: 'var(--background)' }}>
-      <AdminSidebar />
-      <div style={{ flex: 1, padding: '40px 36px', height: '100vh', overflowY: 'auto' }}>
+    <AdminLayout>
+      
+      <div style={{ padding: '40px 36px' }}>
 
         {/* Header */}
         <motion.div initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} style={{ marginBottom:24 }}>
@@ -1024,7 +1024,7 @@ function Cashbook() {
           </div>
         )}
       </div>
-    </div>
+  </AdminLayout>
   )
 }
 
