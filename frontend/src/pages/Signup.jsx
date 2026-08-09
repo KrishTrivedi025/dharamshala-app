@@ -55,7 +55,7 @@ function Signup() {
     setLoading(true)
     setError('')
     try {
-      const { confirmPassword, ...registerData } = formData
+      const { confirmPassword: _cp, ...registerData } = formData
       const res = await authAPI.register(registerData)
       login(res.data.user, res.data.token)
       navigate('/dashboard')

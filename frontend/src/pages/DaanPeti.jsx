@@ -15,7 +15,7 @@ const DHARAMSHALA_INFO = {
 }
 
 function DaanPeti() {
-  const { user, isLoggedIn } = useAuth()
+  const { user } = useAuth()
 
   const [form, setForm] = useState({
     donorName: user?.name || '',
@@ -28,7 +28,6 @@ function DaanPeti() {
   const [selectedPreset, setSelectedPreset] = useState(null)
   const [step, setStep] = useState('form') // 'form' | 'processing' | 'success'
   const [receipt, setReceipt] = useState(null)
-  const [donationId, setDonationId] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const receiptRef = useRef(null)
@@ -93,7 +92,7 @@ function DaanPeti() {
         handler: async (response) => {
           setStep('processing')
           try {
-            const verifyRes = await daanPetiAPI.verifyPayment({
+            await daanPetiAPI.verifyPayment({
               donationId: dId,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
@@ -110,9 +109,8 @@ function DaanPeti() {
               paymentId: response.razorpay_payment_id,
               date: new Date(),
             })
-            setDonationId(dId)
             setStep('success')
-          } catch (err) {
+          } catch {
             setError('Payment verification failed. Please contact admin.')
             setStep('form')
           }
@@ -165,7 +163,6 @@ function DaanPeti() {
   const resetForm = () => {
     setStep('form')
     setReceipt(null)
-    setDonationId(null)
     setSelectedPreset(null)
     setForm({
       donorName: user?.name || '',

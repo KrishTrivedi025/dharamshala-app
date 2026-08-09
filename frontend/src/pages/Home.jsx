@@ -47,7 +47,7 @@ function Home() {
         if (isJan1 && !res.data.hasPaid) {
           setShowRitualModal(true)
         }
-      } catch (e) { /* ignore */ }
+      } catch { /* ignore */ }
     }
     fetchRitual()
   }, [isLoggedIn])
@@ -443,7 +443,7 @@ function Home() {
               try {
                 const res = await ritualAPI.getMyStatus()
                 setRitualStatus(res.data)
-              } catch (e) {}
+              } catch { /* ignore */ }
             }}
           />
         </>

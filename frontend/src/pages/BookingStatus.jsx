@@ -2,15 +2,17 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import { useLanguage } from '../context/LanguageContext'
 
 function BookingStatus() {
+  const { t } = useLanguage()
   const status = 'pending'
 
   const statusConfig = {
     pending: {
       icon: '⏳',
-      title: 'Booking Request Submitted!',
-      subtitle: 'Your request is under review by the admin',
+      title: t.bookingStatus.pending_title,
+      subtitle: t.bookingStatus.pending_sub,
       color: '#d97706',
       bg: 'rgba(247,201,72,0.1)',
       steps: [
@@ -23,8 +25,8 @@ function BookingStatus() {
     },
     approved: {
       icon: '✅',
-      title: 'Booking Approved!',
-      subtitle: 'Your booking has been approved. Please proceed with payment.',
+      title: t.bookingStatus.approved_title,
+      subtitle: t.bookingStatus.approved_sub,
       color: '#16a34a',
       bg: 'rgba(22,163,74,0.1)',
       steps: [
@@ -37,8 +39,8 @@ function BookingStatus() {
     },
     rejected: {
       icon: '❌',
-      title: 'Booking Rejected',
-      subtitle: 'Unfortunately your booking request was not approved.',
+      title: t.bookingStatus.rejected_title,
+      subtitle: t.bookingStatus.rejected_sub,
       color: '#ef4444',
       bg: 'rgba(239,68,68,0.1)',
       steps: [
@@ -149,7 +151,7 @@ function BookingStatus() {
                   background: 'linear-gradient(135deg, #FF6B35, #8B1A1A)',
                   boxShadow: '0 4px 14px rgba(255,107,53,0.3)',
                 }}>
-                View My Bookings
+                {t.bookingStatus.view_bookings}
               </motion.button>
             </Link>
             <Link to="/" style={{ textDecoration: 'none', flex: 1 }}>
@@ -162,7 +164,7 @@ function BookingStatus() {
                   fontSize: 15, fontWeight: 700, color: 'var(--text)',
                   background: 'white',
                 }}>
-                Back to Home
+                {t.nav.home}
               </motion.button>
             </Link>
           </div>

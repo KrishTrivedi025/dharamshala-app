@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ritualAPI } from '../utils/api'
 import html2canvas from 'html2canvas'
 import { useRef } from 'react'
-import jsPDF from 'jspdf' // keeping jsPDF for other potential uses or removing later
 
 function ReceiptDownloader({ receipt, onClose }) {
   const receiptRef = useRef(null)
@@ -231,7 +230,7 @@ function RitualPaymentModal({ isOpen, onClose, ritualStatus, onPaymentSuccess })
             setReceipt(verifyRes.data)
             setStep('success')
             if (onPaymentSuccess) onPaymentSuccess()
-          } catch (err) {
+          } catch {
             setError('Payment verification failed. Please contact support.')
             setStep('choose')
           }

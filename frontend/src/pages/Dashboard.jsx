@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import { bookingAPI, ritualAPI } from '../utils/api'
 import RitualPaymentModal from '../components/RitualPaymentModal'
 
@@ -15,15 +16,16 @@ const STATUS_COLORS = {
   completed: { color: '#8B1A1A', bg: 'rgba(139,26,26,0.08)', label: 'Completed' },
 }
 
-const quickActions = [
-  { icon: '🏛️', label: 'Book Hall', desc: 'Request a new booking', path: '/booking', color: '#FF6B35' },
-  { icon: '📋', label: 'My Bookings', desc: 'View all your bookings', path: '/my-bookings', color: '#8B1A1A' },
-  { icon: '🔔', label: 'Notifications', desc: 'Check your alerts', path: '/notifications', color: '#F7C948' },
-  { icon: '👤', label: 'Profile', desc: 'Update your details', path: '/profile', color: '#16a34a' },
-]
-
 function Dashboard() {
   const { user } = useAuth()
+  const { t } = useLanguage()
+
+  const quickActions = [
+    { icon: '🏛️', label: t.dashboard.book_hall,     desc: t.dashboard.book_hall_desc,     path: '/booking',        color: '#FF6B35' },
+    { icon: '📋', label: t.dashboard.my_bookings,   desc: t.dashboard.my_bookings_desc,   path: '/my-bookings',    color: '#8B1A1A' },
+    { icon: '🔔', label: t.dashboard.notifications, desc: t.dashboard.notifications_desc, path: '/notifications',  color: '#F7C948' },
+    { icon: '👤', label: t.dashboard.profile,       desc: t.dashboard.profile_desc,       path: '/profile',        color: '#16a34a' },
+  ]
   const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 })
   const [recentBookings, setRecentBookings] = useState([])
   const [loading, setLoading] = useState(true)
@@ -32,9 +34,9 @@ function Dashboard() {
 
   const getGreeting = () => {
     const hour = new Date().getHours()
-    if (hour < 12) return 'Good Morning'
-    if (hour < 17) return 'Good Afternoon'
-    return 'Good Evening'
+    if (hour < 12) return t.dashboard.greeting_morning
+    if (hour < 17) return t.dashboard.greeting_afternoon
+    return t.dashboard.greeting_evening
   }
 
   useEffect(() => {
@@ -77,16 +79,16 @@ function Dashboard() {
       try {
         const res = await ritualAPI.getMyStatus()
         setRitualStatus(res.data)
-      } catch (e) {}
+      } catch { /* ignore */ }
     }
     fetchRitual()
   }, [])
 
   const statCards = [
-    { icon: '📋', label: 'Total Bookings', value: stats.total, color: '#FF6B35', bg: 'rgba(255,107,53,0.08)' },
-    { icon: '⏳', label: 'Pending', value: stats.pending, color: '#d97706', bg: 'rgba(247,201,72,0.08)' },
-    { icon: '✅', label: 'Approved', value: stats.approved, color: '#16a34a', bg: 'rgba(22,163,74,0.08)' },
-    { icon: '❌', label: 'Rejected', value: stats.rejected, color: '#ef4444', bg: 'rgba(239,68,68,0.08)' },
+    { icon: '📋', label: t.dashboard.total_bookings, value: stats.total,    color: '#FF6B35', bg: 'rgba(255,107,53,0.08)' },
+    { icon: '⏳', label: t.dashboard.pending,         value: stats.pending,  color: '#d97706', bg: 'rgba(247,201,72,0.08)' },
+    { icon: '✅', label: t.dashboard.approved,        value: stats.approved, color: '#16a34a', bg: 'rgba(22,163,74,0.08)' },
+    { icon: '❌', label: t.booking.status_rejected,   value: stats.rejected, color: '#ef4444', bg: 'rgba(239,68,68,0.08)' },
   ]
 
   return (
@@ -271,7 +273,7 @@ function Dashboard() {
               boxShadow: '0 4px 20px rgba(139,26,26,0.06)',
             }}>
             <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--maroon)', marginBottom: 20 }}>
-              Quick Actions
+              {t.dashboard.quick_actions}
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {quickActions.map((action, i) => (
@@ -313,10 +315,10 @@ function Dashboard() {
             }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--maroon)' }}>
-                Recent Bookings
+                {t.dashboard.recent_activity}
               </h3>
               <Link to="/my-bookings" style={{ textDecoration: 'none', fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>
-                View All →
+                {t.dashboard.view_all}
               </Link>
             </div>
 
@@ -339,10 +341,10 @@ function Dashboard() {
               }}>
                 <div style={{ fontSize: 56, marginBottom: 16 }}>📭</div>
                 <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--maroon)', marginBottom: 8 }}>
-                  No bookings yet
+                  {t.dashboard.no_activity}
                 </p>
                 <p style={{ fontSize: 13, color: '#9ca3af', marginBottom: 20 }}>
-                  Your booking history will appear here
+                  {t.dashboard.no_activity_sub}
                 </p>
                 <Link to="/booking" style={{ textDecoration: 'none' }}>
                   <motion.button
@@ -441,7 +443,7 @@ function Dashboard() {
                 cursor: 'pointer', fontSize: 14, fontWeight: 600,
                 color: 'var(--primary)', background: 'transparent',
               }}>
-              Edit Profile
+              {t.profile.edit}
             </motion.button>
           </Link>
         </motion.div>
@@ -455,7 +457,7 @@ function Dashboard() {
           try {
             const res = await ritualAPI.getMyStatus()
             setRitualStatus(res.data)
-          } catch (e) {}
+          } catch { /* ignore */ }
         }}
       />
     </div>

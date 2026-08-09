@@ -5,6 +5,7 @@ import html2canvas from 'html2canvas'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { bookingAPI } from '../utils/api'
+import { useLanguage } from '../context/LanguageContext'
 
 const STATUS_CONFIG = {
   pending: { color: '#d97706', bg: 'rgba(247,201,72,0.10)', glow: 'rgba(247,201,72,0.3)', label: 'Pending Review', icon: '⏳', step: 2 },
@@ -30,6 +31,7 @@ const to12h = (t) => {
 }
 
 function MyBookings() {
+  const { t } = useLanguage()
   const [activeFilter, setActiveFilter] = useState('All')
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
@@ -180,7 +182,7 @@ function MyBookings() {
                 style={{ fontSize: 42 }}>📋</motion.span>
               <div>
                 <h1 style={{ fontSize: 'clamp(26px, 3.5vw, 40px)', fontWeight: 900, color: 'white', marginBottom: 4 }}>
-                  My Bookings
+                  {t.myBookings.title}
                 </h1>
                 <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>
                   {bookings.length} total booking{bookings.length !== 1 ? 's' : ''} • Track and manage your hall reservations
@@ -193,9 +195,9 @@ function MyBookings() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
             style={{ display: 'flex', gap: 12, marginTop: 24, flexWrap: 'wrap' }}>
             {[
-              { label: 'Pending', count: counts.pending || 0, color: '#F7C948' },
-              { label: 'Approved', count: counts.approved || 0, color: '#22c55e' },
-              { label: 'Completed', count: counts.completed || 0, color: '#a78bfa' },
+              { label: t.booking.status_pending,  count: counts.pending || 0,   color: '#F7C948' },
+              { label: t.booking.status_approved, count: counts.approved || 0,  color: '#22c55e' },
+              { label: t.booking.status_confirmed,count: counts.completed || 0, color: '#a78bfa' },
             ].map(s => (
               <div key={s.label} style={{
                 padding: '10px 18px', borderRadius: 14,
@@ -298,11 +300,11 @@ function MyBookings() {
                 <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 3, repeat: Infinity }}
                   style={{ fontSize: 72, marginBottom: 20 }}>📭</motion.div>
                 <h3 style={{ fontSize: 22, fontWeight: 900, color: 'var(--maroon)', marginBottom: 10 }}>
-                  No bookings found
+                  {t.myBookings.no_bookings}
                 </h3>
                 <p style={{ fontSize: 14, color: '#9ca3af', marginBottom: 28, maxWidth: 340, margin: '0 auto 28px' }}>
                   {activeFilter === 'All'
-                    ? "You haven't made any bookings yet. Book the hall for your next event!"
+                    ? t.myBookings.no_bookings_sub
                     : `No ${activeFilter.toLowerCase()} bookings found.`}
                 </p>
                 <Link to="/booking" style={{ textDecoration: 'none' }}>
@@ -315,7 +317,7 @@ function MyBookings() {
                       background: 'linear-gradient(135deg, #FF6B35 0%, #c94a1a 50%, #8B1A1A 100%)',
                       boxShadow: '0 6px 20px rgba(255,107,53,0.35)',
                     }}>
-                    🏛️ Book Hall Now
+                    🏛️ {t.myBookings.book_now}
                   </motion.button>
                 </Link>
               </motion.div>
@@ -413,7 +415,7 @@ function MyBookings() {
                               color: booking.totalAmount ? 'var(--maroon)' : '#9ca3af',
                               fontFamily: 'inherit',
                             }}>
-                              {booking.totalAmount ? `₹${booking.totalAmount.toLocaleString()}` : 'Price TBD'}
+                              {booking.totalAmount ? `₹${booking.totalAmount.toLocaleString()}` : t.myBookings.price_tbd}
                             </div>
 
                             {/* Pay Now Button */}
@@ -454,7 +456,7 @@ function MyBookings() {
                                 {downloadingReceipt?._id === booking._id ? (
                                   <>⏳ Preparing...</>
                                 ) : (
-                                  <>📥 Download Receipt</>
+                                  <>📥 {t.myBookings.receipt_download}</>
                                 )}
                               </motion.button>
                             )}
@@ -504,7 +506,7 @@ function MyBookings() {
                                 {/* Progress Timeline */}
                                 {sc.step > 0 && (
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 20 }}>
-                                    {['Submitted', 'Under Review', 'Approved', 'Payment', 'Complete'].map((label, idx) => {
+                                    {[t.myBookings.submitted, t.myBookings.under_review, t.myBookings.approved, t.myBookings.payment, t.myBookings.complete].map((label, idx) => {
                                       const active = idx < sc.step || (idx === 3 && isPaid)
                                       const current = (isPaid && sc.step < 5) ? idx === 4 : idx === sc.step - 1
                                       return (
@@ -669,7 +671,7 @@ function MyBookings() {
               }}>
               <div style={{ fontSize: 48, textAlign: 'center', marginBottom: 16 }}>⚠️</div>
               <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--maroon)', marginBottom: 8, textAlign: 'center' }}>
-                Cancel Booking?
+                {t.myBookings.cancel_booking}?
               </h3>
               <p style={{ fontSize: 14, color: '#9ca3af', marginBottom: 20, textAlign: 'center' }}>
                 Are you sure you want to cancel <strong style={{ color: 'var(--maroon)' }}>{showCancelModal.eventName}</strong>?
@@ -694,7 +696,7 @@ function MyBookings() {
                     border: '2px solid #ede8e0', cursor: 'pointer',
                     fontSize: 14, fontWeight: 700, color: '#6b7280', background: 'white',
                   }}>
-                  Keep Booking
+                  {t.myBookings.keep_booking}
                 </motion.button>
                 <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                   onClick={() => handleCancel(showCancelModal._id)}
@@ -704,7 +706,7 @@ function MyBookings() {
                     cursor: 'pointer', fontSize: 14, fontWeight: 700, color: 'white',
                     background: cancellingId === showCancelModal._id ? '#ccc' : '#ef4444',
                   }}>
-                  {cancellingId === showCancelModal._id ? 'Cancelling...' : '❌ Cancel Booking'}
+                  {cancellingId === showCancelModal._id ? `${t.common.loading}` : `❌ ${t.myBookings.cancel_booking}`}
                 </motion.button>
               </div>
             </motion.div>

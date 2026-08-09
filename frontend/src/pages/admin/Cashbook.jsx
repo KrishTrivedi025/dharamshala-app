@@ -371,7 +371,6 @@ function Cashbook() {
       setExporting(true)
 
       let dataToExport = []
-      let exportSummary = { ...summary }
       let titleSuffix = ''
 
       if (exportTarget === 'ledger') {

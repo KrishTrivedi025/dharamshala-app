@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { bookingAPI } from '../utils/api'
+import { useLanguage } from '../context/LanguageContext'
 
 const NOTIF_TYPES = {
   booking: { icon: '🏛️', color: '#FF6B35' },
@@ -14,6 +15,7 @@ const NOTIF_TYPES = {
 }
 
 function Notifications() {
+  const { t } = useLanguage()
   const [notifications, setNotifications] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('All')
@@ -114,19 +116,19 @@ function Notifications() {
             style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
             <div>
               <h1 style={{ fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 900, color: 'white', marginBottom: 8 }}>
-                Notifications
+                {t.notifications.title}
                 {unreadCount > 0 && (
                   <span style={{
                     marginLeft: 12, fontSize: 14,
                     background: '#FF6B35', color: 'white',
                     padding: '2px 10px', borderRadius: 99, fontWeight: 700,
                   }}>
-                    {unreadCount} new
+                    {unreadCount} {t.notifications.new}
                   </span>
                 )}
               </h1>
               <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.55)' }}>
-                Stay updated with your booking alerts and reminders
+                {t.notifications.subtitle}
               </p>
             </div>
           </motion.div>
@@ -141,7 +143,13 @@ function Notifications() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           style={{ display: 'flex', gap: 10, marginBottom: 28, flexWrap: 'wrap' }}>
-          {['All', 'Unread', 'Booking', 'Payment', 'Reminder'].map(f => (
+          {[
+            { key: 'All',      label: t.notifications.filter_all },
+            { key: 'Unread',   label: t.notifications.filter_unread },
+            { key: 'Booking',  label: t.notifications.filter_booking },
+            { key: 'Payment',  label: t.notifications.filter_payment },
+            { key: 'Reminder', label: t.notifications.filter_reminder },
+          ].map(({ key: f, label }) => (
             <motion.button
               key={f}
               whileHover={{ scale: 1.05 }}
@@ -159,7 +167,7 @@ function Notifications() {
                   ? '0 4px 14px rgba(255,107,53,0.35)'
                   : '0 2px 8px rgba(0,0,0,0.06)',
               }}>
-              {f}
+              {label}
             </motion.button>
           ))}
         </motion.div>
@@ -185,10 +193,10 @@ function Notifications() {
               }}>
               <div style={{ fontSize: 64, marginBottom: 20 }}>🔕</div>
               <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--maroon)', marginBottom: 10 }}>
-                No notifications yet
+                {t.notifications.empty}
               </h3>
               <p style={{ fontSize: 14, color: '#9ca3af', maxWidth: 300, margin: '0 auto' }}>
-                You will receive alerts here when your bookings are updated or payments are due
+                {t.notifications.empty_sub}
               </p>
             </motion.div>
           ) : (
