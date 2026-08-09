@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-09T02:00:00.000Z",
+  "title": "Design System: Dharamshala Hall Booking (Incumbent Anti-Reference)",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Festival Orange",
+        "canonical": "#FF6B35",
+        "tonalRamp": ["#7a2810", "#a83318", "#cc4520", "#e05a28", "#ff6b35", "#ff8a61", "#ffaa8a", "#ffd4c2"]
+      },
+      "primary-deep": {
+        "role": "primary",
+        "displayName": "Festival Orange Deep",
+        "canonical": "#e05a28",
+        "tonalRamp": ["#5c1e0a", "#7a2810", "#99340f", "#cc4520", "#e05a28", "#ff7044", "#ff9070", "#ffbba3"]
+      },
+      "secondary": {
+        "role": "secondary",
+        "displayName": "Temple Gold",
+        "canonical": "#F7C948",
+        "tonalRamp": ["#7a5e0a", "#9e7a12", "#c29618", "#e0b020", "#f7c948", "#f9d670", "#fbe49a", "#fdf2cc"]
+      },
+      "maroon": {
+        "role": "tertiary",
+        "displayName": "Deep Maroon",
+        "canonical": "#8B1A1A",
+        "tonalRamp": ["#2d0808", "#4a0f0f", "#661414", "#7d1818", "#8b1a1a", "#a83c3c", "#c97070", "#e8b0b0"]
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "Warm Cream",
+        "canonical": "#FDF8F0",
+        "tonalRamp": ["#e8dac8", "#eee3d0", "#f2e9da", "#f6efe3", "#faf5ec", "#fdf8f0", "#fefcf8", "#fffffe"]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Near-Black",
+        "canonical": "#2D2D2D",
+        "tonalRamp": ["#111111", "#1a1a1a", "#222222", "#2d2d2d", "#3d3d3d", "#5a5a5a", "#888888", "#bbbbbb"]
+      },
+      "input-border": {
+        "role": "neutral",
+        "displayName": "Input Border Gray",
+        "canonical": "#ede8e0",
+        "tonalRamp": ["#c8bfad", "#d4cbbB", "#ddd6ca", "#e5ded5", "#ede8e0", "#f3efe9", "#f8f5f1", "#fdfcfa"]
+      }
+    },
+    "typographyMeta": {
+      "body": {
+        "displayName": "Body",
+        "purpose": "All body text and UI prose across the app."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Form labels, table headers, navigation items, badge text."
+      }
+    },
+    "shadows": [
+      {
+        "name": "card-warm",
+        "value": "0 20px 60px rgba(255, 107, 53, 0.15)",
+        "purpose": "Primary card shadow — warm orange tint. Used on most content cards and modals."
+      },
+      {
+        "name": "card-maroon",
+        "value": "0 8px 32px rgba(139, 26, 26, 0.12)",
+        "purpose": "Secondary card shadow — maroon tint. Used on auth panels and admin cards."
+      },
+      {
+        "name": "lift-subtle",
+        "value": "0 2px 8px rgba(0, 0, 0, 0.08)",
+        "purpose": "Subtle lift for inputs at focus state and small interactive elements."
+      },
+      {
+        "name": "modal-deep",
+        "value": "0 30px 80px rgba(0, 0, 0, 0.3)",
+        "purpose": "Full-screen overlay modals — deep shadow to separate from background."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Default easing for state transitions (opacity, translate, scale)."
+      },
+      {
+        "name": "ease-in-out",
+        "value": "easeInOut",
+        "purpose": "Framer Motion easing used for floating/looping background animations."
+      },
+      {
+        "name": "duration-fast",
+        "value": "150ms",
+        "purpose": "Hover state transitions, color changes."
+      },
+      {
+        "name": "duration-standard",
+        "value": "250ms",
+        "purpose": "Enter/exit transitions for components, page-level Framer Motion animations."
+      },
+      {
+        "name": "duration-slow",
+        "value": "400ms",
+        "purpose": "Longer entrances (staggered lists, page-level fade in)."
+      }
+    ],
+    "breakpoints": [
+      { "name": "mobile-only", "value": "1023px", "purpose": "Max-width breakpoint — the only responsive breakpoint in the current codebase, applied globally via index.css with !important flags." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Full-gradient pill CTA. The dominant interactive element across all pages.",
+      "html": "<button class=\"ds-btn-primary\">Book the Hall</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 32px; background: linear-gradient(135deg, #FF6B35 0%, #8B1A1A 100%); color: #ffffff; font-family: 'Segoe UI', sans-serif; font-size: 15px; font-weight: 600; border: none; border-radius: 99px; cursor: pointer; transition: transform 0.15s cubic-bezier(0.4,0,0.2,1), box-shadow 0.15s cubic-bezier(0.4,0,0.2,1); box-shadow: 0 4px 16px rgba(255,107,53,0.3); } .ds-btn-primary:hover { transform: scale(1.04); box-shadow: 0 8px 24px rgba(255,107,53,0.4); } .ds-btn-primary:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(255,107,53,0.2); } .ds-btn-primary:focus-visible { outline: 2px solid #FF6B35; outline-offset: 3px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Transparent-fill with orange border. Used for secondary CTAs alongside a primary.",
+      "html": "<button class=\"ds-btn-ghost\">View Details</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 32px; background: transparent; color: #FF6B35; font-family: 'Segoe UI', sans-serif; font-size: 15px; font-weight: 600; border: 1.5px solid #FF6B35; border-radius: 99px; cursor: pointer; transition: background 0.15s, transform 0.15s; } .ds-btn-ghost:hover { background: rgba(255,107,53,0.08); transform: scale(1.02); } .ds-btn-ghost:active { transform: scale(0.97); } .ds-btn-ghost:focus-visible { outline: 2px solid #FF6B35; outline-offset: 3px; }"
+    },
+    {
+      "name": "Glassmorphic Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "The default content container used on every page. White-glass with warm shadow.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Booking Request</h3><p class=\"ds-card-body\">Your request has been submitted and is awaiting admin review.</p></div>",
+      "css": ".ds-card { background: rgba(255,255,255,0.92); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-radius: 24px; padding: 32px; box-shadow: 0 20px 60px rgba(255,107,53,0.12); border: 1px solid rgba(255,255,255,0.6); } .ds-card-title { font-family: 'Segoe UI', sans-serif; font-size: 20px; font-weight: 700; color: #2D2D2D; margin-bottom: 10px; } .ds-card-body { font-family: 'Segoe UI', sans-serif; font-size: 15px; font-weight: 400; color: #555555; line-height: 1.55; }"
+    },
+    {
+      "name": "Form Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Text input field. The inputStyle pattern duplicated 6× across the codebase.",
+      "html": "<div class=\"ds-input-wrap\"><label class=\"ds-label\">Full Name</label><input class=\"ds-input\" type=\"text\" placeholder=\"Enter your name\" /></div>",
+      "css": ".ds-input-wrap { display: flex; flex-direction: column; gap: 6px; } .ds-label { font-family: 'Segoe UI', sans-serif; font-size: 13px; font-weight: 600; color: #2D2D2D; letter-spacing: 0.01em; } .ds-input { padding: 12px 16px; background: rgba(255,255,255,0.7); border: 1.5px solid #ede8e0; border-radius: 10px; font-family: 'Segoe UI', sans-serif; font-size: 15px; color: #2D2D2D; outline: none; transition: border-color 0.15s, box-shadow 0.15s; } .ds-input:focus { border-color: #FF6B35; box-shadow: 0 0 0 3px rgba(255,107,53,0.12); } .ds-input::placeholder { color: #aaaaaa; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "status-badge",
+      "description": "Booking status indicator. The STATUS_COLORS pattern copy-pasted across 4 files.",
+      "html": "<div style=\"display:flex;gap:8px;\"><span class=\"ds-badge ds-badge-pending\">Pending</span><span class=\"ds-badge ds-badge-approved\">Approved</span><span class=\"ds-badge ds-badge-rejected\">Rejected</span></div>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 99px; font-family: 'Segoe UI', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; } .ds-badge-pending { background: #fff7e0; color: #b45309; } .ds-badge-approved { background: #ecfdf5; color: #059669; } .ds-badge-rejected { background: #fef2f2; color: #dc2626; }"
+    },
+    {
+      "name": "Nav Bar",
+      "kind": "nav",
+      "refersTo": "navbar",
+      "description": "Glassmorphic top navigation with brand name, links, language switcher, user menu.",
+      "html": "<nav class=\"ds-nav\"><span class=\"ds-nav-brand\">🛕 Dharamshala</span><div class=\"ds-nav-links\"><a class=\"ds-nav-link ds-nav-link-active\" href=\"#\">Home</a><a class=\"ds-nav-link\" href=\"#\">Book Hall</a><a class=\"ds-nav-link\" href=\"#\">My Bookings</a></div></nav>",
+      "css": ".ds-nav { display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 64px; background: rgba(255,255,255,0.88); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(139,26,26,0.08); box-shadow: 0 2px 20px rgba(0,0,0,0.06); } .ds-nav-brand { font-family: 'Segoe UI', sans-serif; font-size: 18px; font-weight: 700; color: #8B1A1A; letter-spacing: -0.01em; } .ds-nav-links { display: flex; gap: 4px; } .ds-nav-link { padding: 8px 14px; border-radius: 8px; font-family: 'Segoe UI', sans-serif; font-size: 14px; font-weight: 500; color: #555555; text-decoration: none; transition: background 0.15s, color 0.15s; } .ds-nav-link:hover { background: rgba(255,107,53,0.08); color: #FF6B35; } .ds-nav-link-active { background: rgba(255,107,53,0.1); color: #FF6B35; border-left: 2px solid #FF6B35; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Temple Fair at Dusk (incumbent — anti-reference for redesign)",
+    "overview": "The current interface is built on a saturated orange-to-maroon gradient-everywhere aesthetic: every button is a gradient, every page background carries floating glassmorphic blobs, every card blurs its background. The visual language borrows heavily from 2020-era glassmorphism trends — translucent cards against gradient backgrounds, warm drop shadows, and a heavy hand with motion. The result reads as energetic but generic; the Indian community context is present in the emoji set and color warmth but not in the design DNA itself.\n\nThere is no typographic hierarchy beyond bold weight shifts; ad hoc pixel sizes (9.5px, 11.5px, 13.5px) with no scale system make the interface feel assembled rather than designed. The redesign retains the warm palette and framer-motion foundation while building a real design system on top.",
+    "keyCharacteristics": [
+      "Every interactive element uses the orange→maroon gradient",
+      "Glassmorphism applied globally to every card",
+      "Floating animated orbs in all page backgrounds",
+      "~50+ emoji used as functional icons",
+      "No spacing, radius, or shadow token scale",
+      "5 flat CSS variables; all other values hardcoded across 23 files"
+    ],
+    "rules": [
+      {
+        "name": "The Gradient Everywhere Rule",
+        "body": "The incumbent applies the orange→maroon gradient to every button, header band, and page decoration simultaneously. The redesign must break this: the primary accent appears on ≤2 interactive elements per screen; gradients are retired in favor of solid tokens.",
+        "section": "colors"
+      },
+      {
+        "name": "The No-Scale Rule",
+        "body": "The incumbent has no rem-based type scale — sizes are hand-authored px values with half-pixel steps (13.5px, 11.5px). The redesign must introduce a fixed rem scale (~7–8 steps).",
+        "section": "typography"
+      },
+      {
+        "name": "The Warm Tint Rule",
+        "body": "Shadows carry a warm tint from the brand palette rather than neutral gray — rgba(255,107,53,0.15) instead of rgba(0,0,0,0.15). This grounds elevated surfaces in the color world. The redesign must preserve this character.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep the warm cream background (#FDF8F0) — it grounds the interface in a warm, community context",
+      "Do keep warm-tinted shadows — the orange/maroon tint in box-shadows is distinctive and appropriate",
+      "Do keep framer-motion for animations — it's well-integrated and the motion quality is a genuine strength",
+      "Do keep the pill-button shape (border-radius: 99px) for primary CTAs — it fits the soft visual character",
+      "Do keep the three culturally load-bearing emoji: 🛕, 🙏, 🪔",
+      "Do keep system fonts ('Segoe UI' stack) — no webfont loading",
+      "Do keep scale(0.97) on button tap/click via whileTap"
+    ],
+    "donts": [
+      "Don't apply the orange→maroon gradient to every button — reserve it for one primary CTA per screen maximum",
+      "Don't use backdrop-filter: blur(24px) on every card — use it only where depth hierarchy requires it",
+      "Don't inject hover styles via inline <style> tags or onMouseEnter/onMouseLeave — use Tailwind hover: classes",
+      "Don't define inputStyle locally in each file — use the shared styles/theme.js module",
+      "Don't use emoji as functional icons (except 🛕 🙏 🪔) — use @phosphor-icons/react",
+      "Don't use ad hoc px font sizes (9.5px, 11.5px, 13.5px) — use the rem type scale",
+      "Don't hardcode #FF6B35, #8B1A1A, #ede8e0 — use CSS custom property tokens",
+      "Don't leave AdminSidebar without responsive handling — convert to off-canvas drawer at < lg"
+    ]
+  }
+}

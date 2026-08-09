@@ -1,96 +1,93 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import {
+  CheckCircle, Hourglass, XCircle,
+  Eye, Tag, CreditCard, SealCheck, Bell, ArrowRight,
+} from '@phosphor-icons/react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 
+const statusConfig = {
+  pending: {
+    icon: <Hourglass size={38} weight="duotone" />,
+    title: 'Booking Request Submitted!',
+    subtitle: 'Your request is under review by the admin',
+    color: 'var(--warning)',
+    bg: 'var(--warning-subtle)',
+    steps: [
+      { label: 'Request Submitted', done: true, icon: <CheckCircle size={18} weight="fill" /> },
+      { label: 'Admin Review', done: false, active: true, icon: <Eye size={18} weight="duotone" /> },
+      { label: 'Price Set', done: false, icon: <Tag size={18} weight="duotone" /> },
+      { label: 'Payment', done: false, icon: <CreditCard size={18} weight="duotone" /> },
+      { label: 'Confirmed', done: false, icon: <SealCheck size={18} weight="duotone" /> },
+    ],
+  },
+  approved: {
+    icon: <CheckCircle size={38} weight="fill" />,
+    title: 'Booking Approved!',
+    subtitle: 'Your booking has been approved. Please proceed with payment.',
+    color: 'var(--success)',
+    bg: 'var(--success-subtle)',
+    steps: [
+      { label: 'Request Submitted', done: true, icon: <CheckCircle size={18} weight="fill" /> },
+      { label: 'Admin Review', done: true, icon: <CheckCircle size={18} weight="fill" /> },
+      { label: 'Price Set', done: true, icon: <CheckCircle size={18} weight="fill" /> },
+      { label: 'Payment', done: false, active: true, icon: <CreditCard size={18} weight="duotone" /> },
+      { label: 'Confirmed', done: false, icon: <SealCheck size={18} weight="duotone" /> },
+    ],
+  },
+  rejected: {
+    icon: <XCircle size={38} weight="fill" />,
+    title: 'Booking Rejected',
+    subtitle: 'Unfortunately your booking request was not approved.',
+    color: 'var(--error)',
+    bg: 'var(--error-subtle)',
+    steps: [
+      { label: 'Request Submitted', done: true, icon: <CheckCircle size={18} weight="fill" /> },
+      { label: 'Admin Review', done: true, icon: <CheckCircle size={18} weight="fill" /> },
+      { label: 'Rejected', done: true, rejected: true, icon: <XCircle size={18} weight="fill" /> },
+    ],
+  },
+}
+
 function BookingStatus() {
   const status = 'pending'
-
-  const statusConfig = {
-    pending: {
-      icon: '⏳',
-      title: 'Booking Request Submitted!',
-      subtitle: 'Your request is under review by the admin',
-      color: '#d97706',
-      bg: 'rgba(247,201,72,0.1)',
-      steps: [
-        { label: 'Request Submitted', done: true, icon: '✅' },
-        { label: 'Admin Review', done: false, active: true, icon: '👀' },
-        { label: 'Price Set', done: false, icon: '💰' },
-        { label: 'Payment', done: false, icon: '💳' },
-        { label: 'Confirmed', done: false, icon: '🎉' },
-      ],
-    },
-    approved: {
-      icon: '✅',
-      title: 'Booking Approved!',
-      subtitle: 'Your booking has been approved. Please proceed with payment.',
-      color: '#16a34a',
-      bg: 'rgba(22,163,74,0.1)',
-      steps: [
-        { label: 'Request Submitted', done: true, icon: '✅' },
-        { label: 'Admin Review', done: true, icon: '✅' },
-        { label: 'Price Set', done: true, icon: '✅' },
-        { label: 'Payment', done: false, active: true, icon: '💳' },
-        { label: 'Confirmed', done: false, icon: '🎉' },
-      ],
-    },
-    rejected: {
-      icon: '❌',
-      title: 'Booking Rejected',
-      subtitle: 'Unfortunately your booking request was not approved.',
-      color: '#ef4444',
-      bg: 'rgba(239,68,68,0.1)',
-      steps: [
-        { label: 'Request Submitted', done: true, icon: '✅' },
-        { label: 'Admin Review', done: true, icon: '✅' },
-        { label: 'Rejected', done: true, rejected: true, icon: '❌' },
-      ],
-    },
-  }
-
   const config = statusConfig[status] || statusConfig.pending
 
   return (
     <div style={{ backgroundColor: 'var(--background)', minHeight: '100vh' }}>
       <Navbar />
 
-      <div style={{ maxWidth: 700, margin: '0 auto', padding: '60px 32px' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}>
+      <div style={{ maxWidth: 680, margin: '0 auto', padding: '56px 24px' }}>
+        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
 
-          {/* Status Card */}
+          {/* Status card */}
           <div style={{
-            borderRadius: 28, padding: '48px 40px',
-            background: 'rgba(255,255,255,0.92)',
-            backdropFilter: 'blur(20px)',
-            border: '1.5px solid rgba(255,107,53,0.08)',
-            boxShadow: '0 8px 40px rgba(139,26,26,0.08)',
-            textAlign: 'center',
-            marginBottom: 24,
+            borderRadius: 'var(--radius-xl)', padding: '44px 36px',
+            background: 'var(--surface-solid)', border: '1px solid var(--border)',
+            boxShadow: 'var(--shadow-xl)', textAlign: 'center', marginBottom: 20,
           }}>
             <motion.div
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              animate={{ scale: [1, 1.08, 1] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
               style={{
-                width: 90, height: 90, borderRadius: '50%',
+                width: 84, height: 84, borderRadius: '50%',
                 background: config.bg,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 40, margin: '0 auto 24px',
-                border: `2px solid ${config.color}30`,
+                margin: '0 auto 22px', color: config.color,
+                border: `2px solid ${config.color}`,
               }}>
               {config.icon}
             </motion.div>
-            <h1 style={{ fontSize: 26, fontWeight: 900, color: 'var(--maroon)', marginBottom: 10 }}>
+
+            <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 900, color: 'var(--maroon)', marginBottom: 8 }}>
               {config.title}
             </h1>
-            <p style={{ fontSize: 15, color: '#6b7280', marginBottom: 32, maxWidth: 400, margin: '0 auto 32px' }}>
+            <p style={{ fontSize: 'var(--text-base)', color: 'var(--text-secondary)', marginBottom: 30, maxWidth: 400, margin: '0 auto 30px' }}>
               {config.subtitle}
             </p>
 
-            {/* Progress Steps */}
+            {/* Progress steps */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0, flexWrap: 'wrap' }}>
               {config.steps.map((s, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
@@ -98,69 +95,63 @@ function BookingStatus() {
                     <div style={{
                       width: 44, height: 44, borderRadius: '50%',
                       background: s.done
-                        ? (s.rejected ? 'rgba(239,68,68,0.1)' : 'rgba(22,163,74,0.1)')
-                        : s.active ? 'rgba(247,201,72,0.15)' : '#f5f5f5',
+                        ? (s.rejected ? 'var(--error-subtle)' : 'var(--success-subtle)')
+                        : s.active ? 'var(--warning-subtle)' : 'var(--neutral-100)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 18, margin: '0 auto 6px',
-                      border: s.active ? '2px solid #d97706' : 'none',
+                      margin: '0 auto 6px',
+                      border: s.active ? '2px solid var(--warning)' : '1px solid var(--border)',
+                      color: s.done ? (s.rejected ? 'var(--error)' : 'var(--success)') : s.active ? 'var(--warning)' : 'var(--text-muted)',
                     }}>
                       {s.icon}
                     </div>
                     <div style={{
-                      fontSize: 10, fontWeight: 700,
-                      color: s.done ? '#16a34a' : s.active ? '#d97706' : '#9ca3af',
+                      fontSize: 'var(--text-xs)', fontWeight: 700,
+                      color: s.done ? 'var(--success)' : s.active ? 'var(--warning)' : 'var(--text-muted)',
                       maxWidth: 60, lineHeight: 1.3,
                     }}>
                       {s.label}
                     </div>
                   </div>
                   {i < config.steps.length - 1 && (
-                    <div style={{
-                      width: 32, height: 2, margin: '0 4px 20px',
-                      background: s.done ? '#16a34a' : '#ede8e0',
-                    }} />
+                    <div style={{ width: 28, height: 2, margin: '0 4px 20px', background: s.done ? 'var(--success)' : 'var(--border)' }} />
                   )}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Info Note */}
+          {/* Info note */}
           <div style={{
-            borderRadius: 20, padding: '20px 24px',
-            background: 'rgba(255,107,53,0.05)',
-            border: '1.5px solid rgba(255,107,53,0.12)',
-            marginBottom: 24,
+            borderRadius: 'var(--radius-lg)', padding: '16px 20px',
+            background: 'var(--primary-subtle)', border: '1px solid var(--primary-border)', marginBottom: 20,
+            display: 'flex', alignItems: 'flex-start', gap: 10,
           }}>
-            <p style={{ fontSize: 14, color: 'var(--primary)', fontWeight: 600, lineHeight: 1.6 }}>
-              🔔 You will receive an in-app notification once the admin reviews your request and sets the pricing.
+            <Bell size={16} weight="fill" style={{ color: 'var(--primary)', flexShrink: 0, marginTop: 1 }} />
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--primary)', fontWeight: 600, lineHeight: 1.6, margin: 0 }}>
+              You will receive an in-app notification once the admin reviews your request and sets the pricing.
             </p>
           </div>
 
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <Link to="/my-bookings" style={{ textDecoration: 'none', flex: 1 }}>
-              <motion.button
-                whileHover={{ scale: 1.03, boxShadow: '0 8px 24px rgba(255,107,53,0.4)' }}
-                whileTap={{ scale: 0.97 }}
+              <motion.button whileHover={{ scale: 1.02, boxShadow: '0 8px 22px var(--primary-border)' }} whileTap={{ scale: 0.97 }}
                 style={{
-                  width: '100%', padding: '14px', borderRadius: 13, border: 'none',
-                  cursor: 'pointer', fontSize: 15, fontWeight: 700, color: 'white',
-                  background: 'linear-gradient(135deg, #FF6B35, #8B1A1A)',
-                  boxShadow: '0 4px 14px rgba(255,107,53,0.3)',
+                  width: '100%', padding: '13px', borderRadius: 'var(--radius-full)', border: 'none',
+                  cursor: 'pointer', fontSize: 'var(--text-base)', fontWeight: 700, color: 'white',
+                  background: 'linear-gradient(135deg, var(--primary), var(--maroon))',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, fontFamily: 'inherit',
                 }}>
-                View My Bookings
+                View My Bookings <ArrowRight size={14} weight="bold" />
               </motion.button>
             </Link>
             <Link to="/" style={{ textDecoration: 'none', flex: 1 }}>
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+              <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                 style={{
-                  width: '100%', padding: '14px', borderRadius: 13,
-                  border: '2px solid #ede8e0', cursor: 'pointer',
-                  fontSize: 15, fontWeight: 700, color: 'var(--text)',
-                  background: 'white',
+                  width: '100%', padding: '13px', borderRadius: 'var(--radius-full)',
+                  border: '1.5px solid var(--border)', cursor: 'pointer',
+                  fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--text-secondary)',
+                  background: 'var(--surface-solid)', fontFamily: 'inherit',
                 }}>
                 Back to Home
               </motion.button>
