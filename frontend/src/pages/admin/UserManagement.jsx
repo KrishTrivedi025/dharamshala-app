@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { AdminLayout } from './AdminDashboard'
+import { AdminLayout, useIsMobile } from './AdminDashboard'
 import { adminAPI } from '../../utils/api'
 import { MagnifyingGlass, Users, Crown, User } from '@phosphor-icons/react'
-import { cardStyleSolid, adminCardStyle } from '../../styles/theme'
+import { cardStyleSolid } from '../../styles/theme'
+
+const PAGE_SIZE_UM = 10
 
 function UserManagement() {
+  const isMobile = useIsMobile()
   const [users, setUsers] = useState([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [togglingId, setTogglingId] = useState(null)
   const [focused, setFocused] = useState(false)
+  const [page, setPage] = useState(1)
 
   const fetchUsers = async () => {
     try {
@@ -43,14 +47,17 @@ function UserManagement() {
     u.email?.toLowerCase().includes(search.toLowerCase()) ||
     u.phone?.includes(search)
   )
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE_UM))
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE_UM, page * PAGE_SIZE_UM)
+  useEffect(() => { setPage(1) }, [search])
 
   return (
     <AdminLayout>
       
-      <div style={{ padding: '40px 36px' }}>
+      <div style={{ padding: isMobile ? '20px 14px' : '40px 36px' }}>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 900, color: 'var(--maroon)', marginBottom: 6 }}>User Management</h1>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: isMobile ? 16 : 32 }}>
+          <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, color: 'var(--maroon)', marginBottom: 4 }}>User Management</h1>
           <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>View and manage all registered users</p>
         </motion.div>
 
@@ -60,7 +67,7 @@ function UserManagement() {
           transition={{ delay: 0.1 }}
           style={{ marginBottom: 24 }}>
           <div style={{
-            position: 'relative', maxWidth: 480,
+            position: 'relative', maxWidth: isMobile ? '100%' : 480,
             display: 'flex', alignItems: 'center',
           }}>
             <MagnifyingGlass
@@ -104,57 +111,60 @@ function UserManagement() {
             </p>
           </motion.div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {filtered.map((user, i) => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {paginated.map((user, i) => (
               <motion.div key={user._id || i}
-                initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06 }}
-                whileHover={{ y: -3, boxShadow: 'var(--shadow-xl)' }}
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04 }}
+                whileHover={{ boxShadow: 'var(--shadow-md)' }}
                 style={{
-                  ...adminCardStyle,
-                  display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
-                  transition: 'box-shadow 0.3s ease',
+                  borderRadius: 12, padding: isMobile ? '10px 12px' : '12px 16px',
+                  background: 'var(--surface-solid)', border: '1px solid var(--border)',
+                  boxShadow: 'var(--shadow-sm)',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  transition: 'box-shadow 0.2s ease',
                 }}>
+                {/* Avatar */}
                 <div style={{
-                  width: 46, height: 46, borderRadius: '50%',
+                  width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
                   background: 'linear-gradient(135deg, var(--primary), var(--maroon))',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 18, fontWeight: 800, color: 'white', flexShrink: 0,
+                  fontSize: 13, fontWeight: 800, color: 'white',
                 }}>
                   {user.name?.charAt(0).toUpperCase() || '?'}
                 </div>
-                <div style={{ flex: 1, minWidth: 160 }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', marginBottom: 3 }}>
+                {/* Name + email */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--maroon)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {user.name}
                   </div>
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{user.email}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.email}</div>
                 </div>
-                <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>{user.phone}</div>
+                {/* Role badge */}
                 <div style={{
-                  padding: '5px 14px', borderRadius: 99, fontSize: 12, fontWeight: 700,
+                  padding: '3px 8px', borderRadius: 99, fontSize: 10, fontWeight: 700, flexShrink: 0,
                   background: user.role === 'admin' ? 'var(--maroon-subtle)' : 'var(--success-subtle)',
                   color: user.role === 'admin' ? 'var(--maroon)' : 'var(--success-text)',
-                  display: 'flex', alignItems: 'center', gap: 5,
+                  display: 'flex', alignItems: 'center', gap: 3,
                 }}>
-                  {user.role === 'admin'
-                    ? <><Crown size={12} weight="fill" /> Admin</>
-                    : <><User size={12} weight="fill" /> User</>
-                  }
+                  {user.role === 'admin' ? <><Crown size={9} weight="fill" /> Admin</> : <><User size={9} weight="fill" /> User</>}
                 </div>
+                {/* Status badge */}
                 <div style={{
-                  padding: '5px 14px', borderRadius: 99, fontSize: 12, fontWeight: 700,
+                  padding: '3px 8px', borderRadius: 99, fontSize: 10, fontWeight: 700, flexShrink: 0,
                   background: user.isActive ? 'var(--success-subtle)' : 'var(--error-subtle)',
                   color: user.isActive ? 'var(--success-text)' : 'var(--error-text)',
                 }}>
                   {user.isActive ? 'Active' : 'Inactive'}
                 </div>
+                {/* Toggle button */}
                 <motion.button
-                  whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => handleToggle(user._id)}
                   disabled={togglingId === user._id || user.role === 'admin'}
                   style={{
-                    padding: '7px 16px', borderRadius: 10, border: 'none',
-                    cursor: user.role === 'admin' ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 700,
+                    padding: '4px 10px', borderRadius: 8, border: 'none', flexShrink: 0,
+                    cursor: user.role === 'admin' ? 'not-allowed' : 'pointer', fontSize: 11, fontWeight: 700,
                     color: user.isActive ? 'var(--error-text)' : 'var(--success-text)',
                     background: user.isActive ? 'var(--error-subtle)' : 'var(--success-subtle)',
                     opacity: user.role === 'admin' ? 0.4 : 1,
@@ -163,6 +173,22 @@ function UserManagement() {
                 </motion.button>
               </motion.div>
             ))}
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '10px 0' }}>
+                <motion.button whileTap={{ scale: 0.93 }} disabled={page === 1}
+                  onClick={() => setPage(p => p - 1)}
+                  style={{ padding: '7px 18px', borderRadius: 99, border: '1.5px solid var(--border)', background: 'white', cursor: page === 1 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 700, color: page === 1 ? 'var(--text-muted)' : 'var(--maroon)', opacity: page === 1 ? 0.4 : 1 }}>
+                  ← Prev
+                </motion.button>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)' }}>{page} / {totalPages}</span>
+                <motion.button whileTap={{ scale: 0.93 }} disabled={page === totalPages}
+                  onClick={() => setPage(p => p + 1)}
+                  style={{ padding: '7px 18px', borderRadius: 99, border: '1.5px solid var(--border)', background: 'white', cursor: page === totalPages ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 700, color: page === totalPages ? 'var(--text-muted)' : 'var(--maroon)', opacity: page === totalPages ? 0.4 : 1 }}>
+                  Next →
+                </motion.button>
+              </div>
+            )}
           </div>
         )}
       </div>

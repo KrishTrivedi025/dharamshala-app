@@ -4,8 +4,6 @@ import { AdminLayout } from './AdminDashboard'
 import { adminAPI } from '../../utils/api'
 import { CurrencyCircleDollar, Tray } from '@phosphor-icons/react'
 import { cardStyleSolid, adminCardStyle } from '../../styles/theme'
-import { CustomSelect } from '../../components/AdminSelect'
-
 const REFUND_FILTERS = ['All', 'Pending', 'Processed', 'Failed']
 
 const REFUND_STATUS = {
@@ -60,14 +58,29 @@ function RefundManager() {
           <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>Process and track all cancellation refunds</p>
         </motion.div>
 
-        {/* Filters */}
-        <div style={{ marginBottom: 28 }}>
-          <CustomSelect
-            value={filter}
-            onChange={v => setFilter(v)}
-            options={REFUND_FILTERS.map(f => ({ value: f, label: f }))}
-            minWidth={180}
-          />
+        {/* Filters — horizontally scrollable pill tabs */}
+        <div style={{ marginBottom: 28, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <div style={{ display: 'flex', gap: 8, paddingBottom: 4, width: 'max-content' }}>
+            {REFUND_FILTERS.map((f) => {
+              const active = filter === f
+              return (
+                <motion.button key={f}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => setFilter(f)}
+                  style={{
+                    flexShrink: 0, padding: '7px 18px', borderRadius: 99,
+                    border: active ? 'none' : '1.5px solid var(--border)',
+                    cursor: 'pointer', fontSize: 13, fontWeight: 700,
+                    background: active ? 'linear-gradient(135deg, var(--primary), var(--maroon))' : 'white',
+                    color: active ? 'white' : 'var(--text-secondary)',
+                    boxShadow: active ? '0 2px 10px rgba(255,107,53,0.35)' : 'none',
+                    transition: 'all 0.2s ease',
+                  }}>
+                  {f}
+                </motion.button>
+              )
+            })}
+          </div>
         </div>
 
         {loading ? (

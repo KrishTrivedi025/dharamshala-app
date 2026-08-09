@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AdminLayout } from './AdminDashboard'
+import { AdminLayout, useIsMobile } from './AdminDashboard'
 import { adminAPI } from '../../utils/api'
 import { LockSimple, LockOpen, Clock } from '@phosphor-icons/react'
 import { cardStyleSolid, adminCardStyle, modalOverlay, modalContent, inputStyle as themeInput } from '../../styles/theme'
 
 function LockedDates() {
+  const isMobile = useIsMobile()
   const [lockedDates, setLockedDates] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -63,7 +64,7 @@ function LockedDates() {
   return (
     <AdminLayout>
       
-      <div style={{ padding: '40px 36px' }}>
+      <div style={{ padding: isMobile ? '20px 14px' : '40px 36px' }}>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -113,40 +114,42 @@ function LockedDates() {
             </motion.button>
           </motion.div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {lockedDates.map((lock, i) => (
               <motion.div key={i}
-                initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.07 }}
-                whileHover={{ y: -3, boxShadow: 'var(--shadow-xl)' }}
+                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                whileHover={{ y: -2, boxShadow: 'var(--shadow-md)' }}
                 style={{
-                  ...adminCardStyle,
-                  display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap',
-                  transition: 'box-shadow 0.3s ease',
+                  borderRadius: 14, padding: '12px 16px',
+                  background: 'var(--surface-solid)', border: '1px solid var(--border)',
+                  boxShadow: 'var(--shadow-sm)',
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  transition: 'box-shadow 0.2s ease',
                 }}>
                 <div style={{
-                  width: 50, height: 50, borderRadius: 14,
+                  width: 36, height: 36, borderRadius: 10, flexShrink: 0,
                   background: 'var(--warning-subtle)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: '1.5px solid rgba(217,119,6,0.2)', flexShrink: 0,
+                  border: '1.5px solid rgba(217,119,6,0.2)',
                 }}>
-                  <LockSimple size={22} weight="duotone" color="var(--warning-text)" />
+                  <LockSimple size={16} weight="duotone" color="var(--warning-text)" />
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--maroon)', marginBottom: 4 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--maroon)' }}>
                     {new Date(lock.startDate).toLocaleDateString('en-IN')} — {new Date(lock.endDate).toLocaleDateString('en-IN')}
                   </div>
-                  <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{lock.reason}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lock.reason}</div>
                 </div>
                 <div style={{
-                  padding: '5px 14px', borderRadius: 99,
+                  padding: '3px 10px', borderRadius: 99, flexShrink: 0,
                   background: 'var(--warning-subtle)', color: 'var(--warning-text)',
-                  fontSize: 12, fontWeight: 700,
-                  display: 'flex', alignItems: 'center', gap: 5,
+                  fontSize: 11, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', gap: 4,
                 }}>
                   {lock.lockType === 'full'
-                    ? <><LockSimple size={11} weight="fill" /> Full Day</>
-                    : <><Clock size={11} weight="fill" /> Partial</>
+                    ? <><LockSimple size={10} weight="fill" /> Full Day</>
+                    : <><Clock size={10} weight="fill" /> Partial</>
                   }
                 </div>
                 <motion.button
@@ -154,11 +157,11 @@ function LockedDates() {
                   onClick={() => handleRelease(lock._id)}
                   disabled={releasingId === lock._id}
                   style={{
-                    padding: '7px 16px', borderRadius: 10, border: 'none',
-                    cursor: 'pointer', fontSize: 13, fontWeight: 700,
+                    padding: '5px 12px', borderRadius: 8, border: 'none', flexShrink: 0,
+                    cursor: 'pointer', fontSize: 12, fontWeight: 700,
                     color: 'var(--error-text)', background: 'var(--error-subtle)',
                   }}>
-                  {releasingId === lock._id ? 'Releasing...' : 'Release'}
+                  {releasingId === lock._id ? '...' : 'Release'}
                 </motion.button>
               </motion.div>
             ))}

@@ -164,6 +164,7 @@ const STAT_META = [
 
 function AdminDashboard() {
   const { user } = useAuth()
+  const isMobile = useIsMobile()
   const [statsData, setStatsData] = useState({
     total: 0, pending: 0, approved: 0, totalUsers: 0,
     monthlyRevenue: 0, recentBookings: [],
@@ -202,40 +203,40 @@ function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <div style={{ padding: '40px 36px' }}>
+      <div style={{ padding: isMobile ? '20px 16px' : '40px 36px' }}>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }} style={{ marginBottom: 36 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 900, color: 'var(--maroon)', marginBottom: 6 }}>
+          transition={{ duration: 0.5 }} style={{ marginBottom: isMobile ? 20 : 36 }}>
+          <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, color: 'var(--maroon)', marginBottom: 4 }}>
             Admin Dashboard
           </h1>
-          <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>
             Welcome back, <strong>{user?.name || 'Admin'}</strong> — here is your overview
           </p>
         </motion.div>
 
-        {/* Stats Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20, marginBottom: 36 }}>
+        {/* Stats Grid — 2×2 on mobile */}
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(auto-fit, minmax(200px, 1fr))', gap: isMobile ? 10 : 20, marginBottom: isMobile ? 20 : 36 }}>
           {STAT_META.map((s, i) => (
             <motion.div key={i}
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
+              transition={{ delay: i * 0.08 }}
               whileHover={{ y: -4, boxShadow: 'var(--shadow-xl)' }}
-              style={{ ...cardStyleSolid, padding: '24px', transition: 'box-shadow 0.3s ease' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              style={{ ...cardStyleSolid, padding: isMobile ? '14px 16px' : '24px', transition: 'box-shadow 0.3s ease' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 10 : 14 }}>
                 <div style={{
-                  width: 50, height: 50, borderRadius: 14,
-                  background: s.bg, display: 'flex',
+                  width: isMobile ? 38 : 50, height: isMobile ? 38 : 50, borderRadius: isMobile ? 10 : 14,
+                  background: s.bg, display: 'flex', flexShrink: 0,
                   alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <s.Icon size={24} weight="duotone" color={s.color} />
+                  <s.Icon size={isMobile ? 18 : 24} weight="duotone" color={s.color} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 28, fontWeight: 900, color: s.color }}>
+                  <div style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, color: s.color, lineHeight: 1 }}>
                     {loading ? '—' : statValues[i]}
                   </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 500 }}>{s.label}</div>
+                  <div style={{ fontSize: isMobile ? 11 : 12, color: 'var(--text-muted)', fontWeight: 500, marginTop: 2 }}>{s.label}</div>
                 </div>
               </div>
             </motion.div>
@@ -272,14 +273,14 @@ function AdminDashboard() {
           <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--maroon)', marginBottom: 20 }}>
             Quick Actions
           </h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(auto-fit, minmax(160px, 1fr))', gap: isMobile ? 8 : 14 }}>
             {adminLinks.slice(1).map(({ path, label, Icon }, i) => (
               <Link key={i} to={path} style={{ textDecoration: 'none' }}>
                 <motion.div
                   whileHover={{ scale: 1.03, boxShadow: 'var(--shadow-lg)' }}
                   whileTap={{ scale: 0.98 }}
                   style={{
-                    padding: '18px 16px', borderRadius: 16,
+                    padding: isMobile ? '10px 8px' : '18px 16px', borderRadius: isMobile ? 12 : 16,
                     background: 'var(--primary-subtle)',
                     border: '1.5px solid var(--primary-border)',
                     cursor: 'pointer', textAlign: 'center',
@@ -297,10 +298,10 @@ function AdminDashboard() {
                       {statsData.pending}
                     </div>
                   )}
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
-                    <Icon size={28} weight="duotone" color="var(--maroon)" />
+                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: isMobile ? 5 : 8 }}>
+                    <Icon size={isMobile ? 20 : 28} weight="duotone" color="var(--maroon)" />
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--maroon)' }}>{label}</div>
+                  <div style={{ fontSize: isMobile ? 10 : 13, fontWeight: 700, color: 'var(--maroon)', lineHeight: 1.2 }}>{label}</div>
                 </motion.div>
               </Link>
             ))}

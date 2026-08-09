@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AdminLayout } from './AdminDashboard'
+import { AdminLayout, useIsMobile } from './AdminDashboard'
 import { adminAPI } from '../../utils/api'
 import {
   User, Phone, CalendarBlank, Clock, Users, Confetti,
   CurrencyCircleDollar, CheckCircle, X, WarningCircle, Tray,
 } from '@phosphor-icons/react'
 import { cardStyleSolid, STATUS_COLORS, modalOverlay, modalContent, inputStyle as themeInput } from '../../styles/theme'
-import { CustomSelect } from '../../components/AdminSelect'
 
 const to12h = (t) => {
   if (!t) return ''
@@ -19,7 +18,10 @@ const to12h = (t) => {
 
 const FILTERS = ['All', 'Pending', 'Approved', 'Rejected', 'Cancelled']
 
+const PAGE_SIZE_BR = 8
+
 function BookingRequests() {
+  const isMobile = useIsMobile()
   const [filter, setFilter] = useState('All')
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
@@ -30,6 +32,7 @@ function BookingRequests() {
   const [actionLoading, setActionLoading] = useState(false)
   const [actionError, setActionError] = useState(null)
   const [modalMode, setModalMode] = useState('review')
+  const [page, setPage] = useState(1)
 
   const fetchBookings = async () => {
     try {
@@ -45,10 +48,13 @@ function BookingRequests() {
   }
 
   useEffect(() => { fetchBookings() }, [])
+  useEffect(() => { setPage(1) }, [filter])
 
   const filtered = filter === 'All'
     ? bookings
     : bookings.filter(b => b.status?.toLowerCase() === filter.toLowerCase())
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE_BR))
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE_BR, page * PAGE_SIZE_BR)
 
   const handleApprove = async (booking) => {
     if (!priceInput || isNaN(priceInput) || parseFloat(priceInput) <= 0) {
@@ -103,27 +109,38 @@ function BookingRequests() {
   return (
     <AdminLayout>
       
-      <div style={{ padding: '40px 36px' }}>
+      <div style={{ padding: isMobile ? '20px 14px' : '40px 36px' }}>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 900, color: 'var(--maroon)', marginBottom: 6 }}>Booking Requests</h1>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: isMobile ? 16 : 32 }}>
+          <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 900, color: 'var(--maroon)', marginBottom: 4 }}>Booking Requests</h1>
           <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>Review and manage all booking requests</p>
         </motion.div>
 
-        {/* Filters */}
-        <div style={{ marginBottom: 28 }}>
-          <CustomSelect
-            value={filter}
-            onChange={v => setFilter(v)}
-            options={FILTERS.map(f => {
+        {/* Filters — horizontally scrollable pill tabs */}
+        <div style={{ marginBottom: 28, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <div style={{ display: 'flex', gap: 8, paddingBottom: 4, width: 'max-content' }}>
+            {FILTERS.map((f) => {
               const pendingCount = bookings.filter(b => b.status === 'pending').length
-              return {
-                value: f,
-                label: f === 'Pending' && pendingCount > 0 ? `Pending (${pendingCount})` : f,
-              }
+              const active = filter === f
+              const label = f === 'Pending' && pendingCount > 0 ? `Pending (${pendingCount})` : f
+              return (
+                <motion.button key={f}
+                  whileTap={{ scale: 0.96 }}
+                  onClick={() => setFilter(f)}
+                  style={{
+                    flexShrink: 0, padding: '7px 18px', borderRadius: 99,
+                    border: active ? 'none' : '1.5px solid var(--border)',
+                    cursor: 'pointer', fontSize: 13, fontWeight: 700,
+                    background: active ? 'linear-gradient(135deg, var(--primary), var(--maroon))' : 'white',
+                    color: active ? 'white' : 'var(--text-secondary)',
+                    boxShadow: active ? '0 2px 10px rgba(255,107,53,0.35)' : 'none',
+                    transition: 'all 0.2s ease',
+                  }}>
+                  {label}
+                </motion.button>
+              )
             })}
-            minWidth={180}
-          />
+          </div>
         </div>
 
         {/* Loading */}
@@ -177,7 +194,7 @@ function BookingRequests() {
             </motion.div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {filtered.map((booking, i) => {
+              {paginated.map((booking, i) => {
                 const statusStyle = STATUS_COLORS[booking.status] || STATUS_COLORS.pending
                 return (
                   <motion.div key={booking._id || i}
@@ -287,6 +304,22 @@ function BookingRequests() {
                   </motion.div>
                 )
               })}
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '8px 0' }}>
+                  <motion.button whileTap={{ scale: 0.93 }} disabled={page === 1}
+                    onClick={() => setPage(p => p - 1)}
+                    style={{ padding: '7px 18px', borderRadius: 99, border: '1.5px solid var(--border)', background: 'white', cursor: page === 1 ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 700, color: page === 1 ? 'var(--text-muted)' : 'var(--maroon)', opacity: page === 1 ? 0.4 : 1 }}>
+                    ← Prev
+                  </motion.button>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-secondary)' }}>{page} / {totalPages}</span>
+                  <motion.button whileTap={{ scale: 0.93 }} disabled={page === totalPages}
+                    onClick={() => setPage(p => p + 1)}
+                    style={{ padding: '7px 18px', borderRadius: 99, border: '1.5px solid var(--border)', background: 'white', cursor: page === totalPages ? 'not-allowed' : 'pointer', fontSize: 13, fontWeight: 700, color: page === totalPages ? 'var(--text-muted)' : 'var(--maroon)', opacity: page === totalPages ? 0.4 : 1 }}>
+                    Next →
+                  </motion.button>
+                </div>
+              )}
             </div>
           )
         )}

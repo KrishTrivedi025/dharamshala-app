@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { AdminLayout } from './AdminDashboard'
+import { AdminLayout, useIsMobile } from './AdminDashboard'
 import { adminAPI } from '../../utils/api'
 import { LockSimple } from '@phosphor-icons/react'
 import { cardStyleSolid, STATUS_COLORS } from '../../styles/theme'
@@ -19,6 +19,7 @@ const MONTH_NAMES = [
 ]
 
 function CalendarView() {
+  const isMobile = useIsMobile()
   const today = new Date()
   const [calMonth, setCalMonth] = useState(today.getMonth())
   const [calYear, setCalYear] = useState(today.getFullYear())
@@ -78,14 +79,14 @@ function CalendarView() {
   return (
     <AdminLayout>
       
-      <div style={{ padding: '40px 36px' }}>
+      <div style={{ padding: isMobile ? '20px 12px' : '40px 36px' }}>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 32 }}>
           <h1 style={{ fontSize: 28, fontWeight: 900, color: 'var(--maroon)', marginBottom: 6 }}>Calendar View</h1>
           <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>View all bookings and locked dates at a glance</p>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          style={cardStyleSolid}>
+          style={{ ...cardStyleSolid, padding: isMobile ? '16px 12px' : '28px', overflow: 'hidden' }}>
           {/* Navigation */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
             <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
@@ -107,14 +108,14 @@ function CalendarView() {
           </div>
 
           {/* Day Headers */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 8, gap: 4 }}>
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-              <div key={d} style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', padding: '8px 0' }}>{d}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 6, gap: isMobile ? 2 : 4 }}>
+            {(isMobile ? ['S','M','T','W','T','F','S'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']).map((d, idx) => (
+              <div key={idx} style={{ textAlign: 'center', fontSize: isMobile ? 11 : 12, fontWeight: 700, color: 'var(--text-muted)', padding: isMobile ? '4px 0' : '8px 0' }}>{d}</div>
             ))}
           </div>
 
           {/* Calendar Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: isMobile ? 2 : 4 }}>
             {[...Array(firstDay)].map((_, i) => <div key={`e-${i}`} />)}
             {[...Array(daysInMonth)].map((_, i) => {
               const day = i + 1
@@ -129,18 +130,26 @@ function CalendarView() {
               else if (locked)       { bg = 'var(--warning-subtle)'; border = '1.5px solid rgba(217,119,6,0.3)'; color = 'var(--warning-text)' }
               else if (dayBookings.length > 0) { bg = 'var(--success-subtle)'; border = '1.5px solid rgba(5,150,105,0.2)'; color = 'var(--success-text)' }
               return (
-                <motion.div key={day} whileHover={{ scale: 1.06 }}
+                <motion.div key={day} whileHover={{ scale: 1.04 }}
                   onClick={() => setSelectedDay(selected ? null : day)}
-                  style={{ minHeight: 68, borderRadius: 12, padding: '8px', background: bg, border, color, cursor: 'pointer', transition: 'all 0.2s ease', boxShadow: todayDay ? 'var(--shadow-lg)' : 'none' }}>
-                  <div style={{ fontSize: 13, fontWeight: todayDay ? 900 : 600, marginBottom: 4 }}>{day}</div>
-                  {locked && (
+                  style={{ minHeight: isMobile ? 40 : 68, borderRadius: isMobile ? 8 : 12, padding: isMobile ? '5px 3px' : '8px', background: bg, border, color, cursor: 'pointer', transition: 'all 0.2s ease', boxShadow: todayDay ? 'var(--shadow-lg)' : 'none' }}>
+                  <div style={{ fontSize: isMobile ? 12 : 13, fontWeight: todayDay ? 900 : 600, marginBottom: 2, textAlign: isMobile ? 'center' : 'left' }}>{day}</div>
+                  {!isMobile && locked && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 700, color: 'var(--warning-text)' }}>
                       <LockSimple size={10} weight="fill" /> Locked
                     </div>
                   )}
-                  {dayBookings.length > 0 && (
+                  {isMobile && locked && (
+                    <div style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--warning-text)', margin: '0 auto' }} />
+                  )}
+                  {!isMobile && dayBookings.length > 0 && (
                     <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--success-text)' }}>
                       {dayBookings.length} booking{dayBookings.length > 1 ? 's' : ''}
+                    </div>
+                  )}
+                  {isMobile && dayBookings.length > 0 && (
+                    <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--success-text)', textAlign: 'center' }}>
+                      {dayBookings.length}
                     </div>
                   )}
                 </motion.div>
