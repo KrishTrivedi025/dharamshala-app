@@ -128,18 +128,13 @@ function Cashbook() {
     finally { setReceiptNoSaving(false) }
   }
 
-  const openAdd = async () => {
+  const openAdd = () => {
     setEditEntry(null)
-    let nextReceipt = ''
-    try {
-      const res = await cashbookAPI.getNextReceipt(CURRENT_YEAR)
-      nextReceipt = res.data?.receiptNumber || ''
-    } catch { /* leave blank */ }
     setFormData({
       entryDate: String(CURRENT_YEAR), paymentDate: '',
       name:'', phone:'', category:'', paymentMode:'cash',
       type:'credit', amount:'', status:'completed', description:'',
-      receiptNumber: nextReceipt
+      receiptNumber: nextReceiptNo || ''
     })
     setShowModal(true)
   }
@@ -320,31 +315,36 @@ function Cashbook() {
   return (
     <AdminLayout>
       
-      <div style={{ padding: '40px 36px' }}>
+      <div style={{ padding: isMobile ? '20px 14px' : '40px 36px' }}>
 
         {/* Header */}
-        <motion.div initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} style={{ marginBottom:24 }}>
-          <h1 style={{ fontSize:28, fontWeight:900, color:'var(--maroon)', marginBottom:6, display:'flex', alignItems:'center', gap:10 }}>
-            <BookOpen size={28} weight="duotone" color="var(--maroon)" /> Cashbook / Bank Ledger
+        <motion.div initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} style={{ marginBottom: isMobile ? 18 : 24 }}>
+          <h1 style={{ fontSize: isMobile ? 20 : 28, fontWeight:900, color:'var(--maroon)', marginBottom:4, display:'flex', alignItems:'center', gap:8 }}>
+            <BookOpen size={isMobile ? 20 : 28} weight="duotone" color="var(--maroon)" /> Cashbook / Bank Ledger
           </h1>
-          <p style={{ fontSize:14, color:'var(--text-muted)' }}>Complete financial record of all transactions</p>
+          <p style={{ fontSize:13, color:'var(--text-muted)' }}>Complete financial record of all transactions</p>
         </motion.div>
 
-        {/* Tab Switcher */}
-        <div style={{ display:'flex', gap:8, marginBottom:24 }}>
+        {/* Tab Switcher — segmented pill control */}
+        <div style={{ display:'flex', background:'var(--neutral-100)', borderRadius:14, padding:4, marginBottom: isMobile ? 16 : 24, gap:2 }}>
           {[{k:'ledger',Icon:ChartBar,l:'Ledger'},{k:'annual',emoji:'🪔',l:'Annual Ritual Payments'}].map(t=>(
-            <motion.button key={t.k} whileHover={{ scale:1.03 }} whileTap={{ scale:0.97 }}
-              onClick={()=>setTab(t.k)}
-              style={{
-                ...adminBtn(tab===t.k ? 'linear-gradient(135deg,var(--primary),var(--maroon))' : 'var(--surface-solid)'),
-                color: tab===t.k ? 'white' : 'var(--text-secondary)',
-                boxShadow: tab===t.k ? 'var(--shadow-lg)' : 'var(--shadow-sm)',
-                border: tab===t.k ? 'none' : '1px solid var(--border)',
-                padding: '10px 24px',
-              }}>
-              {t.Icon ? <t.Icon size={16} weight={tab===t.k ? 'fill':'regular'} /> : <span>{t.emoji}</span>}
-              {t.l}
-            </motion.button>
+            <div key={t.k} style={{ flex:1, position:'relative' }}>
+              {tab===t.k && (
+                <motion.div layoutId="tab-pill"
+                  style={{ position:'absolute', inset:0, background:'white', borderRadius:11, boxShadow:'0 2px 8px rgba(0,0,0,0.10)' }}
+                  transition={{ type:'spring', stiffness:400, damping:32 }} />
+              )}
+              <button onClick={()=>setTab(t.k)}
+                style={{ position:'relative', zIndex:1, width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                  padding: isMobile ? '9px 8px' : '10px 20px', borderRadius:11, border:'none', cursor:'pointer', background:'transparent',
+                  fontSize: isMobile ? 12 : 13, fontWeight:700, fontFamily:'inherit', whiteSpace:'nowrap',
+                  color: tab===t.k ? 'var(--maroon)' : 'var(--text-muted)',
+                  transition:'color 0.2s ease',
+                }}>
+                {t.Icon ? <t.Icon size={14} weight={tab===t.k ? 'fill':'regular'} color={tab===t.k ? 'var(--primary)' : 'var(--text-muted)'} /> : <span style={{ fontSize:14 }}>{t.emoji}</span>}
+                {t.l}
+              </button>
+            </div>
           ))}
         </div>
 
@@ -365,22 +365,29 @@ function Cashbook() {
 
         {tab === 'ledger' ? (
           <>
-            {/* Summary Cards */}
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:16, marginBottom:24 }}>
+            {/* Summary Cards — always 3-col with left accent bar */}
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap: isMobile ? 8 : 16, marginBottom: isMobile ? 14 : 24 }}>
               {[
-                { label:'Total Income',  value:`₹${summary.totalIncome?.toLocaleString()}`,  color:'var(--success-text)', bg:'var(--success-subtle)', Icon: CurrencyCircleDollar },
-                { label:'Total Expense', value:`₹${summary.totalExpense?.toLocaleString()}`, color:'var(--error-text)',   bg:'var(--error-subtle)',   Icon: ArrowUp },
-                { label:'Balance',       value:`₹${summary.balance?.toLocaleString()}`,      color:'var(--info-text)',    bg:'var(--info-subtle)',    Icon: Wallet },
+                { label:'Income',  value:`₹${summary.totalIncome?.toLocaleString()}`,  color:'var(--success-text)', accentColor:'#059669', bg:'var(--success-subtle)', Icon: CurrencyCircleDollar },
+                { label:'Expense', value:`₹${summary.totalExpense?.toLocaleString()}`, color:'var(--error-text)',   accentColor:'#dc2626', bg:'var(--error-subtle)',   Icon: ArrowUp },
+                { label:'Balance', value:`₹${summary.balance?.toLocaleString()}`,      color:'var(--info-text)',    accentColor:'#2563eb', bg:'var(--info-subtle)',    Icon: Wallet },
               ].map((c,i)=>(
-                <motion.div key={i} initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:i*0.1}}
-                  style={{ ...cardStyleSolid, padding:'20px 24px', display:'flex', alignItems:'center', gap:14 }}>
-                  <div style={{ width:50, height:50, borderRadius:14, background:c.bg, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                    <c.Icon size={24} weight="duotone" color={c.color} />
+                <motion.div key={i} initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:i*0.08}}
+                  style={{ background:'var(--surface-solid)', border:'1px solid var(--border)', boxShadow:'var(--shadow-sm)',
+                    borderRadius:14, overflow:'hidden', display:'flex', alignItems:'stretch', minHeight: isMobile ? 72 : 90 }}>
+                  {/* Left accent bar */}
+                  <div style={{ width:4, background:c.accentColor, flexShrink:0 }} />
+                  <div style={{ padding: isMobile ? '10px 10px' : '16px 18px', display:'flex', flexDirection:'column', justifyContent:'center', flex:1 }}>
+                    <div style={{ fontSize:10, color:'var(--text-muted)', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.4px', marginBottom:4 }}>{c.label}</div>
+                    <div style={{ fontSize: isMobile ? 16 : 22, fontWeight:900, color:c.color, lineHeight:1 }}>{loading ? '—' : c.value}</div>
                   </div>
-                  <div>
-                    <div style={{ fontSize:24, fontWeight:900, color:c.color }}>{loading ? '—' : c.value}</div>
-                    <div style={{ fontSize:12, color:'var(--text-muted)', fontWeight:500 }}>{c.label}</div>
-                  </div>
+                  {!isMobile && (
+                    <div style={{ padding:'16px 14px', display:'flex', alignItems:'center' }}>
+                      <div style={{ width:40, height:40, borderRadius:12, background:c.bg, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        <c.Icon size={20} weight="duotone" color={c.color} />
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               ))}
             </div>
@@ -423,23 +430,28 @@ function Cashbook() {
                       <PencilSimple size={11} weight="fill" /> Edit
                     </motion.button>
                   </div>
-                  {/* Row 5: Action buttons 2×2 grid */}
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-                    <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
-                      onClick={openAdd} style={{ ...adminBtn(), justifyContent:'center' }}>
-                      <Plus size={14} weight="bold" /> Add Entry
-                    </motion.button>
+                  {/* Row 5: Add Entry hero + 3-col export */}
+                  <motion.button whileHover={{scale:1.02}} whileTap={{scale:0.97}}
+                    onClick={openAdd}
+                    style={{ width:'100%', padding:'13px', borderRadius:12, border:'none', cursor:'pointer',
+                      fontSize:14, fontWeight:800, color:'white', fontFamily:'inherit',
+                      background:'linear-gradient(135deg, var(--primary), var(--maroon))',
+                      boxShadow:'0 4px 14px rgba(255,107,53,0.35)',
+                      display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                    <Plus size={16} weight="bold" /> Add New Entry
+                  </motion.button>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
                     <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
                       onClick={() => openExportModal('pdf', 'ledger')} style={{ ...adminBtn('var(--success)'), justifyContent:'center' }}>
-                      <DownloadSimple size={14} /> PDF
+                      <DownloadSimple size={13} /> PDF
                     </motion.button>
                     <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
                       onClick={() => openExportModal('doc', 'ledger')} style={{ ...adminBtn('var(--info)'), justifyContent:'center' }}>
-                      <DownloadSimple size={14} /> DOC
+                      <DownloadSimple size={13} /> DOC
                     </motion.button>
                     <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
                       onClick={() => openExportModal('print', 'ledger')} style={{ ...adminBtn('#7c3aed'), justifyContent:'center' }}>
-                      <Printer size={14} /> Print
+                      <Printer size={13} /> Print
                     </motion.button>
                   </div>
                 </div>
@@ -505,54 +517,57 @@ function Cashbook() {
                 <p style={{ fontSize:14, color:'var(--text-muted)' }}>Add your first cashbook entry to get started</p>
               </div>
             ) : isMobile ? (
-              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                 {entriesWithBalance.map((e,i)=>(
-                  <div key={e._id} style={{ ...cardStyleSolid, padding:'14px 16px' }}>
-                    {/* Top: type+status badges + amount */}
-                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
-                      <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                        <span style={{ padding:'3px 10px', borderRadius:99, fontSize:11, fontWeight:700,
-                          background: e.type==='credit' ? 'var(--success-subtle)' : 'var(--error-subtle)',
-                          color: e.type==='credit' ? 'var(--success-text)' : 'var(--error-text)' }}>
-                          {e.type==='credit'?'↑ Credit':'↓ Debit'}
-                        </span>
-                        <span style={{ padding:'3px 10px', borderRadius:99, fontSize:11, fontWeight:700,
-                          background: e.status==='completed' ? 'var(--success-subtle)' : 'var(--warning-subtle)',
-                          color: e.status==='completed' ? 'var(--success-text)' : 'var(--warning-text)' }}>
-                          {e.status==='completed'?'Done':'Pending'}
-                        </span>
+                  <div key={e._id} style={{ background:'white', border:'1px solid var(--border)', borderRadius:14,
+                    boxShadow:'var(--shadow-sm)', overflow:'hidden', display:'flex' }}>
+                    {/* Left accent bar — green for credit, red for debit */}
+                    <div style={{ width:4, flexShrink:0, background: e.type==='credit' ? '#059669' : '#dc2626' }} />
+                    <div style={{ flex:1, padding:'12px 14px' }}>
+                      {/* Row 1: badges + amount + action icons */}
+                      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:6 }}>
+                        <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+                          <span style={{ padding:'2px 8px', borderRadius:99, fontSize:10, fontWeight:700,
+                            background: e.type==='credit' ? 'var(--success-subtle)' : 'var(--error-subtle)',
+                            color: e.type==='credit' ? 'var(--success-text)' : 'var(--error-text)' }}>
+                            {e.type==='credit'?'↑ Credit':'↓ Debit'}
+                          </span>
+                          <span style={{ padding:'2px 8px', borderRadius:99, fontSize:10, fontWeight:700,
+                            background: e.status==='completed' ? 'var(--success-subtle)' : 'var(--warning-subtle)',
+                            color: e.status==='completed' ? 'var(--success-text)' : 'var(--warning-text)' }}>
+                            {e.status==='completed'?'Done':'Pending'}
+                          </span>
+                        </div>
+                        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                          <span style={{ fontSize:16, fontWeight:900, color: e.type==='credit' ? 'var(--success-text)' : 'var(--error-text)' }}>
+                            ₹{e.amount.toLocaleString()}
+                          </span>
+                          <button onClick={()=>openEdit(e)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--primary)', padding:2, display:'flex' }}>
+                            <PencilSimple size={15} weight="duotone" />
+                          </button>
+                          <button onClick={()=>setDeleteConfirm(e._id)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--error)', padding:2, display:'flex' }}>
+                            <Trash size={15} weight="duotone" />
+                          </button>
+                        </div>
                       </div>
-                      <span style={{ fontSize:18, fontWeight:900, color: e.type==='credit' ? 'var(--success-text)' : 'var(--error-text)' }}>
-                        ₹{e.amount.toLocaleString()}
-                      </span>
-                    </div>
-                    {/* Name + category */}
-                    <div style={{ fontSize:14, fontWeight:700, color:'var(--maroon)', marginBottom:2 }}>{e.name}</div>
-                    <div style={{ fontSize:12, color:'var(--text-secondary)', marginBottom:8 }}>{e.category}</div>
-                    {/* Meta row */}
-                    <div style={{ fontSize:11, color:'var(--text-muted)', display:'flex', flexWrap:'wrap', gap:4, alignItems:'center', marginBottom:8 }}>
-                      <span>{yearRange(e.entryDate)}</span>
-                      {e.paymentDate && <><span>•</span><span>{new Date(e.paymentDate).toLocaleDateString('en-IN')}</span></>}
-                      {e.receiptNumber && <><span>•</span><span style={{ fontFamily:'monospace' }}>{e.receiptNumber}</span></>}
-                      <span>•</span>
-                      <span style={{ padding:'2px 8px', borderRadius:99, fontSize:10, fontWeight:700,
-                        background: e.paymentMode==='online' ? 'var(--info-subtle)' : 'var(--neutral-100)',
-                        color: e.paymentMode==='online' ? 'var(--info-text)' : 'var(--text-secondary)' }}>
-                        {e.paymentMode==='online'?'Online':'Cash'}
-                      </span>
-                    </div>
-                    {/* Balance + actions */}
-                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                      <span style={{ fontSize:12, fontWeight:700, color: e.runningBalance>=0 ? 'var(--success-text)' : 'var(--error-text)' }}>
-                        Balance: ₹{e.runningBalance.toLocaleString()}
-                      </span>
-                      <div style={{ display:'flex', gap:10 }}>
-                        <button onClick={()=>openEdit(e)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--primary)' }} title="Edit">
-                          <PencilSimple size={18} weight="duotone" />
-                        </button>
-                        <button onClick={()=>setDeleteConfirm(e._id)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--error)' }} title="Delete">
-                          <Trash size={18} weight="duotone" />
-                        </button>
+                      {/* Name + category */}
+                      <div style={{ fontSize:13, fontWeight:700, color:'var(--maroon)', marginBottom:1 }}>{e.name}</div>
+                      <div style={{ fontSize:11, color:'var(--text-secondary)', marginBottom:6 }}>{e.category}</div>
+                      {/* Meta row */}
+                      <div style={{ fontSize:10, color:'var(--text-muted)', display:'flex', flexWrap:'wrap', gap:4, alignItems:'center' }}>
+                        <span>{yearRange(e.entryDate)}</span>
+                        {e.paymentDate && <><span>·</span><span>{new Date(e.paymentDate).toLocaleDateString('en-IN')}</span></>}
+                        {e.receiptNumber && <><span>·</span><span style={{ fontFamily:'monospace', color:'var(--text-secondary)' }}>{e.receiptNumber}</span></>}
+                        <span>·</span>
+                        <span style={{ padding:'1px 6px', borderRadius:99, fontSize:9, fontWeight:700,
+                          background: e.paymentMode==='online' ? 'var(--info-subtle)' : 'var(--neutral-100)',
+                          color: e.paymentMode==='online' ? 'var(--info-text)' : 'var(--text-secondary)' }}>
+                          {e.paymentMode==='online'?'Online':'Cash'}
+                        </span>
+                        <span>·</span>
+                        <span style={{ fontWeight:600, color: e.runningBalance>=0 ? 'var(--success-text)' : 'var(--error-text)' }}>
+                          Bal: ₹{e.runningBalance.toLocaleString()}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -643,25 +658,21 @@ function Cashbook() {
                       </motion.button>
                     </div>
                   </div>
-                  {/* Row 2: Stats 2×2 grid */}
+                  {/* Row 2: Stats — single scrollable badge row */}
                   {ritualData && (
-                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-                      <div style={{ padding:'10px 12px', borderRadius:10, background:'var(--success-subtle)', textAlign:'center' }}>
-                        <div style={{ fontSize:20, fontWeight:900, color:'var(--success-text)' }}>{ritualData.paid}</div>
-                        <div style={{ fontSize:11, color:'var(--text-muted)', fontWeight:600 }}>Paid</div>
-                      </div>
-                      <div style={{ padding:'10px 12px', borderRadius:10, background:'var(--warning-subtle)', textAlign:'center' }}>
-                        <div style={{ fontSize:20, fontWeight:900, color:'var(--warning-text)' }}>{ritualData.pending}</div>
-                        <div style={{ fontSize:11, color:'var(--text-muted)', fontWeight:600 }}>Pending</div>
-                      </div>
-                      <div style={{ padding:'10px 12px', borderRadius:10, background:'var(--error-subtle)', textAlign:'center' }}>
-                        <div style={{ fontSize:20, fontWeight:900, color:'var(--error-text)' }}>{ritualData.notPaid}</div>
-                        <div style={{ fontSize:11, color:'var(--text-muted)', fontWeight:600 }}>Not Paid</div>
-                      </div>
-                      <div style={{ padding:'10px 12px', borderRadius:10, background:'var(--maroon-subtle)', textAlign:'center' }}>
-                        <div style={{ fontSize:20, fontWeight:900, color:'var(--maroon)' }}>{ritualData.totalMembers}</div>
-                        <div style={{ fontSize:11, color:'var(--text-muted)', fontWeight:600 }}>Total</div>
-                      </div>
+                    <div style={{ display:'flex', gap:8, overflowX:'auto', scrollbarWidth:'none' }}>
+                      {[
+                        { label:'Paid', value: ritualData.paid, color:'var(--success-text)', bg:'var(--success-subtle)' },
+                        { label:'Pending', value: ritualData.pending, color:'var(--warning-text)', bg:'var(--warning-subtle)' },
+                        { label:'Not Paid', value: ritualData.notPaid, color:'var(--error-text)', bg:'var(--error-subtle)' },
+                        { label:'Total', value: ritualData.totalMembers, color:'var(--maroon)', bg:'var(--maroon-subtle)' },
+                      ].map((s,i) => (
+                        <div key={i} style={{ flexShrink:0, padding:'7px 14px', borderRadius:99, background:s.bg,
+                          display:'flex', alignItems:'center', gap:6 }}>
+                          <span style={{ fontSize:16, fontWeight:900, color:s.color }}>{s.value}</span>
+                          <span style={{ fontSize:11, fontWeight:600, color:s.color, opacity:0.8 }}>{s.label}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
                   {/* Row 3: Search */}
