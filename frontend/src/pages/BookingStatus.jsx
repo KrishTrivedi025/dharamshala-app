@@ -6,12 +6,15 @@ import {
 } from '@phosphor-icons/react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import { useLanguage } from '../context/LanguageContext'
 
-const statusConfig = {
+function BookingStatus() {
+  const { t } = useLanguage()
+  const statusConfig = {
   pending: {
     icon: <Hourglass size={38} weight="duotone" />,
-    title: 'Booking Request Submitted!',
-    subtitle: 'Your request is under review by the admin',
+    title: t.bookingStatus.pending_title,
+    subtitle: t.bookingStatus.pending_sub,
     color: 'var(--warning)',
     bg: 'var(--warning-subtle)',
     steps: [
@@ -24,8 +27,8 @@ const statusConfig = {
   },
   approved: {
     icon: <CheckCircle size={38} weight="fill" />,
-    title: 'Booking Approved!',
-    subtitle: 'Your booking has been approved. Please proceed with payment.',
+    title: t.bookingStatus.approved_title,
+    subtitle: t.bookingStatus.approved_sub,
     color: 'var(--success)',
     bg: 'var(--success-subtle)',
     steps: [
@@ -38,8 +41,8 @@ const statusConfig = {
   },
   rejected: {
     icon: <XCircle size={38} weight="fill" />,
-    title: 'Booking Rejected',
-    subtitle: 'Unfortunately your booking request was not approved.',
+    title: t.bookingStatus.rejected_title,
+    subtitle: t.bookingStatus.rejected_sub,
     color: 'var(--error)',
     bg: 'var(--error-subtle)',
     steps: [
@@ -49,8 +52,6 @@ const statusConfig = {
     ],
   },
 }
-
-function BookingStatus() {
   const status = 'pending'
   const config = statusConfig[status] || statusConfig.pending
 
@@ -142,7 +143,7 @@ function BookingStatus() {
                   background: 'linear-gradient(135deg, var(--primary), var(--maroon))',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, fontFamily: 'inherit',
                 }}>
-                View My Bookings <ArrowRight size={14} weight="bold" />
+                {t.bookingStatus.view_bookings} <ArrowRight size={14} weight="bold" />
               </motion.button>
             </Link>
             <Link to="/" style={{ textDecoration: 'none', flex: 1 }}>
@@ -153,7 +154,7 @@ function BookingStatus() {
                   fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--text-secondary)',
                   background: 'var(--surface-solid)', fontFamily: 'inherit',
                 }}>
-                Back to Home
+                {t.common.back}
               </motion.button>
             </Link>
           </div>

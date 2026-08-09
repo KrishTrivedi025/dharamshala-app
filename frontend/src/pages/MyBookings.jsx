@@ -12,6 +12,7 @@ import {
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { bookingAPI } from '../utils/api'
+import { useLanguage } from '../context/LanguageContext'
 
 const STATUS_CONFIG = {
   pending:   { color: 'var(--warning)',  bg: 'var(--warning-subtle)',  label: 'Pending Review', icon: <Hourglass size={13} weight="duotone" />,     step: 2 },
@@ -41,6 +42,7 @@ const _to12h = (t) => {
 }
 
 function MyBookings() {
+  const { t } = useLanguage()
   const [activeFilter, setActiveFilter] = useState('All')
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
@@ -124,7 +126,7 @@ function MyBookings() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 5 }}>
               <ClipboardText size={40} weight="duotone" style={{ color: 'white' }} />
               <div>
-                <h1 style={{ fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 900, color: 'white', marginBottom: 3 }}>My Bookings</h1>
+                <h1 style={{ fontSize: 'clamp(24px, 3.5vw, 38px)', fontWeight: 900, color: 'white', marginBottom: 3 }}>{t.myBookings.title}</h1>
                 <p style={{ fontSize: 'var(--text-sm)', color: 'rgba(255,255,255,0.48)' }}>
                   {bookings.length} total booking{bookings.length !== 1 ? 's' : ''} · Track and manage your hall reservations
                 </p>
@@ -133,7 +135,7 @@ function MyBookings() {
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
             style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
-            {[{ label: 'Pending', count: counts.pending || 0, color: 'var(--secondary)' }, { label: 'Approved', count: counts.approved || 0, color: '#22c55e' }, { label: 'Completed', count: counts.completed || 0, color: '#a78bfa' }].map(s => (
+            {[{ label: t.myBookings.submitted, count: counts.pending || 0, color: 'var(--secondary)' }, { label: t.dashboard.approved, count: counts.approved || 0, color: '#22c55e' }, { label: t.booking.status_confirmed, count: counts.completed || 0, color: '#a78bfa' }].map(s => (
               <div key={s.label} style={{ padding: '9px 16px', borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: 9 }}>
                 <div style={{ width: 7, height: 7, borderRadius: '50%', background: s.color }} />
                 <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'rgba(255,255,255,0.65)' }}>{s.label}</span>
@@ -191,14 +193,14 @@ function MyBookings() {
               <motion.div key="empty" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                 style={{ borderRadius: 'var(--radius-xl)', padding: '72px 32px', background: 'var(--surface-solid)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)', textAlign: 'center' }}>
                 <Building size={64} weight="duotone" style={{ color: 'var(--neutral-300)', marginBottom: 18 }} />
-                <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 900, color: 'var(--maroon)', marginBottom: 8 }}>No bookings found</h3>
+                <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 900, color: 'var(--maroon)', marginBottom: 8 }}>{t.myBookings.no_bookings}</h3>
                 <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 24, maxWidth: 320, margin: '0 auto 24px' }}>
-                  {activeFilter === 'All' ? "You haven't made any bookings yet. Book the hall for your next event!" : `No ${activeFilter.toLowerCase()} bookings found.`}
+                  {activeFilter === 'All' ? t.myBookings.no_bookings_sub : `No ${activeFilter.toLowerCase()} bookings found.`}
                 </p>
                 <Link to="/booking" style={{ textDecoration: 'none' }}>
                   <motion.button whileHover={{ scale: 1.04, boxShadow: '0 10px 26px var(--primary-border)' }} whileTap={{ scale: 0.97 }}
                     style={{ padding: '13px 28px', borderRadius: 'var(--radius-full)', border: 'none', cursor: 'pointer', fontSize: 'var(--text-base)', fontWeight: 800, color: 'white', background: 'linear-gradient(135deg, var(--primary), var(--maroon))', display: 'inline-flex', alignItems: 'center', gap: 8, fontFamily: 'inherit' }}>
-                    Book Hall Now <ArrowRight size={14} weight="bold" />
+                    {t.myBookings.book_now} <ArrowRight size={14} weight="bold" />
                   </motion.button>
                 </Link>
               </motion.div>
@@ -247,7 +249,7 @@ function MyBookings() {
                           {/* Right — price + actions */}
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 7, minWidth: 130 }}>
                             <div style={{ fontSize: 'var(--text-xl)', fontWeight: 900, color: booking.totalAmount ? 'var(--maroon)' : 'var(--text-muted)' }}>
-                              {booking.totalAmount ? `₹${booking.totalAmount.toLocaleString()}` : 'Price TBD'}
+                              {booking.totalAmount ? `₹${booking.totalAmount.toLocaleString()}` : t.myBookings.price_tbd}
                             </div>
                             {needsPayment && (
                               <motion.button whileHover={{ scale: 1.04, boxShadow: '0 6px 18px rgba(22,163,74,0.32)' }} whileTap={{ scale: 0.95 }}
@@ -286,7 +288,7 @@ function MyBookings() {
                               <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
                                 {sc.step > 0 && (
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginBottom: 18 }}>
-                                    {['Submitted', 'Under Review', 'Approved', 'Payment', 'Complete'].map((label, idx) => {
+                                    {[t.myBookings.submitted, t.myBookings.under_review, t.myBookings.approved, t.myBookings.payment, t.myBookings.complete].map((label, idx) => {
                                       const active = idx < sc.step || (idx === 3 && isPaid)
                                       const current = (isPaid && sc.step < 5) ? idx === 4 : idx === sc.step - 1
                                       return (
@@ -390,11 +392,11 @@ function MyBookings() {
               <div style={{ display: 'flex', gap: 10 }}>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => setShowCancelModal(null)}
                   style={{ flex: 1, padding: '12px', borderRadius: 'var(--radius-full)', border: '1.5px solid var(--border)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-secondary)', background: 'var(--surface-solid)', fontFamily: 'inherit' }}>
-                  Keep Booking
+                  {t.myBookings.keep_booking}
                 </motion.button>
                 <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={() => handleCancel(showCancelModal._id)} disabled={cancellingId === showCancelModal._id}
                   style={{ flex: 1, padding: '12px', borderRadius: 'var(--radius-full)', border: 'none', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 700, color: 'white', background: cancellingId === showCancelModal._id ? 'var(--neutral-400)' : 'var(--error)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, fontFamily: 'inherit' }}>
-                  {cancellingId === showCancelModal._id ? 'Cancelling…' : <><XCircle size={14} weight="bold" /> Cancel Booking</>}
+                  {cancellingId === showCancelModal._id ? 'Cancelling…' : <><XCircle size={14} weight="bold" /> {t.myBookings.cancel_booking}</>}
                 </motion.button>
               </div>
             </motion.div>

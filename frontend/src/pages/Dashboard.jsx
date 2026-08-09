@@ -9,30 +9,32 @@ import {
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import { bookingAPI, ritualAPI } from '../utils/api'
 import RitualPaymentModal from '../components/RitualPaymentModal'
 import { STATUS_COLORS, cardStyle } from '../styles/theme'
 
-const quickActions = [
-  { icon: <Building size={24} weight="duotone" />, label: 'Book Hall', desc: 'Request a new booking', path: '/booking', color: 'var(--primary)', colorRaw: '#FF6B35' },
-  { icon: <ClipboardText size={24} weight="duotone" />, label: 'My Bookings', desc: 'View all your bookings', path: '/my-bookings', color: 'var(--maroon)', colorRaw: '#8B1A1A' },
-  { icon: <Bell size={24} weight="duotone" />, label: 'Notifications', desc: 'Check your alerts', path: '/notifications', color: 'var(--secondary)', colorRaw: '#F7C948' },
-  { icon: <UserCircle size={24} weight="duotone" />, label: 'Profile', desc: 'Update your details', path: '/profile', color: 'var(--success)', colorRaw: '#059669' },
-]
-
 function Dashboard() {
   const { user } = useAuth()
+  const { t } = useLanguage()
   const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 })
   const [recentBookings, setRecentBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [ritualStatus, setRitualStatus] = useState(null)
   const [showRitualModal, setShowRitualModal] = useState(false)
 
+  const quickActions = [
+    { icon: <Building size={24} weight="duotone" />, label: t.dashboard.book_hall, desc: t.dashboard.book_hall_desc, path: '/booking', color: 'var(--primary)', colorRaw: '#FF6B35' },
+    { icon: <ClipboardText size={24} weight="duotone" />, label: t.dashboard.my_bookings, desc: t.dashboard.my_bookings_desc, path: '/my-bookings', color: 'var(--maroon)', colorRaw: '#8B1A1A' },
+    { icon: <Bell size={24} weight="duotone" />, label: t.dashboard.notifications, desc: t.dashboard.notifications_desc, path: '/notifications', color: 'var(--secondary)', colorRaw: '#F7C948' },
+    { icon: <UserCircle size={24} weight="duotone" />, label: t.dashboard.profile, desc: t.dashboard.profile_desc, path: '/profile', color: 'var(--success)', colorRaw: '#059669' },
+  ]
+
   const getGreeting = () => {
     const h = new Date().getHours()
-    if (h < 12) return 'Good Morning'
-    if (h < 17) return 'Good Afternoon'
-    return 'Good Evening'
+    if (h < 12) return t.dashboard.greeting_morning
+    if (h < 17) return t.dashboard.greeting_afternoon
+    return t.dashboard.greeting_evening
   }
 
   useEffect(() => {
@@ -64,10 +66,10 @@ function Dashboard() {
   }, [])
 
   const statCards = [
-    { icon: <ClipboardText size={22} weight="duotone" />, label: 'Total Bookings', value: stats.total, color: 'var(--primary)', bg: 'var(--primary-subtle)' },
-    { icon: <Hourglass size={22} weight="duotone" />, label: 'Pending', value: stats.pending, color: 'var(--warning)', bg: 'var(--warning-subtle)' },
-    { icon: <CheckCircle size={22} weight="duotone" />, label: 'Approved', value: stats.approved, color: 'var(--success)', bg: 'var(--success-subtle)' },
-    { icon: <XCircle size={22} weight="duotone" />, label: 'Rejected', value: stats.rejected, color: 'var(--error)', bg: 'var(--error-subtle)' },
+    { icon: <ClipboardText size={22} weight="duotone" />, label: t.dashboard.total_bookings, value: stats.total, color: 'var(--primary)', bg: 'var(--primary-subtle)' },
+    { icon: <Hourglass size={22} weight="duotone" />, label: t.dashboard.pending, value: stats.pending, color: 'var(--warning)', bg: 'var(--warning-subtle)' },
+    { icon: <CheckCircle size={22} weight="duotone" />, label: t.dashboard.approved, value: stats.approved, color: 'var(--success)', bg: 'var(--success-subtle)' },
+    { icon: <XCircle size={22} weight="duotone" />, label: t.booking.status_rejected, value: stats.rejected, color: 'var(--error)', bg: 'var(--error-subtle)' },
   ]
 
   return (
@@ -180,7 +182,7 @@ function Dashboard() {
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
             style={cardStyle}>
             <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 800, color: 'var(--maroon)', marginBottom: 18 }}>
-              Quick Actions
+              {t.dashboard.quick_actions}
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               {quickActions.map((action, i) => (
@@ -205,10 +207,10 @@ function Dashboard() {
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
             style={cardStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-              <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 800, color: 'var(--maroon)' }}>Recent Bookings</h3>
+              <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 800, color: 'var(--maroon)' }}>{t.dashboard.recent_activity}</h3>
               <Link to="/my-bookings" style={{ textDecoration: 'none' }}>
                 <span style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                  View All <ArrowRight size={13} weight="bold" />
+                  {t.dashboard.view_all}
                 </span>
               </Link>
             </div>
@@ -222,8 +224,8 @@ function Dashboard() {
             ) : recentBookings.length === 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '36px 20px', textAlign: 'center' }}>
                 <Building size={52} weight="duotone" style={{ color: 'var(--neutral-300)', marginBottom: 14 }} />
-                <p style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--maroon)', marginBottom: 6 }}>No bookings yet</p>
-                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 18 }}>Your booking history will appear here</p>
+                <p style={{ fontSize: 'var(--text-base)', fontWeight: 600, color: 'var(--maroon)', marginBottom: 6 }}>{t.dashboard.no_activity}</p>
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', marginBottom: 18 }}>{t.dashboard.no_activity_sub}</p>
                 <Link to="/booking" style={{ textDecoration: 'none' }}>
                   <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
                     style={{
@@ -232,7 +234,7 @@ function Dashboard() {
                       background: 'linear-gradient(135deg, var(--primary), var(--maroon))',
                       display: 'flex', alignItems: 'center', gap: 7, fontFamily: 'inherit',
                     }}>
-                    Book Now <ArrowRight size={13} weight="bold" />
+                    {t.myBookings.book_now} <ArrowRight size={13} weight="bold" />
                   </motion.button>
                 </Link>
               </div>
@@ -292,7 +294,7 @@ function Dashboard() {
                 cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 600,
                 color: 'var(--primary)', background: 'transparent', fontFamily: 'inherit',
               }}>
-              Edit Profile
+              {t.profile.edit}
             </motion.button>
           </Link>
         </motion.div>

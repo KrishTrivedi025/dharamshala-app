@@ -7,6 +7,7 @@ import {
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { bookingAPI } from '../utils/api'
+import { useLanguage } from '../context/LanguageContext'
 
 const NOTIF_TYPES = {
   booking: { icon: <Building size={20} weight="duotone" />, color: 'var(--primary)' },
@@ -18,6 +19,7 @@ const NOTIF_TYPES = {
 }
 
 function Notifications() {
+  const { t } = useLanguage()
   const [notifications, setNotifications] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('All')
@@ -84,14 +86,14 @@ function Notifications() {
         <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 2 }}>
           <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55 }}>
             <h1 style={{ fontSize: 'clamp(22px, 3vw, 34px)', fontWeight: 900, color: 'white', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 12 }}>
-              Notifications
+              {t.notifications.title}
               {unreadCount > 0 && (
                 <span style={{ fontSize: 'var(--text-sm)', background: 'var(--primary)', color: 'white', padding: '2px 10px', borderRadius: 'var(--radius-full)', fontWeight: 700 }}>
-                  {unreadCount} new
+                  {unreadCount} {t.notifications.new}
                 </span>
               )}
             </h1>
-            <p style={{ fontSize: 'var(--text-base)', color: 'rgba(255,255,255,0.5)' }}>Stay updated with your booking alerts and reminders</p>
+            <p style={{ fontSize: 'var(--text-base)', color: 'rgba(255,255,255,0.5)' }}>{t.notifications.subtitle}</p>
           </motion.div>
         </div>
       </div>
@@ -100,18 +102,24 @@ function Notifications() {
         {/* Filter pills */}
         <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45 }}
           style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-          {['All', 'Unread', 'Booking', 'Payment', 'Reminder'].map(f => (
-            <motion.button key={f} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-              onClick={() => { setFilter(f); setCurrentPage(1) }}
+          {[
+            { key: 'All', label: t.notifications.filter_all },
+            { key: 'Unread', label: t.notifications.filter_unread },
+            { key: 'Booking', label: t.notifications.filter_booking },
+            { key: 'Payment', label: t.notifications.filter_payment },
+            { key: 'Reminder', label: t.notifications.filter_reminder },
+          ].map(({ key, label }) => (
+            <motion.button key={key} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+              onClick={() => { setFilter(key); setCurrentPage(1) }}
               style={{
                 padding: '7px 16px', borderRadius: 'var(--radius-full)', border: 'none',
                 cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 700, transition: 'all 0.2s',
-                background: filter === f ? 'linear-gradient(135deg, var(--primary), var(--maroon))' : 'var(--surface-solid)',
-                color: filter === f ? 'white' : 'var(--text-secondary)',
-                boxShadow: filter === f ? '0 4px 14px var(--primary-border)' : 'var(--shadow-sm)',
+                background: filter === key ? 'linear-gradient(135deg, var(--primary), var(--maroon))' : 'var(--surface-solid)',
+                color: filter === key ? 'white' : 'var(--text-secondary)',
+                boxShadow: filter === key ? '0 4px 14px var(--primary-border)' : 'var(--shadow-sm)',
                 fontFamily: 'inherit',
               }}>
-              {f}
+              {label}
             </motion.button>
           ))}
         </motion.div>
@@ -124,15 +132,15 @@ function Notifications() {
                 style={{ display: 'inline-block', color: 'var(--primary)', marginBottom: 16 }}>
                 <CircleNotch size={44} weight="bold" />
               </motion.div>
-              <p style={{ fontSize: 'var(--text-base)', color: 'var(--text-muted)' }}>Loading notifications…</p>
+              <p style={{ fontSize: 'var(--text-base)', color: 'var(--text-muted)' }}>{t.notifications.loading}</p>
             </div>
           ) : notifications.length === 0 ? (
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
               style={{ borderRadius: 'var(--radius-xl)', padding: '72px 32px', background: 'var(--surface-solid)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)', textAlign: 'center' }}>
               <BellSlash size={60} weight="duotone" style={{ color: 'var(--neutral-300)', marginBottom: 18 }} />
-              <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--maroon)', marginBottom: 8 }}>No notifications yet</h3>
+              <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 800, color: 'var(--maroon)', marginBottom: 8 }}>{t.notifications.empty}</h3>
               <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-muted)', maxWidth: 280, margin: '0 auto' }}>
-                You will receive alerts here when your bookings are updated or payments are due
+                {t.notifications.empty_sub}
               </p>
             </motion.div>
           ) : (

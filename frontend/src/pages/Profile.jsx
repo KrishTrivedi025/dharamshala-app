@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { useAuth } from '../context/AuthContext'
 import { authAPI } from '../utils/api'
+import { useLanguage } from '../context/LanguageContext'
 
 const fieldBase = (focused, disabled) => ({
   width: '100%', padding: '12px 15px', borderRadius: 'var(--radius-md)', boxSizing: 'border-box',
@@ -18,6 +19,7 @@ const fieldBase = (focused, disabled) => ({
 
 function Profile() {
   const { user, updateUser } = useAuth()
+  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState('profile')
   const [editing, setEditing] = useState(false)
   const [focusedField, setFocusedField] = useState(null)
@@ -37,7 +39,7 @@ function Profile() {
       setSaving(true); setSaveMsg(null)
       const res = await authAPI.updateProfile(formData)
       updateUser({ ...user, ...res.data }); setEditing(false)
-      setSaveMsg({ type: 'success', text: 'Profile updated successfully!' })
+      setSaveMsg({ type: 'success', text: t.profile.update_success })
       setTimeout(() => setSaveMsg(null), 3000)
     } catch (err) {
       setSaveMsg({ type: 'error', text: err.message || 'Failed to update profile' })
@@ -50,7 +52,7 @@ function Profile() {
     try {
       setPwSaving(true); setPwMsg(null)
       await authAPI.changePassword({ currentPassword: passwordData.currentPassword, newPassword: passwordData.newPassword })
-      setPwMsg({ type: 'success', text: 'Password changed successfully!' })
+      setPwMsg({ type: 'success', text: t.profile.password_success })
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
       setTimeout(() => setPwMsg(null), 3000)
     } catch (err) {
@@ -59,8 +61,8 @@ function Profile() {
   }
 
   const tabs = [
-    { key: 'profile', label: 'Profile', icon: <User size={15} weight="duotone" /> },
-    { key: 'password', label: 'Password', icon: <Lock size={15} weight="duotone" /> },
+    { key: 'profile', label: t.profile.tab_profile, icon: <User size={15} weight="duotone" /> },
+    { key: 'password', label: t.profile.tab_password, icon: <Lock size={15} weight="duotone" /> },
   ]
 
   return (
@@ -121,17 +123,17 @@ function Profile() {
               {!editing ? (
                 <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} onClick={() => setEditing(true)}
                   style={{ padding: '8px 18px', borderRadius: 'var(--radius-full)', border: '1.5px solid var(--primary-border)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--primary)', background: 'transparent', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
-                  <PencilSimple size={14} weight="bold" /> Edit
+                  <PencilSimple size={14} weight="bold" /> {t.profile.edit}
                 </motion.button>
               ) : (
                 <div style={{ display: 'flex', gap: 8 }}>
                   <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} onClick={() => setEditing(false)}
                     style={{ padding: '8px 18px', borderRadius: 'var(--radius-full)', border: '1.5px solid var(--border)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-secondary)', background: 'transparent', fontFamily: 'inherit' }}>
-                    Cancel
+                    {t.profile.cancel}
                   </motion.button>
                   <motion.button whileHover={{ scale: 1.04, boxShadow: '0 8px 20px var(--primary-border)' }} whileTap={{ scale: 0.97 }} onClick={handleSave} disabled={saving}
                     style={{ padding: '8px 18px', borderRadius: 'var(--radius-full)', border: 'none', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 700, color: 'white', background: saving ? 'var(--neutral-400)' : 'linear-gradient(135deg, var(--primary), var(--maroon))', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
-                    {saving ? 'Saving…' : <><ArrowRight size={13} weight="bold" /> Save Changes</>}
+                    {saving ? t.profile.saving : <><ArrowRight size={13} weight="bold" /> {t.profile.save}</>}
                   </motion.button>
                 </div>
               )}
@@ -139,9 +141,9 @@ function Profile() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
               {[
-                { label: 'Full Name', name: 'name', type: 'text', placeholder: 'Your full name' },
-                { label: 'Email Address', name: 'email', type: 'email', placeholder: 'your@email.com' },
-                { label: 'Phone Number', name: 'phone', type: 'tel', placeholder: '10-digit number' },
+                { label: t.profile.name, name: 'name', type: 'text', placeholder: 'Your full name' },
+                { label: t.profile.email, name: 'email', type: 'email', placeholder: 'your@email.com' },
+                { label: t.profile.phone, name: 'phone', type: 'tel', placeholder: '10-digit number' },
               ].map((field) => (
                 <div key={field.name}>
                   <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
@@ -154,9 +156,9 @@ function Profile() {
                 </div>
               ))}
               <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.6px', textTransform: 'uppercase' }}>Address</label>
+                <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.6px', textTransform: 'uppercase' }}>{t.profile.address}</label>
                 <textarea name="address" value={formData.address} onChange={handleChange}
-                  placeholder="Your full address" disabled={!editing} rows={3}
+                  placeholder={t.profile.address_placeholder} disabled={!editing} rows={3}
                   onFocus={() => setFocusedField('address')} onBlur={() => setFocusedField(null)}
                   style={{ ...fieldBase(focusedField === 'address', !editing), resize: 'none', lineHeight: 1.6 }} />
               </div>
@@ -168,12 +170,12 @@ function Profile() {
         {activeTab === 'password' && (
           <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
             style={{ borderRadius: 'var(--radius-xl)', padding: '28px', background: 'var(--surface-solid)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)' }}>
-            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 800, color: 'var(--maroon)', marginBottom: 24 }}>Change Password</h3>
+            <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 800, color: 'var(--maroon)', marginBottom: 24 }}>{t.profile.tab_password}</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               {[
-                { label: 'Current Password', name: 'currentPassword', key: 'current' },
-                { label: 'New Password', name: 'newPassword', key: 'new' },
-                { label: 'Confirm New Password', name: 'confirmPassword', key: 'confirm' },
+                { label: t.profile.current_password, name: 'currentPassword', key: 'current' },
+                { label: t.profile.new_password, name: 'newPassword', key: 'new' },
+                { label: t.profile.confirm_password, name: 'confirmPassword', key: 'confirm' },
               ].map((field) => (
                 <div key={field.name}>
                   <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
@@ -204,7 +206,7 @@ function Profile() {
                 onClick={handlePasswordSubmit} disabled={pwSaving}
                 style={{ padding: '13px', borderRadius: 'var(--radius-full)', border: 'none', cursor: pwSaving ? 'not-allowed' : 'pointer', fontSize: 'var(--text-base)', fontWeight: 700, color: 'white', background: pwSaving ? 'var(--neutral-400)' : 'linear-gradient(135deg, var(--primary), var(--maroon))', boxShadow: '0 6px 18px var(--primary-border)', marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit' }}>
                 <Lock size={15} weight="bold" />
-                {pwSaving ? 'Updating…' : 'Update Password'}
+                {pwSaving ? t.profile.updating : t.profile.update_password}
               </motion.button>
             </div>
           </motion.div>
