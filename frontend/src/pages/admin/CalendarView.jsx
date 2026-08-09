@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { AdminSidebar } from './AdminDashboard'
 import { adminAPI } from '../../utils/api'
+import { LockSimple } from '@phosphor-icons/react'
+import { cardStyleSolid, STATUS_COLORS } from '../../styles/theme'
 
 const to12h = (t) => {
   if (!t) return ''
@@ -15,14 +17,6 @@ const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ]
-
-const STATUS_COLORS = {
-  pending: { color: '#d97706', bg: 'rgba(247,201,72,0.12)', label: 'Pending' },
-  approved: { color: '#16a34a', bg: 'rgba(22,163,74,0.1)', label: 'Approved' },
-  rejected: { color: '#ef4444', bg: 'rgba(239,68,68,0.1)', label: 'Rejected' },
-  cancelled: { color: '#6b7280', bg: 'rgba(107,114,128,0.1)', label: 'Cancelled' },
-  completed: { color: '#8B1A1A', bg: 'rgba(139,26,26,0.08)', label: 'Completed' },
-}
 
 function CalendarView() {
   const today = new Date()
@@ -70,35 +64,44 @@ function CalendarView() {
 
   const selectedDayBookings = selectedDay ? getBookingsForDay(selectedDay) : []
 
+  const prevMonth = () => {
+    setSelectedDay(null)
+    if (calMonth === 0) { setCalMonth(11); setCalYear(calYear - 1) }
+    else setCalMonth(calMonth - 1)
+  }
+  const nextMonth = () => {
+    setSelectedDay(null)
+    if (calMonth === 11) { setCalMonth(0); setCalYear(calYear + 1) }
+    else setCalMonth(calMonth + 1)
+  }
+
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: 'var(--background)' }}><AdminSidebar />
-      <div style={{ flex: 1, padding: '40px 36px', height: '100vh', overflowY: 'auto'  }}>
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', backgroundColor: 'var(--background)' }}>
+      <AdminSidebar />
+      <div style={{ flex: 1, padding: '40px 36px', height: '100vh', overflowY: 'auto' }}>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 32 }}>
           <h1 style={{ fontSize: 28, fontWeight: 900, color: 'var(--maroon)', marginBottom: 6 }}>Calendar View</h1>
-          <p style={{ fontSize: 14, color: '#9ca3af' }}>View all bookings and locked dates at a glance</p>
+          <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>View all bookings and locked dates at a glance</p>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          style={{
-            borderRadius: 24, padding: '32px',
-            background: 'rgba(255,255,255,0.92)',
-            border: '1.5px solid rgba(255,107,53,0.08)',
-            boxShadow: '0 4px 20px rgba(139,26,26,0.06)',
-          }}>
+          style={cardStyleSolid}>
           {/* Navigation */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
             <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-              onClick={() => { if (calMonth === 0) { setCalMonth(11); setCalYear(calYear - 1) } else setCalMonth(calMonth - 1); setSelectedDay(null) }}
-              style={{ width: 40, height: 40, borderRadius: 12, border: '1.5px solid #ede8e0', background: 'white', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              onClick={prevMonth}
+              aria-label="Previous month"
+              style={{ width: 40, height: 40, borderRadius: 12, border: '1.5px solid var(--border)', background: 'white', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               ‹
             </motion.button>
             <div style={{ textAlign: 'center' }}>
               <h2 style={{ fontSize: 22, fontWeight: 900, color: 'var(--maroon)' }}>{MONTH_NAMES[calMonth]} {calYear}</h2>
-              {loading && <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>Loading...</div>}
+              {loading && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>Loading...</div>}
             </div>
             <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-              onClick={() => { if (calMonth === 11) { setCalMonth(0); setCalYear(calYear + 1) } else setCalMonth(calMonth + 1); setSelectedDay(null) }}
-              style={{ width: 40, height: 40, borderRadius: 12, border: '1.5px solid #ede8e0', background: 'white', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              onClick={nextMonth}
+              aria-label="Next month"
+              style={{ width: 40, height: 40, borderRadius: 12, border: '1.5px solid var(--border)', background: 'white', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               ›
             </motion.button>
           </div>
@@ -106,7 +109,7 @@ function CalendarView() {
           {/* Day Headers */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 8, gap: 4 }}>
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-              <div key={d} style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#9ca3af', padding: '8px 0' }}>{d}</div>
+              <div key={d} style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', padding: '8px 0' }}>{d}</div>
             ))}
           </div>
 
@@ -120,18 +123,26 @@ function CalendarView() {
               const todayDay = isToday(day)
               const selected = selectedDay === day
               const isPast = new Date(calYear, calMonth, day) < new Date(today.getFullYear(), today.getMonth(), today.getDate())
-              let bg = 'transparent', border = '1.5px solid #f0e6d3', color = isPast ? '#d1d5db' : 'var(--text)'
-              if (todayDay) { bg = 'linear-gradient(135deg, #FF6B35, #8B1A1A)'; color = 'white'; border = 'none' }
-              else if (selected) { border = '2px solid var(--primary)'; bg = 'rgba(255,107,53,0.06)' }
-              else if (locked) { bg = 'rgba(247,201,72,0.12)'; border = '1.5px solid rgba(247,201,72,0.3)'; color = '#d97706' }
-              else if (dayBookings.length > 0) { bg = 'rgba(22,163,74,0.08)'; border = '1.5px solid rgba(22,163,74,0.2)'; color = '#16a34a' }
+              let bg = 'transparent', border = '1.5px solid var(--border)', color = isPast ? 'var(--neutral-300)' : 'var(--text)'
+              if (todayDay)          { bg = 'linear-gradient(135deg, var(--primary), var(--maroon))'; color = 'white'; border = 'none' }
+              else if (selected)     { border = '2px solid var(--primary)'; bg = 'var(--primary-subtle)' }
+              else if (locked)       { bg = 'var(--warning-subtle)'; border = '1.5px solid rgba(217,119,6,0.3)'; color = 'var(--warning-text)' }
+              else if (dayBookings.length > 0) { bg = 'var(--success-subtle)'; border = '1.5px solid rgba(5,150,105,0.2)'; color = 'var(--success-text)' }
               return (
                 <motion.div key={day} whileHover={{ scale: 1.06 }}
                   onClick={() => setSelectedDay(selected ? null : day)}
-                  style={{ minHeight: 68, borderRadius: 12, padding: '8px', background: bg, border, color, cursor: 'pointer', transition: 'all 0.2s ease', boxShadow: todayDay ? '0 4px 14px rgba(255,107,53,0.4)' : 'none' }}>
+                  style={{ minHeight: 68, borderRadius: 12, padding: '8px', background: bg, border, color, cursor: 'pointer', transition: 'all 0.2s ease', boxShadow: todayDay ? 'var(--shadow-lg)' : 'none' }}>
                   <div style={{ fontSize: 13, fontWeight: todayDay ? 900 : 600, marginBottom: 4 }}>{day}</div>
-                  {locked && <div style={{ fontSize: 10, fontWeight: 700, color: '#d97706' }}>🔒 Locked</div>}
-                  {dayBookings.length > 0 && <div style={{ fontSize: 10, fontWeight: 700, color: '#16a34a' }}>{dayBookings.length} booking{dayBookings.length > 1 ? 's' : ''}</div>}
+                  {locked && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10, fontWeight: 700, color: 'var(--warning-text)' }}>
+                      <LockSimple size={10} weight="fill" /> Locked
+                    </div>
+                  )}
+                  {dayBookings.length > 0 && (
+                    <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--success-text)' }}>
+                      {dayBookings.length} booking{dayBookings.length > 1 ? 's' : ''}
+                    </div>
+                  )}
                 </motion.div>
               )
             })}
@@ -140,14 +151,14 @@ function CalendarView() {
           {/* Legend */}
           <div style={{ display: 'flex', gap: 20, marginTop: 24, flexWrap: 'wrap' }}>
             {[
-              { bg: 'linear-gradient(135deg, #FF6B35, #8B1A1A)', label: 'Today' },
-              { bg: 'rgba(22,163,74,0.08)', border: '1.5px solid rgba(22,163,74,0.2)', label: 'Has Bookings' },
-              { bg: 'rgba(247,201,72,0.12)', border: '1.5px solid rgba(247,201,72,0.3)', label: 'Locked' },
-              { bg: 'transparent', border: '1.5px solid #f0e6d3', label: 'Available' },
+              { bg: 'linear-gradient(135deg, var(--primary), var(--maroon))', label: 'Today' },
+              { bg: 'var(--success-subtle)', border: '1.5px solid rgba(5,150,105,0.2)', label: 'Has Bookings' },
+              { bg: 'var(--warning-subtle)', border: '1.5px solid rgba(217,119,6,0.3)', label: 'Locked' },
+              { bg: 'transparent', border: '1.5px solid var(--border)', label: 'Available' },
             ].map((l, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div style={{ width: 18, height: 18, borderRadius: 5, background: l.bg, border: l.border || 'none' }} />
-                <span style={{ fontSize: 12, color: '#6b7280', fontWeight: 500 }}>{l.label}</span>
+                <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500 }}>{l.label}</span>
               </div>
             ))}
           </div>
@@ -156,7 +167,7 @@ function CalendarView() {
         {/* Selected Day Details */}
         {selectedDay && selectedDayBookings.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            style={{ marginTop: 24, borderRadius: 24, padding: '28px', background: 'rgba(255,255,255,0.92)', border: '1.5px solid rgba(255,107,53,0.08)', boxShadow: '0 4px 20px rgba(139,26,26,0.06)' }}>
+            style={{ marginTop: 24, ...cardStyleSolid }}>
             <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--maroon)', marginBottom: 16 }}>
               Bookings on {MONTH_NAMES[calMonth]} {selectedDay}, {calYear}
             </h3>
@@ -164,12 +175,20 @@ function CalendarView() {
               {selectedDayBookings.map((booking, i) => {
                 const st = STATUS_COLORS[booking.status] || STATUS_COLORS.pending
                 return (
-                  <div key={booking._id || i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 16px', borderRadius: 12, background: 'rgba(255,107,53,0.03)', border: '1.5px solid rgba(255,107,53,0.06)' }}>
+                  <div key={booking._id || i} style={{
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    padding: '12px 16px', borderRadius: 12,
+                    background: 'var(--primary-subtle)', border: '1px solid var(--border)',
+                  }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--maroon)' }}>{booking.eventName}</div>
-                      <div style={{ fontSize: 12, color: '#9ca3af' }}>{booking.user?.name} • {to12h(booking.startTime)} – {to12h(booking.endTime)} • {booking.expectedGuests} guests</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                        {booking.user?.name} • {to12h(booking.startTime)} – {to12h(booking.endTime)} • {booking.expectedGuests} guests
+                      </div>
                     </div>
-                    <div style={{ padding: '4px 12px', borderRadius: 99, background: st.bg, color: st.color, fontSize: 11, fontWeight: 700 }}>{st.label}</div>
+                    <div style={{ padding: '4px 12px', borderRadius: 99, background: st.bg, color: st.text, fontSize: 11, fontWeight: 700 }}>
+                      {st.label}
+                    </div>
                   </div>
                 )
               })}

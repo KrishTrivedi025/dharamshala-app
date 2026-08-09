@@ -1,11 +1,27 @@
 import { motion, AnimatePresence } from 'framer-motion'
+import { DownloadSimple, Hourglass } from '@phosphor-icons/react'
 
 function RitualFloatingIcon({ ritualStatus, onClick }) {
-  // Show only if user is logged in and hasn't paid
   if (!ritualStatus) return null
-  const isPending = ritualStatus.isPending
-  const hasPaid = ritualStatus.hasPaid
-  const year = ritualStatus.year || new Date().getFullYear()
+  const { isPending, hasPaid, year = new Date().getFullYear() } = ritualStatus
+
+  const bgGradient = hasPaid
+    ? 'linear-gradient(135deg, var(--success), #064e3b)'
+    : isPending
+    ? 'linear-gradient(135deg, var(--warning), #92400e)'
+    : 'linear-gradient(135deg, var(--primary), var(--maroon))'
+
+  const shadow = hasPaid
+    ? '0 8px 28px rgba(22,163,74,0.5)'
+    : isPending
+    ? '0 8px 28px rgba(217,119,6,0.5)'
+    : '0 8px 28px rgba(255,107,53,0.55)'
+
+  const tooltipBg = hasPaid
+    ? 'linear-gradient(135deg, #14532d, #064e3b)'
+    : 'linear-gradient(135deg, #1a0000, #5a0e0e)'
+
+  const tooltipArrow = hasPaid ? '#064e3b' : '#5a0e0e'
 
   return (
     <AnimatePresence>
@@ -16,20 +32,18 @@ function RitualFloatingIcon({ ritualStatus, onClick }) {
         transition={{ type: 'spring', stiffness: 260, damping: 18 }}
         style={{
           position: 'fixed', bottom: 100, right: 24,
-          zIndex: 8888, cursor: 'pointer', userSelect: 'none',
+          zIndex: 'var(--z-floating-cta)', cursor: 'pointer', userSelect: 'none',
         }}
         onClick={onClick}
       >
-        {/* Ripple rings (Only if not paid and not pending) */}
+        {/* Ripple rings — only when unpaid and not pending */}
         {!isPending && !hasPaid && [1, 2, 3].map(i => (
-          <motion.div
-            key={i}
+          <motion.div key={i}
             animate={{ scale: [1, 2.2], opacity: [0.4, 0] }}
             transition={{ duration: 2, repeat: Infinity, delay: i * 0.6, ease: 'easeOut' }}
             style={{
               position: 'absolute', inset: 0, borderRadius: '50%',
-              background: 'rgba(255,107,53,0.4)',
-              pointerEvents: 'none',
+              background: 'rgba(255,107,53,0.4)', pointerEvents: 'none',
             }}
           />
         ))}
@@ -45,23 +59,17 @@ function RitualFloatingIcon({ ritualStatus, onClick }) {
           }
           transition={!isPending && !hasPaid ? { duration: 2, repeat: Infinity } : {}}
           style={{
-            width: 64, height: 64, borderRadius: '50%',
-            background: hasPaid
-              ? 'linear-gradient(135deg, #16a34a, #064e3b)'
-              : isPending
-                ? 'linear-gradient(135deg, #d97706, #92400e)'
-                : 'linear-gradient(135deg, #FF6B35, #8B1A1A)',
+            width: 62, height: 62, borderRadius: '50%',
+            background: bgGradient,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 28,
-            boxShadow: hasPaid
-              ? '0 8px 30px rgba(22,163,74,0.5)'
-              : isPending
-                ? '0 8px 30px rgba(217,119,6,0.5)'
-                : '0 8px 30px rgba(255,107,53,0.55)',
-            position: 'relative',
+            boxShadow: shadow, position: 'relative',
           }}
         >
-          {hasPaid ? '📥' : isPending ? '⏳' : '🪔'}
+          {hasPaid
+            ? <DownloadSimple size={26} weight="bold" color="white" />
+            : isPending
+            ? <Hourglass size={26} weight="duotone" color="white" />
+            : <span style={{ fontSize: 26 }}>🪔</span>}
         </motion.div>
 
         {/* Tooltip */}
@@ -70,36 +78,35 @@ function RitualFloatingIcon({ ritualStatus, onClick }) {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.5 }}
           style={{
-            position: 'absolute', right: 74, top: '50%', transform: 'translateY(-50%)',
-            background: hasPaid ? 'linear-gradient(135deg, #14532d, #064e3b)' : 'linear-gradient(135deg, #1a0000, #5a0e0e)',
-            color: 'white', borderRadius: 12, padding: '8px 14px',
+            position: 'absolute', right: 72, top: '50%', transform: 'translateY(-50%)',
+            background: tooltipBg, color: 'white',
+            borderRadius: 'var(--radius-md)', padding: '8px 13px',
             whiteSpace: 'nowrap', pointerEvents: 'none',
             boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
           }}
         >
-          <div style={{ fontSize: 12, fontWeight: 800 }}>
-            {hasPaid ? '📥 Download Receipt' : isPending ? '⏳ Cash Payment Pending' : `🪔 Annual Ritual ${year}`}
+          <div style={{ fontSize: 'var(--text-sm)', fontWeight: 800 }}>
+            {hasPaid ? 'Download Receipt' : isPending ? 'Cash Payment Pending' : `Annual Ritual ${year}`}
           </div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>
-            {hasPaid ? 'Payment confirmed' : isPending ? 'Awaiting admin approval' : 'Click to pay now'}
+          <div style={{ fontSize: 'var(--text-xs)', color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>
+            {hasPaid ? 'Payment confirmed' : isPending ? 'Awaiting admin approval' : 'Click to pay now — 🪔'}
           </div>
-          {/* Arrow */}
           <div style={{
             position: 'absolute', right: -6, top: '50%', transform: 'translateY(-50%)',
             width: 0, height: 0,
             borderTop: '6px solid transparent', borderBottom: '6px solid transparent',
-            borderLeft: `6px solid ${hasPaid ? '#064e3b' : '#5a0e0e'}`,
+            borderLeft: `6px solid ${tooltipArrow}`,
           }} />
         </motion.div>
 
-        {/* Badge */}
+        {/* Urgent badge */}
         {!isPending && !hasPaid && (
           <div style={{
             position: 'absolute', top: 0, right: 0,
             width: 20, height: 20, borderRadius: '50%',
-            background: '#ef4444', border: '2px solid white',
+            background: 'var(--error)', border: '2px solid var(--surface-solid)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 10, fontWeight: 900, color: 'white',
+            fontSize: 'var(--text-xs)', fontWeight: 900, color: 'white',
           }}>!</div>
         )}
       </motion.div>
