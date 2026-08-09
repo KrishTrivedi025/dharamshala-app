@@ -210,17 +210,28 @@ function DaanPeti() {
                   {error && (
                     <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
                       style={{
-                        padding: '10px 14px', borderRadius: 10, marginBottom: 16,
-                        background: 'var(--error-subtle)', border: '1px solid rgba(220,38,38,0.2)',
-                        fontSize: 13, color: 'var(--error-text)', fontWeight: 600,
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        borderRadius: 12, marginBottom: 16, overflow: 'hidden',
+                        border: '1px solid rgba(220,38,38,0.18)',
+                        boxShadow: '0 2px 12px rgba(220,38,38,0.08)',
                       }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <WarningCircle size={16} /> {error}
-                      </span>
-                      <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--error-text)', display: 'flex', alignItems: 'center' }}>
-                        <X size={15} />
-                      </button>
+                      <div style={{
+                        padding: '11px 16px',
+                        background: 'var(--error-subtle)',
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10,
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(220,38,38,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <WarningCircle size={16} weight="duotone" color="var(--error-text)" />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--error-text)' }}>Payment Failed</div>
+                            <div style={{ fontSize: 11, color: 'var(--error-text)', opacity: 0.8, marginTop: 1 }}>{error}</div>
+                          </div>
+                        </div>
+                        <button onClick={() => setError(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--error-text)', display: 'flex', alignItems: 'center', opacity: 0.7, flexShrink: 0 }}>
+                          <X size={15} />
+                        </button>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -474,27 +485,27 @@ function DaanPeti() {
 
           </AnimatePresence>
 
-          {/* Info Cards */}
+          {/* Info Cards — premium horizontal row */}
           {step === 'form' && (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-              style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 14, marginTop: 20 }}>
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 20 }}>
               {[
-                { Icon: LockSimple,    title: 'Secure Payment',    desc: 'Via Razorpay gateway' },
-                { Icon: Receipt,       title: 'Instant Receipt',   desc: 'Download after payment' },
-                { Icon: User,          title: 'No Login Required', desc: 'Anyone can donate' },
-              ].map(({ Icon, title, desc }, i) => (
+                { Icon: LockSimple,    title: 'Secure',    desc: 'Razorpay gateway', bg: 'var(--success-subtle)', color: 'var(--success-text)' },
+                { Icon: Receipt,       title: 'Receipt',   desc: 'Instant download', bg: 'var(--info-subtle)', color: 'var(--info-text)' },
+                { Icon: User,          title: 'Open',      desc: 'No login needed', bg: 'var(--primary-subtle)', color: 'var(--maroon)' },
+              ].map(({ Icon, title, desc, bg, color }, i) => (
                 <div key={i} style={{
-                  borderRadius: 16, padding: '16px',
-                  background: 'var(--surface-solid)',
-                  border: '1px solid var(--border)',
-                  boxShadow: 'var(--shadow-sm)',
-                  textAlign: 'center',
+                  borderRadius: 14, padding: '12px 10px',
+                  background: bg, border: `1px solid ${color}20`,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center',
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
-                    <Icon size={28} weight="duotone" color="var(--maroon)" />
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                    <Icon size={18} weight="duotone" color={color} />
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--maroon)', marginBottom: 3 }}>{title}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{desc}</div>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color }}>{title}</div>
+                    <div style={{ fontSize: 10, color, opacity: 0.7, marginTop: 1, lineHeight: 1.3 }}>{desc}</div>
+                  </div>
                 </div>
               ))}
             </motion.div>

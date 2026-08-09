@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { User, Lock, PencilSimple, Eye, EyeSlash, CheckCircle, WarningCircle, ArrowRight } from '@phosphor-icons/react'
+import { useIsMobile } from './admin/AdminDashboard'
+import { ButtonSpinner } from '../components/ButtonSpinner'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { useAuth } from '../context/AuthContext'
@@ -18,6 +20,7 @@ const fieldBase = (focused, disabled) => ({
 })
 
 function Profile() {
+  const isMobile = useIsMobile()
   const { user, updateUser } = useAuth()
   const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState('profile')
@@ -112,56 +115,75 @@ function Profile() {
         {activeTab === 'profile' && (
           <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
             style={{ borderRadius: 'var(--radius-xl)', padding: '28px', background: 'var(--surface-solid)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-md)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+            {/* Header row: title + edit button (or success/error message) */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 10 }}>
               <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 800, color: 'var(--maroon)' }}>Personal Information</h3>
-              {saveMsg && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)', fontWeight: 600, color: saveMsg.type === 'success' ? 'var(--success)' : 'var(--error-text)' }}>
-                  {saveMsg.type === 'success' ? <CheckCircle size={15} weight="fill" /> : <WarningCircle size={15} weight="fill" />}
-                  {saveMsg.text}
-                </div>
-              )}
-              {!editing ? (
-                <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} onClick={() => setEditing(true)}
-                  style={{ padding: '8px 18px', borderRadius: 'var(--radius-full)', border: '1.5px solid var(--primary-border)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--primary)', background: 'transparent', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
-                  <PencilSimple size={14} weight="bold" /> {t.profile.edit}
-                </motion.button>
-              ) : (
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} onClick={() => setEditing(false)}
-                    style={{ padding: '8px 18px', borderRadius: 'var(--radius-full)', border: '1.5px solid var(--border)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-secondary)', background: 'transparent', fontFamily: 'inherit' }}>
-                    {t.profile.cancel}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {saveMsg && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 600, color: saveMsg.type === 'success' ? 'var(--success-text)' : 'var(--error-text)' }}>
+                    {saveMsg.type === 'success' ? <CheckCircle size={13} weight="fill" /> : <WarningCircle size={13} weight="fill" />}
+                    {saveMsg.text}
+                  </div>
+                )}
+                {!editing && (
+                  <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} onClick={() => setEditing(true)}
+                    style={{ padding: '8px 18px', borderRadius: 'var(--radius-full)', border: '1.5px solid var(--primary-border)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--primary)', background: 'transparent', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
+                    <PencilSimple size={14} weight="bold" /> {t.profile.edit}
                   </motion.button>
-                  <motion.button whileHover={{ scale: 1.04, boxShadow: '0 8px 20px var(--primary-border)' }} whileTap={{ scale: 0.97 }} onClick={handleSave} disabled={saving}
-                    style={{ padding: '8px 18px', borderRadius: 'var(--radius-full)', border: 'none', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 700, color: 'white', background: saving ? 'var(--neutral-400)' : 'linear-gradient(135deg, var(--primary), var(--maroon))', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}>
-                    {saving ? t.profile.saving : <><ArrowRight size={13} weight="bold" /> {t.profile.save}</>}
-                  </motion.button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
-              {[
-                { label: t.profile.name, name: 'name', type: 'text', placeholder: 'Your full name' },
-                { label: t.profile.email, name: 'email', type: 'email', placeholder: 'your@email.com' },
-                { label: t.profile.phone, name: 'phone', type: 'tel', placeholder: '10-digit number' },
-              ].map((field) => (
-                <div key={field.name}>
-                  <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
-                    {field.label}
-                  </label>
-                  <input type={field.type} name={field.name} value={formData[field.name]} onChange={handleChange}
-                    placeholder={field.placeholder} disabled={!editing}
-                    onFocus={() => setFocusedField(field.name)} onBlur={() => setFocusedField(null)}
-                    style={fieldBase(focusedField === field.name, !editing)} />
-                </div>
-              ))}
-              <div style={{ gridColumn: '1 / -1' }}>
+            {/* Form fields — Name+Phone on row 1, Email full-width, Address full-width */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Row 1: Full Name + Phone Number */}
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
+                {[
+                  { label: t.profile.name, name: 'name', type: 'text', placeholder: 'Your full name' },
+                  { label: t.profile.phone, name: 'phone', type: 'tel', placeholder: '10-digit number' },
+                ].map((field) => (
+                  <div key={field.name}>
+                    <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
+                      {field.label}
+                    </label>
+                    <input type={field.type} name={field.name} value={formData[field.name]} onChange={handleChange}
+                      placeholder={field.placeholder} disabled={!editing}
+                      onFocus={() => setFocusedField(field.name)} onBlur={() => setFocusedField(null)}
+                      style={fieldBase(focusedField === field.name, !editing)} />
+                  </div>
+                ))}
+              </div>
+              {/* Row 2: Email — full width */}
+              <div>
+                <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
+                  {t.profile.email}
+                </label>
+                <input type="email" name="email" value={formData.email} onChange={handleChange}
+                  placeholder="your@email.com" disabled={!editing}
+                  onFocus={() => setFocusedField('email')} onBlur={() => setFocusedField(null)}
+                  style={fieldBase(focusedField === 'email', !editing)} />
+              </div>
+              {/* Row 3: Address — full width */}
+              <div>
                 <label style={{ display: 'block', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, letterSpacing: '0.6px', textTransform: 'uppercase' }}>{t.profile.address}</label>
                 <textarea name="address" value={formData.address} onChange={handleChange}
                   placeholder={t.profile.address_placeholder} disabled={!editing} rows={3}
                   onFocus={() => setFocusedField('address')} onBlur={() => setFocusedField(null)}
                   style={{ ...fieldBase(focusedField === 'address', !editing), resize: 'none', lineHeight: 1.6 }} />
               </div>
+              {/* Save/Cancel buttons — shown below address when editing */}
+              {editing && (
+                <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                  <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} onClick={() => setEditing(false)}
+                    style={{ flex: 1, padding: '11px 18px', borderRadius: 'var(--radius-full)', border: '1.5px solid var(--border)', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--text-secondary)', background: 'transparent', fontFamily: 'inherit' }}>
+                    {t.profile.cancel}
+                  </motion.button>
+                  <motion.button whileHover={{ scale: 1.04, boxShadow: '0 8px 20px var(--primary-border)' }} whileTap={{ scale: 0.97 }} onClick={handleSave} disabled={saving}
+                    style={{ flex: 2, padding: '11px 18px', borderRadius: 'var(--radius-full)', border: 'none', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 700, color: 'white', background: saving ? 'var(--neutral-400)' : 'linear-gradient(135deg, var(--primary), var(--maroon))', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'inherit' }}>
+                    {saving ? <><ButtonSpinner /> {t.profile.saving}</> : <><ArrowRight size={13} weight="bold" /> {t.profile.save}</>}
+                  </motion.button>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -205,8 +227,7 @@ function Profile() {
               <motion.button whileHover={{ scale: 1.02, boxShadow: '0 10px 26px var(--primary-border)' }} whileTap={{ scale: 0.97 }}
                 onClick={handlePasswordSubmit} disabled={pwSaving}
                 style={{ padding: '13px', borderRadius: 'var(--radius-full)', border: 'none', cursor: pwSaving ? 'not-allowed' : 'pointer', fontSize: 'var(--text-base)', fontWeight: 700, color: 'white', background: pwSaving ? 'var(--neutral-400)' : 'linear-gradient(135deg, var(--primary), var(--maroon))', boxShadow: '0 6px 18px var(--primary-border)', marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit' }}>
-                <Lock size={15} weight="bold" />
-                {pwSaving ? t.profile.updating : t.profile.update_password}
+                {pwSaving ? <><ButtonSpinner /> {t.profile.updating}</> : <><Lock size={15} weight="bold" /> {t.profile.update_password}</>}
               </motion.button>
             </div>
           </motion.div>
