@@ -35,7 +35,8 @@ function Navbar() {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // Close mobile menu on route change
+  // Close mobile menu on route change — intentional setState in effect
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setMenuOpen(false) }, [location.pathname])
 
   const navLinks = [
@@ -78,7 +79,7 @@ function Navbar() {
   ]
 
   const handleLogout = async () => {
-    try { await authAPI.logout() } catch (_) {}
+    try { await authAPI.logout() } catch { /* ignore */ }
     logout()
     navigate('/')
     setUserMenuOpen(false)

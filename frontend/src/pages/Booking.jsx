@@ -37,7 +37,6 @@ const TIME_OPTIONS = [
   { value: '23:00', label: '11:00 PM' },
 ]
 
-const to12h = (t) => TIME_OPTIONS.find(o => o.value === t)?.label || t
 
 const STEPS = ['Event Details', 'Date & Time', 'Contact Info', 'Review & Submit']
 

@@ -1,21 +1,15 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState } from 'react'
 
 const AuthContext = createContext()
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [token, setToken] = useState(localStorage.getItem('token') || null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const savedToken = localStorage.getItem('token')
-    const savedUser = localStorage.getItem('user')
-    if (savedToken && savedUser) {
-      setToken(savedToken)
-      setUser(JSON.parse(savedUser))
-    }
-    setLoading(false)
-  }, [])
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('user')
+    return saved ? JSON.parse(saved) : null
+  })
+  const [token, setToken] = useState(() => localStorage.getItem('token') || null)
+  const [loading] = useState(false)
 
   const login = (userData, authToken) => {
     setUser(userData)
@@ -41,14 +35,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{
-      user,
-      token,
-      loading,
-      login,
-      logout,
-      updateUser,
-      isAdmin,
-      isLoggedIn,
+      user, token, loading, login, logout, updateUser, isAdmin, isLoggedIn,
     }}>
       {children}
     </AuthContext.Provider>
@@ -57,4 +44,4 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   return useContext(AuthContext)
-}                                       
+}

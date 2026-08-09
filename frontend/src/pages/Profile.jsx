@@ -3,10 +3,12 @@ import { motion } from 'framer-motion'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/LanguageContext'
 import { authAPI } from '../utils/api'
 
 function Profile() {
   const { user, updateUser } = useAuth()
+  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState('profile')
   const [editing, setEditing] = useState(false)
   const [focusedField, setFocusedField] = useState(null)
@@ -44,7 +46,7 @@ function Profile() {
       const res = await authAPI.updateProfile(formData)
       updateUser({ ...user, ...res.data })
       setEditing(false)
-      setSaveMsg({ type: 'success', text: 'Profile updated successfully!' })
+      setSaveMsg({ type: 'success', text: t.profile.update_success })
       setTimeout(() => setSaveMsg(null), 3000)
     } catch (err) {
       setSaveMsg({ type: 'error', text: err.message || 'Failed to update profile' })
@@ -69,7 +71,7 @@ function Profile() {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
       })
-      setPwMsg({ type: 'success', text: 'Password changed successfully!' })
+      setPwMsg({ type: 'success', text: t.profile.password_success })
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
       setTimeout(() => setPwMsg(null), 3000)
     } catch (err) {
@@ -95,8 +97,8 @@ function Profile() {
   })
 
   const tabs = [
-    { key: 'profile', label: '👤 Profile', },
-    { key: 'password', label: '🔐 Password', },
+    { key: 'profile',  label: `👤 ${t.profile.tab_profile}` },
+    { key: 'password', label: `🔐 ${t.profile.tab_password}` },
   ]
 
   return (
@@ -197,7 +199,7 @@ function Profile() {
             }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
               <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--maroon)' }}>
-                Personal Information
+                {t.profile.tab_profile}
               </h3>
               {!editing ? (
                 <motion.button
@@ -210,7 +212,7 @@ function Profile() {
                     cursor: 'pointer', fontSize: 13, fontWeight: 700,
                     color: 'var(--primary)', background: 'transparent',
                   }}>
-                  ✏️ Edit
+                  ✏️ {t.profile.edit}
                 </motion.button>
               ) : (
                 <div style={{ display: 'flex', gap: 10 }}>
@@ -224,7 +226,7 @@ function Profile() {
                       cursor: 'pointer', fontSize: 13, fontWeight: 700,
                       color: '#6b7280', background: 'transparent',
                     }}>
-                    Cancel
+                    {t.profile.cancel}
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.05, boxShadow: '0 8px 20px rgba(255,107,53,0.4)' }}
@@ -236,17 +238,30 @@ function Profile() {
                       cursor: 'pointer', fontSize: 13, fontWeight: 700, color: 'white',
                       background: saving ? '#ccc' : 'linear-gradient(135deg, #FF6B35, #8B1A1A)',
                     }}>
-                    {saving ? 'Saving...' : 'Save Changes'}
+                    {saving ? t.profile.saving : t.profile.save}
                   </motion.button>
                 </div>
               )}
             </div>
 
+            {saveMsg && (
+              <div style={{
+                margin: '0 0 20px',
+                padding: '10px 14px', borderRadius: 10,
+                background: saveMsg.type === 'success' ? 'rgba(5,150,105,0.08)' : 'rgba(220,38,38,0.08)',
+                border: `1px solid ${saveMsg.type === 'success' ? 'rgba(5,150,105,0.2)' : 'rgba(220,38,38,0.2)'}`,
+                fontSize: 13, fontWeight: 600,
+                color: saveMsg.type === 'success' ? 'var(--success-text)' : 'var(--error-text)',
+              }}>
+                {saveMsg.type === 'success' ? '✅' : '⚠️'} {saveMsg.text}
+              </div>
+            )}
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
               {[
-                { label: 'Full Name', name: 'name', type: 'text', placeholder: 'Your full name' },
-                { label: 'Email Address', name: 'email', type: 'email', placeholder: 'your@email.com' },
-                { label: 'Phone Number', name: 'phone', type: 'tel', placeholder: '10-digit number' },
+                { label: t.profile.name,  name: 'name',  type: 'text',  placeholder: t.profile.name },
+                { label: t.profile.email, name: 'email', type: 'email', placeholder: 'your@email.com' },
+                { label: t.profile.phone, name: 'phone', type: 'tel',   placeholder: '10-digit number' },
               ].map((field) => (
                 <div key={field.name}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#9ca3af', marginBottom: 7, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
@@ -267,13 +282,13 @@ function Profile() {
               ))}
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#9ca3af', marginBottom: 7, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                  Address
+                  {t.profile.address}
                 </label>
                 <textarea
                   name="address"
                   value={formData.address}
                   onChange={handleChange}
-                  placeholder="Your full address"
+                  placeholder={t.profile.address_placeholder}
                   disabled={!editing}
                   rows={3}
                   onFocus={() => setFocusedField('address')}
@@ -299,13 +314,13 @@ function Profile() {
               boxShadow: '0 4px 20px rgba(139,26,26,0.06)',
             }}>
             <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--maroon)', marginBottom: 28 }}>
-              Change Password
+              {t.profile.tab_password}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               {[
-                { label: 'Current Password', name: 'currentPassword', key: 'current' },
-                { label: 'New Password', name: 'newPassword', key: 'new' },
-                { label: 'Confirm New Password', name: 'confirmPassword', key: 'confirm' },
+                { label: t.profile.current_password, name: 'currentPassword', key: 'current' },
+                { label: t.profile.new_password,     name: 'newPassword',     key: 'new' },
+                { label: t.profile.confirm_password, name: 'confirmPassword', key: 'confirm' },
               ].map((field) => (
                 <div key={field.name}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#9ca3af', marginBottom: 7, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
@@ -359,7 +374,7 @@ function Profile() {
                   boxShadow: '0 6px 20px rgba(255,107,53,0.35)',
                   marginTop: 8,
                 }}>
-                {pwSaving ? 'Updating...' : '🔐 Update Password'}
+                {pwSaving ? t.profile.updating : `🔐 ${t.profile.update_password}`}
               </motion.button>
             </div>
           </motion.div>
