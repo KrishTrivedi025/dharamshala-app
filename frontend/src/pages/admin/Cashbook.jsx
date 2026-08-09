@@ -519,58 +519,65 @@ function Cashbook() {
             ) : isMobile ? (
               <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                 {entriesWithBalance.map((e,i)=>(
-                  <div key={e._id} style={{ background:'white', border:'1px solid var(--border)', borderRadius:14,
-                    boxShadow:'var(--shadow-sm)', overflow:'hidden', display:'flex' }}>
-                    {/* Left accent bar — green for credit, red for debit */}
-                    <div style={{ width:4, flexShrink:0, background: e.type==='credit' ? '#059669' : '#dc2626' }} />
-                    <div style={{ flex:1, padding:'12px 14px' }}>
-                      {/* Row 1: badges + amount + action icons */}
-                      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:6 }}>
-                        <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
-                          <span style={{ padding:'2px 8px', borderRadius:99, fontSize:10, fontWeight:700,
-                            background: e.type==='credit' ? 'var(--success-subtle)' : 'var(--error-subtle)',
-                            color: e.type==='credit' ? 'var(--success-text)' : 'var(--error-text)' }}>
-                            {e.type==='credit'?'↑ Credit':'↓ Debit'}
-                          </span>
-                          <span style={{ padding:'2px 8px', borderRadius:99, fontSize:10, fontWeight:700,
-                            background: e.status==='completed' ? 'var(--success-subtle)' : 'var(--warning-subtle)',
-                            color: e.status==='completed' ? 'var(--success-text)' : 'var(--warning-text)' }}>
-                            {e.status==='completed'?'Done':'Pending'}
-                          </span>
-                        </div>
-                        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                          <span style={{ fontSize:16, fontWeight:900, color: e.type==='credit' ? 'var(--success-text)' : 'var(--error-text)' }}>
-                            ₹{e.amount.toLocaleString()}
-                          </span>
-                          <button onClick={()=>openEdit(e)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--primary)', padding:2, display:'flex' }}>
-                            <PencilSimple size={15} weight="duotone" />
-                          </button>
-                          <button onClick={()=>setDeleteConfirm(e._id)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--error)', padding:2, display:'flex' }}>
-                            <Trash size={15} weight="duotone" />
-                          </button>
-                        </div>
+                  <motion.div key={e._id}
+                    initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }}
+                    transition={{ delay:i*0.04 }}
+                    style={{ background:'white', border:'1px solid var(--border)', borderRadius:14,
+                      boxShadow:'var(--shadow-sm)', padding:'12px 14px' }}>
+                    {/* Row 1: type badge + amount + edit/delete */}
+                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
+                      <div style={{ display:'flex', gap:5, alignItems:'center' }}>
+                        {/* Colored dot — green credit, red debit */}
+                        <div style={{ width:7, height:7, borderRadius:'50%', flexShrink:0,
+                          background: e.type==='credit' ? '#059669' : '#dc2626' }} />
+                        <span style={{ padding:'2px 8px', borderRadius:99, fontSize:10, fontWeight:700,
+                          background: e.type==='credit' ? 'var(--success-subtle)' : 'var(--error-subtle)',
+                          color: e.type==='credit' ? 'var(--success-text)' : 'var(--error-text)' }}>
+                          {e.type==='credit'?'Credit':'Debit'}
+                        </span>
+                        <span style={{ padding:'2px 8px', borderRadius:99, fontSize:10, fontWeight:700,
+                          background: e.status==='completed' ? 'var(--success-subtle)' : 'var(--warning-subtle)',
+                          color: e.status==='completed' ? 'var(--success-text)' : 'var(--warning-text)' }}>
+                          {e.status==='completed'?'Done':'Pending'}
+                        </span>
                       </div>
-                      {/* Name + category */}
-                      <div style={{ fontSize:13, fontWeight:700, color:'var(--maroon)', marginBottom:1 }}>{e.name}</div>
-                      <div style={{ fontSize:11, color:'var(--text-secondary)', marginBottom:6 }}>{e.category}</div>
-                      {/* Meta row */}
-                      <div style={{ fontSize:10, color:'var(--text-muted)', display:'flex', flexWrap:'wrap', gap:4, alignItems:'center' }}>
-                        <span>{yearRange(e.entryDate)}</span>
-                        {e.paymentDate && <><span>·</span><span>{new Date(e.paymentDate).toLocaleDateString('en-IN')}</span></>}
-                        {e.receiptNumber && <><span>·</span><span style={{ fontFamily:'monospace', color:'var(--text-secondary)' }}>{e.receiptNumber}</span></>}
-                        <span>·</span>
-                        <span style={{ padding:'1px 6px', borderRadius:99, fontSize:9, fontWeight:700,
-                          background: e.paymentMode==='online' ? 'var(--info-subtle)' : 'var(--neutral-100)',
-                          color: e.paymentMode==='online' ? 'var(--info-text)' : 'var(--text-secondary)' }}>
-                          {e.paymentMode==='online'?'Online':'Cash'}
+                      <div style={{ display:'flex', alignItems:'center', gap:4 }}>
+                        <span style={{ fontSize:15, fontWeight:900, color: e.type==='credit' ? 'var(--success-text)' : 'var(--error-text)' }}>
+                          ₹{e.amount.toLocaleString()}
                         </span>
-                        <span>·</span>
-                        <span style={{ fontWeight:600, color: e.runningBalance>=0 ? 'var(--success-text)' : 'var(--error-text)' }}>
-                          Bal: ₹{e.runningBalance.toLocaleString()}
-                        </span>
+                        <button onClick={()=>openEdit(e)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--primary)', padding:'2px 4px', display:'flex' }}>
+                          <PencilSimple size={14} weight="duotone" />
+                        </button>
+                        <button onClick={()=>setDeleteConfirm(e._id)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--error)', padding:'2px 4px', display:'flex' }}>
+                          <Trash size={14} weight="duotone" />
+                        </button>
                       </div>
                     </div>
-                  </div>
+                    {/* Row 2: Name + category */}
+                    <div style={{ fontSize:13, fontWeight:700, color:'var(--maroon)', marginBottom:1 }}>{e.name}</div>
+                    <div style={{ fontSize:11, color:'var(--text-secondary)', marginBottom:6 }}>{e.category}</div>
+                    {/* Row 3: meta */}
+                    <div style={{ fontSize:10, color:'var(--text-muted)', display:'flex', flexWrap:'wrap', gap:4, alignItems:'center' }}>
+                      <span>{yearRange(e.entryDate)}</span>
+                      {e.paymentDate && <><span>·</span><span>{new Date(e.paymentDate).toLocaleDateString('en-IN')}</span></>}
+                      {e.receiptNumber && (
+                        <><span>·</span>
+                        <span style={{ display:'flex', alignItems:'center', gap:2, color:'var(--text-secondary)' }}>
+                          <Receipt size={9} weight="duotone" />{e.receiptNumber}
+                        </span></>
+                      )}
+                      <span>·</span>
+                      <span style={{ padding:'1px 6px', borderRadius:99, fontSize:9, fontWeight:700,
+                        background: e.paymentMode==='online' ? 'var(--info-subtle)' : 'var(--neutral-100)',
+                        color: e.paymentMode==='online' ? 'var(--info-text)' : 'var(--text-secondary)' }}>
+                        {e.paymentMode==='online'?'Online':'Cash'}
+                      </span>
+                      <span>·</span>
+                      <span style={{ fontWeight:600, color: e.runningBalance>=0 ? 'var(--success-text)' : 'var(--error-text)' }}>
+                        Bal ₹{e.runningBalance.toLocaleString()}
+                      </span>
+                    </div>
+                  </motion.div>
                 ))}
               </div>
             ) : (
@@ -759,46 +766,93 @@ function Cashbook() {
                 (m.receiptNumber && m.receiptNumber.toLowerCase().includes(ritualSearch.toLowerCase()))
               )
               return isMobile ? (
-                <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                   {filteredMembers.map((m,i)=>(
-                    <div key={m.userId||i} style={{ ...cardStyleSolid, padding:'14px 16px' }}>
-                      {/* Top: name + status */}
-                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6 }}>
-                        <span style={{ fontSize:14, fontWeight:700, color:'var(--maroon)', flex:1, marginRight:8 }}>{m.name}</span>
-                        <span style={{ padding:'3px 10px', borderRadius:99, fontSize:11, fontWeight:700, flexShrink:0,
+                    <motion.div key={m.userId||i}
+                      initial={{ opacity:0, y:12 }} animate={{ opacity:1, y:0 }}
+                      transition={{ delay:i*0.05 }}
+                      style={{ background:'white', borderRadius:16, overflow:'hidden',
+                        border:'1px solid var(--border)', boxShadow:'var(--shadow-sm)' }}>
+
+                      {/* Header row — name + status */}
+                      <div style={{ padding:'12px 14px 10px', display:'flex', alignItems:'center', justifyContent:'space-between',
+                        borderBottom:'1px solid var(--border)' }}>
+                        <div>
+                          <div style={{ fontSize:14, fontWeight:800, color:'var(--maroon)', marginBottom:1 }}>{m.name}</div>
+                          {m.phone && <div style={{ fontSize:11, color:'var(--text-muted)', display:'flex', alignItems:'center', gap:4 }}>
+                            <span>📞</span>{m.phone}
+                          </div>}
+                        </div>
+                        <span style={{
+                          padding:'4px 12px', borderRadius:99, fontSize:11, fontWeight:800, flexShrink:0,
                           background: m.status==='completed' ? 'var(--success-subtle)' : m.status==='pending' ? 'var(--warning-subtle)' : 'var(--error-subtle)',
-                          color: m.status==='completed' ? 'var(--success-text)' : m.status==='pending' ? 'var(--warning-text)' : 'var(--error-text)' }}>
+                          color: m.status==='completed' ? 'var(--success-text)' : m.status==='pending' ? 'var(--warning-text)' : 'var(--error-text)',
+                          border: `1px solid ${m.status==='completed' ? 'rgba(5,150,105,0.2)' : m.status==='pending' ? 'rgba(217,119,6,0.2)' : 'rgba(220,38,38,0.2)'}`,
+                        }}>
                           {m.status==='completed'?'Paid':m.status==='pending'?'Pending':'Not Paid'}
                         </span>
                       </div>
-                      {/* Phone */}
-                      {m.phone && <div style={{ fontSize:12, color:'var(--text-secondary)', marginBottom:6 }}>{m.phone}</div>}
-                      {/* Amount + date + mode */}
-                      <div style={{ fontSize:12, display:'flex', flexWrap:'wrap', gap:4, alignItems:'center', marginBottom:6 }}>
-                        <span style={{ fontWeight:800, color:'var(--maroon)', fontSize:15 }}>₹{(m.amount||annualFee).toLocaleString()}</span>
-                        {m.paymentDate && <><span style={{ color:'var(--text-muted)' }}>•</span><span style={{ color:'var(--text-secondary)' }}>{new Date(m.paymentDate).toLocaleDateString('en-IN')}</span></>}
-                        {m.paymentMode && <><span style={{ color:'var(--text-muted)' }}>•</span><span style={{ color:'var(--text-secondary)' }}>{m.paymentMode}</span></>}
-                      </div>
-                      {/* Receipt number */}
-                      {m.receiptNumber && (
-                        <div style={{ fontSize:11, color:'var(--text-muted)', fontFamily:'monospace', marginBottom:10 }}>{m.receiptNumber}</div>
-                      )}
-                      {/* Actions */}
-                      <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
-                        <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
-                          onClick={()=>openRitualModal(m)}
-                          style={{ ...adminBtn(m.status==='not_paid' ? 'linear-gradient(135deg,var(--success),#166534)' : 'linear-gradient(135deg,var(--primary),var(--maroon))'), padding:'7px 14px', fontSize:12 }}>
-                          {m.status==='not_paid' ? <><CurrencyCircleDollar size={13} /> Record</> : <><PencilSimple size={13} /> Edit</>}
-                        </motion.button>
-                        {m.receiptReady && (
-                          <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
-                            onClick={()=>downloadRitualReceipt(m)}
-                            style={{ ...adminBtn('linear-gradient(135deg,var(--info),#1e40af)'), padding:'7px 14px', fontSize:12 }}>
-                            <DownloadSimple size={13} /> Receipt
-                          </motion.button>
+
+                      {/* Body — amount, date, mode, receipt */}
+                      <div style={{ padding:'10px 14px 12px' }}>
+                        {/* Amount row */}
+                        <div style={{ display:'flex', alignItems:'baseline', gap:8, marginBottom:6 }}>
+                          <span style={{ fontSize:20, fontWeight:900, color:'var(--maroon)' }}>
+                            ₹{(m.amount||annualFee).toLocaleString()}
+                          </span>
+                          {m.paymentDate && (
+                            <span style={{ fontSize:12, color:'var(--text-secondary)', fontWeight:500 }}>
+                              {new Date(m.paymentDate).toLocaleDateString('en-IN')}
+                            </span>
+                          )}
+                          {m.paymentMode && (
+                            <span style={{ padding:'2px 8px', borderRadius:99, fontSize:10, fontWeight:700,
+                              background: m.paymentMode==='online' ? 'var(--info-subtle)' : 'var(--neutral-100)',
+                              color: m.paymentMode==='online' ? 'var(--info-text)' : 'var(--text-secondary)' }}>
+                              {m.paymentMode==='online' ? 'Online' : 'Cash'}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Receipt number — with icon label */}
+                        {m.receiptNumber && (
+                          <div style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'4px 10px', borderRadius:8,
+                            background:'var(--neutral-100)', border:'1px solid var(--border)', marginBottom:12 }}>
+                            <Receipt size={12} weight="duotone" color="var(--text-muted)" />
+                            <span style={{ fontSize:11, fontWeight:600, color:'var(--text-secondary)' }}>
+                              {m.receiptNumber}
+                            </span>
+                          </div>
                         )}
+                        {!m.receiptNumber && <div style={{ marginBottom:12 }} />}
+
+                        {/* Actions */}
+                        <div style={{ display:'flex', gap:8 }}>
+                          <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.95}}
+                            onClick={()=>openRitualModal(m)}
+                            style={{ flex:1, padding:'8px 12px', borderRadius:10, border:'none', cursor:'pointer',
+                              fontSize:12, fontWeight:700, color:'white', fontFamily:'inherit',
+                              background: m.status==='not_paid'
+                                ? 'linear-gradient(135deg,var(--success),#166534)'
+                                : 'linear-gradient(135deg,var(--primary),var(--maroon))',
+                              display:'flex', alignItems:'center', justifyContent:'center', gap:5 }}>
+                            {m.status==='not_paid'
+                              ? <><CurrencyCircleDollar size={13} /> Record Payment</>
+                              : <><PencilSimple size={13} /> Edit</>}
+                          </motion.button>
+                          {m.receiptReady && (
+                            <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.95}}
+                              onClick={()=>downloadRitualReceipt(m)}
+                              style={{ padding:'8px 12px', borderRadius:10,
+                                border:'1.5px solid var(--info)', cursor:'pointer', background:'var(--info-subtle)',
+                                fontSize:12, fontWeight:700, color:'var(--info-text)', fontFamily:'inherit',
+                                display:'flex', alignItems:'center', gap:5 }}>
+                              <DownloadSimple size={13} /> Receipt
+                            </motion.button>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               ) : (
