@@ -7,6 +7,7 @@ import {
   CurrencyCircleDollar, CheckCircle, X, WarningCircle, Tray,
 } from '@phosphor-icons/react'
 import { cardStyleSolid, STATUS_COLORS, modalOverlay, modalContent, inputStyle as themeInput } from '../../styles/theme'
+import { CustomSelect } from '../../components/AdminSelect'
 
 const to12h = (t) => {
   if (!t) return ''
@@ -110,29 +111,19 @@ function BookingRequests() {
         </motion.div>
 
         {/* Filters */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 28, flexWrap: 'wrap' }}>
-          {FILTERS.map((f) => (
-            <motion.button key={f} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-              onClick={() => setFilter(f)}
-              style={{
-                padding: '9px 20px', borderRadius: 99, border: 'none', cursor: 'pointer',
-                fontSize: 13, fontWeight: 700, transition: 'all 0.25s ease',
-                background: filter === f ? 'linear-gradient(135deg, var(--primary), var(--maroon))' : 'var(--surface-solid)',
-                color: filter === f ? 'white' : 'var(--text-secondary)',
-                boxShadow: filter === f ? 'var(--shadow-lg)' : 'var(--shadow-sm)',
-              }}>
-              {f}
-              {f === 'Pending' && bookings.filter(b => b.status === 'pending').length > 0 && (
-                <span style={{
-                  marginLeft: 6, fontSize: 11,
-                  background: filter === 'Pending' ? 'rgba(255,255,255,0.3)' : 'var(--primary)',
-                  color: 'white', padding: '1px 6px', borderRadius: 99,
-                }}>
-                  {bookings.filter(b => b.status === 'pending').length}
-                </span>
-              )}
-            </motion.button>
-          ))}
+        <div style={{ marginBottom: 28 }}>
+          <CustomSelect
+            value={filter}
+            onChange={v => setFilter(v)}
+            options={FILTERS.map(f => {
+              const pendingCount = bookings.filter(b => b.status === 'pending').length
+              return {
+                value: f,
+                label: f === 'Pending' && pendingCount > 0 ? `Pending (${pendingCount})` : f,
+              }
+            })}
+            minWidth={180}
+          />
         </div>
 
         {/* Loading */}

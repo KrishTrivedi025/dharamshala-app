@@ -4,6 +4,9 @@ import { AdminLayout } from './AdminDashboard'
 import { adminAPI } from '../../utils/api'
 import { CurrencyCircleDollar, Tray } from '@phosphor-icons/react'
 import { cardStyleSolid, adminCardStyle } from '../../styles/theme'
+import { CustomSelect } from '../../components/AdminSelect'
+
+const REFUND_FILTERS = ['All', 'Pending', 'Processed', 'Failed']
 
 const REFUND_STATUS = {
   pending:   { text: 'var(--warning-text)', bg: 'var(--warning-subtle)', label: 'Pending' },
@@ -58,20 +61,13 @@ function RefundManager() {
         </motion.div>
 
         {/* Filters */}
-        <div style={{ display: 'flex', gap: 10, marginBottom: 28, flexWrap: 'wrap' }}>
-          {['All', 'Pending', 'Processed', 'Failed'].map((f) => (
-            <motion.button key={f} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-              onClick={() => setFilter(f)}
-              style={{
-                padding: '9px 20px', borderRadius: 99, border: 'none', cursor: 'pointer',
-                fontSize: 13, fontWeight: 700, transition: 'all 0.25s ease',
-                background: filter === f ? 'linear-gradient(135deg, var(--primary), var(--maroon))' : 'var(--surface-solid)',
-                color: filter === f ? 'white' : 'var(--text-secondary)',
-                boxShadow: filter === f ? 'var(--shadow-lg)' : 'var(--shadow-sm)',
-              }}>
-              {f}
-            </motion.button>
-          ))}
+        <div style={{ marginBottom: 28 }}>
+          <CustomSelect
+            value={filter}
+            onChange={v => setFilter(v)}
+            options={REFUND_FILTERS.map(f => ({ value: f, label: f }))}
+            minWidth={180}
+          />
         </div>
 
         {loading ? (

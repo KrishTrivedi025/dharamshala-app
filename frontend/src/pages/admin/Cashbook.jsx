@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AdminLayout } from './AdminDashboard'
+import { AdminLayout, useIsMobile } from './AdminDashboard'
+import { CustomSelect } from '../../components/AdminSelect'
 import {
   BookOpen, ChartBar, CurrencyCircleDollar, ArrowUp, Wallet,
   Plus, DownloadSimple, Printer, PencilSimple, Trash,
@@ -13,87 +14,6 @@ import html2canvas from 'html2canvas'
 import autoTable from 'jspdf-autotable'
 import { saveAs } from 'file-saver'
 
-// Premium custom select — uses fixed positioning to escape stacking contexts
-function CustomSelect({ value, onChange, options, minWidth = 120 }) {
-  const [open, setOpen] = useState(false)
-  const btnRef = useRef(null)
-  const selected = options.find(o => String(o.value) === String(value))
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (btnRef.current && !btnRef.current.contains(e.target)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  return (
-    <div style={{ position: 'relative', minWidth }}>
-      <button
-        ref={btnRef}
-        onClick={() => setOpen(v => !v)}
-        style={{
-          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          gap: 10, padding: '9px 14px', borderRadius: 10, cursor: 'pointer',
-          border: `1.5px solid ${open ? 'var(--primary)' : 'var(--border)'}`,
-          background: open ? 'var(--primary-subtle)' : 'white',
-          fontSize: 13.5, fontWeight: 500, color: 'var(--text)',
-          transition: 'all 0.18s ease', whiteSpace: 'nowrap',
-          boxShadow: open ? '0 0 0 3px var(--primary-subtle)' : 'none',
-        }}>
-        <span>{selected?.label}</span>
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"
-          style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease', opacity: 0.4, flexShrink: 0 }}>
-          <path d="M2 3.5L5 6.5L8 3.5" stroke="var(--text)" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.97 }}
-            transition={{ duration: 0.14, ease: 'easeOut' }}
-            style={{
-              position: 'absolute', top: 'calc(100% + 6px)', left: 0,
-              minWidth: '100%', zIndex: 9999,
-              background: 'white', borderRadius: 12, padding: '5px',
-              maxHeight: 280, overflowY: 'auto',
-              boxShadow: '0 8px 8px rgba(0,0,0,0.04), 0 16px 48px rgba(0,0,0,0.13)',
-              border: '1px solid var(--border)',
-            }}>
-            {options.map(opt => {
-              const active = String(opt.value) === String(value)
-              return (
-                <div key={opt.value}
-                  onMouseDown={e => { e.preventDefault(); onChange(opt.value); setOpen(false) }}
-                  style={{
-                    padding: '8px 12px', borderRadius: 8, cursor: 'pointer',
-                    fontSize: 13.5, fontWeight: active ? 700 : 400,
-                    color: active ? 'var(--primary)' : 'var(--text)',
-                    background: active ? 'var(--primary-subtle)' : 'transparent',
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    transition: 'background 0.1s ease',
-                  }}
-                  onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--neutral-100)' }}
-                  onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
-                >
-                  <span>{opt.label}</span>
-                  {active && (
-                    <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                      <path d="M2 6.5L5.5 10L11 3" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  )}
-                </div>
-              )
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
 
 const CURRENT_YEAR = new Date().getFullYear()
 const YEARS = Array.from({ length: CURRENT_YEAR - 2020 + 1 }, (_, i) => 2020 + i)
@@ -119,6 +39,7 @@ const adminBtn = (bg = 'linear-gradient(135deg, var(--primary), var(--maroon))')
 })
 
 function Cashbook() {
+  const isMobile = useIsMobile()
   const savedFilters = loadSavedLedgerFilters()
   const [entries, setEntries] = useState([])
   const [summary, setSummary] = useState({ totalIncome:0, totalExpense:0, balance:0 })
@@ -466,50 +387,108 @@ function Cashbook() {
 
             {/* Filters & Actions */}
             <div style={{ ...cardStyleSolid, marginBottom:24, padding:'16px 20px' }}>
-              <div style={{ display:'flex', gap:10, flexWrap:'wrap', alignItems:'center' }}>
-                <CustomSelect value={year} onChange={v => setYear(+v)} options={[{ value: 0, label: 'All Years' }, ...YEARS.map(y => ({ value: y, label: String(y) }))]} minWidth={120} />
-                <CustomSelect value={month} onChange={v => setMonth(+v)} options={MONTHS.map((m, i) => ({ value: i, label: m }))} minWidth={140} />
-                <CustomSelect value={typeFilter} onChange={v => setTypeFilter(v)} options={TYPES.map(t => ({ value: t, label: t === 'All' ? 'All Types' : t === 'credit' ? 'Credit ↑' : 'Debit ↓' }))} minWidth={120} />
-                <CustomSelect value={sourceFilter} onChange={v => setSourceFilter(v)} options={SOURCES.map(s => ({ value: s, label: s === 'All' ? 'All Sources' : SOURCE_LABELS[s] || s }))} minWidth={140} />
-                <div style={{ position:'relative', display:'flex', alignItems:'center' }}>
-                  <MagnifyingGlass size={14} color="var(--text-muted)" style={{ position:'absolute', left:10, pointerEvents:'none' }} />
-                  <input placeholder="Search name, receipt..." value={search}
-                    onChange={e=>setSearch(e.target.value)} onKeyDown={handleSearch}
-                    style={{ ...themeInput(), width:'auto', minWidth:180, paddingLeft:30 }} />
+              {isMobile ? (
+                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                  {/* Row 1: Year + Month */}
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                    <CustomSelect value={year} onChange={v => setYear(+v)} options={[{ value: 0, label: 'All Years' }, ...YEARS.map(y => ({ value: y, label: String(y) }))]} minWidth={0} />
+                    <CustomSelect value={month} onChange={v => setMonth(+v)} options={MONTHS.map((m, i) => ({ value: i, label: m }))} minWidth={0} />
+                  </div>
+                  {/* Row 2: Type + Source */}
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                    <CustomSelect value={typeFilter} onChange={v => setTypeFilter(v)} options={TYPES.map(t => ({ value: t, label: t === 'All' ? 'All Types' : t === 'credit' ? 'Credit ↑' : 'Debit ↓' }))} minWidth={0} />
+                    <CustomSelect value={sourceFilter} onChange={v => setSourceFilter(v)} options={SOURCES.map(s => ({ value: s, label: s === 'All' ? 'All Sources' : SOURCE_LABELS[s] || s }))} minWidth={0} />
+                  </div>
+                  {/* Row 3: Search */}
+                  <div style={{ display:'flex', gap:8 }}>
+                    <div style={{ position:'relative', flex:1 }}>
+                      <MagnifyingGlass size={14} color="var(--text-muted)" style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', pointerEvents:'none' }} />
+                      <input placeholder="Search name, receipt..." value={search}
+                        onChange={e=>setSearch(e.target.value)} onKeyDown={handleSearch}
+                        style={{ ...themeInput(), width:'100%', paddingLeft:30 }} />
+                    </div>
+                    <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
+                      onClick={fetchData} style={adminBtn()}>
+                      <MagnifyingGlass size={14} />
+                    </motion.button>
+                  </div>
+                  {/* Row 4: Next Receipt No */}
+                  <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 14px', borderRadius:10, background:'var(--maroon-subtle)', border:'1px solid rgba(139,26,26,0.15)' }}>
+                    <span style={{ fontSize:12, fontWeight:600, color:'var(--text-secondary)', whiteSpace:'nowrap' }}>Next Receipt No:</span>
+                    <span style={{ fontSize:13, fontWeight:800, color:'var(--maroon)', fontFamily:'monospace', flex:1 }}>{nextReceiptNo || '—'}</span>
+                    <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
+                      onClick={openReceiptModal}
+                      style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:8, border:'1.5px solid rgba(139,26,26,0.2)',
+                        fontSize:11, fontWeight:700, color:'var(--maroon)', background:'white', cursor:'pointer', flexShrink:0 }}>
+                      <PencilSimple size={11} weight="fill" /> Edit
+                    </motion.button>
+                  </div>
+                  {/* Row 5: Action buttons 2×2 grid */}
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                    <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
+                      onClick={openAdd} style={{ ...adminBtn(), justifyContent:'center' }}>
+                      <Plus size={14} weight="bold" /> Add Entry
+                    </motion.button>
+                    <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
+                      onClick={() => openExportModal('pdf', 'ledger')} style={{ ...adminBtn('var(--success)'), justifyContent:'center' }}>
+                      <DownloadSimple size={14} /> PDF
+                    </motion.button>
+                    <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
+                      onClick={() => openExportModal('doc', 'ledger')} style={{ ...adminBtn('var(--info)'), justifyContent:'center' }}>
+                      <DownloadSimple size={14} /> DOC
+                    </motion.button>
+                    <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
+                      onClick={() => openExportModal('print', 'ledger')} style={{ ...adminBtn('#7c3aed'), justifyContent:'center' }}>
+                      <Printer size={14} /> Print
+                    </motion.button>
+                  </div>
                 </div>
-                <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
-                  onClick={fetchData} style={adminBtn()}>
-                  <MagnifyingGlass size={14} />
-                </motion.button>
-                <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 14px', borderRadius:10, background:'var(--maroon-subtle)', border:'1px solid rgba(139,26,26,0.15)' }}>
-                  <span style={{ fontSize:12, fontWeight:600, color:'var(--text-secondary)', whiteSpace:'nowrap' }}>Next Receipt No:</span>
-                  <span style={{ fontSize:14, fontWeight:800, color:'var(--maroon)', fontFamily:'monospace', whiteSpace:'nowrap' }}>{nextReceiptNo || '—'}</span>
-                  <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
-                    onClick={openReceiptModal}
-                    style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:8, border:'1.5px solid rgba(139,26,26,0.2)',
-                      fontSize:11, fontWeight:700, color:'var(--maroon)', background:'white', cursor:'pointer' }}>
-                    <PencilSimple size={11} weight="fill" /> Edit
+              ) : (
+                <div style={{ display:'flex', gap:10, flexWrap:'wrap', alignItems:'center' }}>
+                  <CustomSelect value={year} onChange={v => setYear(+v)} options={[{ value: 0, label: 'All Years' }, ...YEARS.map(y => ({ value: y, label: String(y) }))]} minWidth={120} />
+                  <CustomSelect value={month} onChange={v => setMonth(+v)} options={MONTHS.map((m, i) => ({ value: i, label: m }))} minWidth={140} />
+                  <CustomSelect value={typeFilter} onChange={v => setTypeFilter(v)} options={TYPES.map(t => ({ value: t, label: t === 'All' ? 'All Types' : t === 'credit' ? 'Credit ↑' : 'Debit ↓' }))} minWidth={120} />
+                  <CustomSelect value={sourceFilter} onChange={v => setSourceFilter(v)} options={SOURCES.map(s => ({ value: s, label: s === 'All' ? 'All Sources' : SOURCE_LABELS[s] || s }))} minWidth={140} />
+                  <div style={{ position:'relative', display:'flex', alignItems:'center' }}>
+                    <MagnifyingGlass size={14} color="var(--text-muted)" style={{ position:'absolute', left:10, pointerEvents:'none' }} />
+                    <input placeholder="Search name, receipt..." value={search}
+                      onChange={e=>setSearch(e.target.value)} onKeyDown={handleSearch}
+                      style={{ ...themeInput(), width:'auto', minWidth:180, paddingLeft:30 }} />
+                  </div>
+                  <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
+                    onClick={fetchData} style={adminBtn()}>
+                    <MagnifyingGlass size={14} />
                   </motion.button>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 14px', borderRadius:10, background:'var(--maroon-subtle)', border:'1px solid rgba(139,26,26,0.15)' }}>
+                    <span style={{ fontSize:12, fontWeight:600, color:'var(--text-secondary)', whiteSpace:'nowrap' }}>Next Receipt No:</span>
+                    <span style={{ fontSize:14, fontWeight:800, color:'var(--maroon)', fontFamily:'monospace', whiteSpace:'nowrap' }}>{nextReceiptNo || '—'}</span>
+                    <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
+                      onClick={openReceiptModal}
+                      style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:8, border:'1.5px solid rgba(139,26,26,0.2)',
+                        fontSize:11, fontWeight:700, color:'var(--maroon)', background:'white', cursor:'pointer' }}>
+                      <PencilSimple size={11} weight="fill" /> Edit
+                    </motion.button>
+                  </div>
+                  <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
+                    <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
+                      onClick={openAdd} style={adminBtn()}>
+                      <Plus size={14} weight="bold" /> Add Entry
+                    </motion.button>
+                    <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
+                      onClick={() => openExportModal('pdf', 'ledger')} style={adminBtn('var(--success)')}>
+                      <DownloadSimple size={14} /> PDF
+                    </motion.button>
+                    <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
+                      onClick={() => openExportModal('doc', 'ledger')} style={adminBtn('var(--info)')}>
+                      <DownloadSimple size={14} /> DOC
+                    </motion.button>
+                    <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
+                      onClick={() => openExportModal('print', 'ledger')} style={adminBtn('#7c3aed')}>
+                      <Printer size={14} /> Print
+                    </motion.button>
+                  </div>
                 </div>
-                <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
-                  <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
-                    onClick={openAdd} style={adminBtn()}>
-                    <Plus size={14} weight="bold" /> Add Entry
-                  </motion.button>
-                  <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
-                    onClick={() => openExportModal('pdf', 'ledger')} style={adminBtn('var(--success)')}>
-                    <DownloadSimple size={14} /> PDF
-                  </motion.button>
-                  <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
-                    onClick={() => openExportModal('doc', 'ledger')} style={adminBtn('var(--info)')}>
-                    <DownloadSimple size={14} /> DOC
-                  </motion.button>
-                  <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
-                    onClick={() => openExportModal('print', 'ledger')} style={adminBtn('#7c3aed')}>
-                    <Printer size={14} /> Print
-                  </motion.button>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Data Table */}
@@ -524,6 +503,60 @@ function Cashbook() {
                 <BookOpen size={56} weight="duotone" color="var(--text-muted)" style={{ marginBottom:16 }} />
                 <h3 style={{ fontSize:18, fontWeight:800, color:'var(--maroon)', marginBottom:8 }}>No entries found</h3>
                 <p style={{ fontSize:14, color:'var(--text-muted)' }}>Add your first cashbook entry to get started</p>
+              </div>
+            ) : isMobile ? (
+              <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                {entriesWithBalance.map((e,i)=>(
+                  <div key={e._id} style={{ ...cardStyleSolid, padding:'14px 16px' }}>
+                    {/* Top: type+status badges + amount */}
+                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+                      <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                        <span style={{ padding:'3px 10px', borderRadius:99, fontSize:11, fontWeight:700,
+                          background: e.type==='credit' ? 'var(--success-subtle)' : 'var(--error-subtle)',
+                          color: e.type==='credit' ? 'var(--success-text)' : 'var(--error-text)' }}>
+                          {e.type==='credit'?'↑ Credit':'↓ Debit'}
+                        </span>
+                        <span style={{ padding:'3px 10px', borderRadius:99, fontSize:11, fontWeight:700,
+                          background: e.status==='completed' ? 'var(--success-subtle)' : 'var(--warning-subtle)',
+                          color: e.status==='completed' ? 'var(--success-text)' : 'var(--warning-text)' }}>
+                          {e.status==='completed'?'Done':'Pending'}
+                        </span>
+                      </div>
+                      <span style={{ fontSize:18, fontWeight:900, color: e.type==='credit' ? 'var(--success-text)' : 'var(--error-text)' }}>
+                        ₹{e.amount.toLocaleString()}
+                      </span>
+                    </div>
+                    {/* Name + category */}
+                    <div style={{ fontSize:14, fontWeight:700, color:'var(--maroon)', marginBottom:2 }}>{e.name}</div>
+                    <div style={{ fontSize:12, color:'var(--text-secondary)', marginBottom:8 }}>{e.category}</div>
+                    {/* Meta row */}
+                    <div style={{ fontSize:11, color:'var(--text-muted)', display:'flex', flexWrap:'wrap', gap:4, alignItems:'center', marginBottom:8 }}>
+                      <span>{yearRange(e.entryDate)}</span>
+                      {e.paymentDate && <><span>•</span><span>{new Date(e.paymentDate).toLocaleDateString('en-IN')}</span></>}
+                      {e.receiptNumber && <><span>•</span><span style={{ fontFamily:'monospace' }}>{e.receiptNumber}</span></>}
+                      <span>•</span>
+                      <span style={{ padding:'2px 8px', borderRadius:99, fontSize:10, fontWeight:700,
+                        background: e.paymentMode==='online' ? 'var(--info-subtle)' : 'var(--neutral-100)',
+                        color: e.paymentMode==='online' ? 'var(--info-text)' : 'var(--text-secondary)' }}>
+                        {e.paymentMode==='online'?'Online':'Cash'}
+                      </span>
+                    </div>
+                    {/* Balance + actions */}
+                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                      <span style={{ fontSize:12, fontWeight:700, color: e.runningBalance>=0 ? 'var(--success-text)' : 'var(--error-text)' }}>
+                        Balance: ₹{e.runningBalance.toLocaleString()}
+                      </span>
+                      <div style={{ display:'flex', gap:10 }}>
+                        <button onClick={()=>openEdit(e)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--primary)' }} title="Edit">
+                          <PencilSimple size={18} weight="duotone" />
+                        </button>
+                        <button onClick={()=>setDeleteConfirm(e._id)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--error)' }} title="Delete">
+                          <Trash size={18} weight="duotone" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <div style={{ ...cardStyleSolid, padding:0, overflow:'hidden' }}>
@@ -591,50 +624,117 @@ function Cashbook() {
           /* Annual Ritual Payments Tab */
           <>
             <div style={{ ...cardStyleSolid, marginBottom:24, padding:'16px 20px' }}>
-              <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
-                <span style={{ fontWeight:700, color:'var(--maroon)' }}>Year:</span>
-                <CustomSelect value={ritualYear} onChange={v => setRitualYear(+v)} options={YEARS.map(y => ({ value: y, label: String(y) }))} minWidth={100} />
-                <div style={{ marginLeft:8, display:'flex', alignItems:'center', gap:8 }}>
-                  <span style={{ fontSize:13, fontWeight:600, color:'var(--text-secondary)' }}>Annual Fee:</span>
-                  <span style={{ fontSize:16, fontWeight:900, color:'var(--maroon)' }}>₹{annualFee.toLocaleString()}</span>
-                  <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
-                    onClick={() => { setNewFee(annualFee); setShowFeeModal(true) }}
-                    style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 12px', borderRadius:8, border:'1.5px solid rgba(139,26,26,0.2)',
-                      fontSize:12, fontWeight:700, color:'var(--maroon)', background:'var(--maroon-subtle)', cursor:'pointer' }}>
-                    <PencilSimple size={12} weight="fill" /> Edit Fee
-                  </motion.button>
-                </div>
-                {ritualData && (
-                  <div style={{ marginLeft:'auto', display:'flex', gap:16, fontSize:13, fontWeight:600 }}>
-                    <span style={{ color:'var(--success-text)' }}>Paid: {ritualData.paid}</span>
-                    <span style={{ color:'var(--warning-text)' }}>Pending: {ritualData.pending}</span>
-                    <span style={{ color:'var(--error-text)' }}>Not Paid: {ritualData.notPaid}</span>
-                    <span style={{ color:'var(--maroon)' }}>Total: {ritualData.totalMembers}</span>
+              {isMobile ? (
+                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                  {/* Row 1: Year + Annual Fee */}
+                  <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <span style={{ fontWeight:700, color:'var(--maroon)', fontSize:13 }}>Year:</span>
+                      <CustomSelect value={ritualYear} onChange={v => setRitualYear(+v)} options={YEARS.map(y => ({ value: y, label: String(y) }))} minWidth={90} />
+                    </div>
+                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                      <span style={{ fontSize:12, fontWeight:600, color:'var(--text-secondary)' }}>Fee:</span>
+                      <span style={{ fontSize:15, fontWeight:900, color:'var(--maroon)' }}>₹{annualFee.toLocaleString()}</span>
+                      <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
+                        onClick={() => { setNewFee(annualFee); setShowFeeModal(true) }}
+                        style={{ display:'flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:8, border:'1.5px solid rgba(139,26,26,0.2)',
+                          fontSize:11, fontWeight:700, color:'var(--maroon)', background:'var(--maroon-subtle)', cursor:'pointer' }}>
+                        <PencilSimple size={11} weight="fill" /> Edit Fee
+                      </motion.button>
+                    </div>
                   </div>
-                )}
-              </div>
-              <div style={{ display:'flex', gap:10, marginTop:16, alignItems:'center', flexWrap:'wrap' }}>
-                <div style={{ position:'relative', display:'flex', alignItems:'center' }}>
-                  <MagnifyingGlass size={14} color="var(--text-muted)" style={{ position:'absolute', left:10, pointerEvents:'none' }} />
-                  <input placeholder="Search name or receipt..." value={ritualSearch}
-                    onChange={e=>setRitualSearch(e.target.value)}
-                    style={{ ...themeInput(), width:'auto', minWidth:250, paddingLeft:30 }} />
+                  {/* Row 2: Stats 2×2 grid */}
+                  {ritualData && (
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                      <div style={{ padding:'10px 12px', borderRadius:10, background:'var(--success-subtle)', textAlign:'center' }}>
+                        <div style={{ fontSize:20, fontWeight:900, color:'var(--success-text)' }}>{ritualData.paid}</div>
+                        <div style={{ fontSize:11, color:'var(--text-muted)', fontWeight:600 }}>Paid</div>
+                      </div>
+                      <div style={{ padding:'10px 12px', borderRadius:10, background:'var(--warning-subtle)', textAlign:'center' }}>
+                        <div style={{ fontSize:20, fontWeight:900, color:'var(--warning-text)' }}>{ritualData.pending}</div>
+                        <div style={{ fontSize:11, color:'var(--text-muted)', fontWeight:600 }}>Pending</div>
+                      </div>
+                      <div style={{ padding:'10px 12px', borderRadius:10, background:'var(--error-subtle)', textAlign:'center' }}>
+                        <div style={{ fontSize:20, fontWeight:900, color:'var(--error-text)' }}>{ritualData.notPaid}</div>
+                        <div style={{ fontSize:11, color:'var(--text-muted)', fontWeight:600 }}>Not Paid</div>
+                      </div>
+                      <div style={{ padding:'10px 12px', borderRadius:10, background:'var(--maroon-subtle)', textAlign:'center' }}>
+                        <div style={{ fontSize:20, fontWeight:900, color:'var(--maroon)' }}>{ritualData.totalMembers}</div>
+                        <div style={{ fontSize:11, color:'var(--text-muted)', fontWeight:600 }}>Total</div>
+                      </div>
+                    </div>
+                  )}
+                  {/* Row 3: Search */}
+                  <div style={{ position:'relative' }}>
+                    <MagnifyingGlass size={14} color="var(--text-muted)" style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', pointerEvents:'none' }} />
+                    <input placeholder="Search name or receipt..." value={ritualSearch}
+                      onChange={e=>setRitualSearch(e.target.value)}
+                      style={{ ...themeInput(), width:'100%', paddingLeft:30 }} />
+                  </div>
+                  {/* Row 4: Export buttons 3-column */}
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
+                    <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
+                      onClick={() => openExportModal('pdf', 'annual')} style={{ ...adminBtn('var(--success)'), justifyContent:'center' }}>
+                      <DownloadSimple size={14} /> PDF
+                    </motion.button>
+                    <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
+                      onClick={() => openExportModal('doc', 'annual')} style={{ ...adminBtn('var(--info)'), justifyContent:'center' }}>
+                      <DownloadSimple size={14} /> DOC
+                    </motion.button>
+                    <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
+                      onClick={() => openExportModal('print', 'annual')} style={{ ...adminBtn('#7c3aed'), justifyContent:'center' }}>
+                      <Printer size={14} /> Print
+                    </motion.button>
+                  </div>
                 </div>
-                <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
-                  <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
-                    onClick={() => openExportModal('pdf', 'annual')} style={adminBtn('var(--success)')}>
-                    <DownloadSimple size={14} /> PDF
-                  </motion.button>
-                  <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
-                    onClick={() => openExportModal('doc', 'annual')} style={adminBtn('var(--info)')}>
-                    <DownloadSimple size={14} /> DOC
-                  </motion.button>
-                  <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
-                    onClick={() => openExportModal('print', 'annual')} style={adminBtn('#7c3aed')}>
-                    <Printer size={14} /> Print
-                  </motion.button>
-                </div>
-              </div>
+              ) : (
+                <>
+                  <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
+                    <span style={{ fontWeight:700, color:'var(--maroon)' }}>Year:</span>
+                    <CustomSelect value={ritualYear} onChange={v => setRitualYear(+v)} options={YEARS.map(y => ({ value: y, label: String(y) }))} minWidth={100} />
+                    <div style={{ marginLeft:8, display:'flex', alignItems:'center', gap:8 }}>
+                      <span style={{ fontSize:13, fontWeight:600, color:'var(--text-secondary)' }}>Annual Fee:</span>
+                      <span style={{ fontSize:16, fontWeight:900, color:'var(--maroon)' }}>₹{annualFee.toLocaleString()}</span>
+                      <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
+                        onClick={() => { setNewFee(annualFee); setShowFeeModal(true) }}
+                        style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 12px', borderRadius:8, border:'1.5px solid rgba(139,26,26,0.2)',
+                          fontSize:12, fontWeight:700, color:'var(--maroon)', background:'var(--maroon-subtle)', cursor:'pointer' }}>
+                        <PencilSimple size={12} weight="fill" /> Edit Fee
+                      </motion.button>
+                    </div>
+                    {ritualData && (
+                      <div style={{ marginLeft:'auto', display:'flex', gap:16, fontSize:13, fontWeight:600 }}>
+                        <span style={{ color:'var(--success-text)' }}>Paid: {ritualData.paid}</span>
+                        <span style={{ color:'var(--warning-text)' }}>Pending: {ritualData.pending}</span>
+                        <span style={{ color:'var(--error-text)' }}>Not Paid: {ritualData.notPaid}</span>
+                        <span style={{ color:'var(--maroon)' }}>Total: {ritualData.totalMembers}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ display:'flex', gap:10, marginTop:16, alignItems:'center', flexWrap:'wrap' }}>
+                    <div style={{ position:'relative', display:'flex', alignItems:'center' }}>
+                      <MagnifyingGlass size={14} color="var(--text-muted)" style={{ position:'absolute', left:10, pointerEvents:'none' }} />
+                      <input placeholder="Search name or receipt..." value={ritualSearch}
+                        onChange={e=>setRitualSearch(e.target.value)}
+                        style={{ ...themeInput(), width:'auto', minWidth:250, paddingLeft:30 }} />
+                    </div>
+                    <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
+                      <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
+                        onClick={() => openExportModal('pdf', 'annual')} style={adminBtn('var(--success)')}>
+                        <DownloadSimple size={14} /> PDF
+                      </motion.button>
+                      <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
+                        onClick={() => openExportModal('doc', 'annual')} style={adminBtn('var(--info)')}>
+                        <DownloadSimple size={14} /> DOC
+                      </motion.button>
+                      <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
+                        onClick={() => openExportModal('print', 'annual')} style={adminBtn('#7c3aed')}>
+                        <Printer size={14} /> Print
+                      </motion.button>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {loading ? (
@@ -642,55 +742,104 @@ function Cashbook() {
                 <motion.div animate={{ rotate:360 }} transition={{ duration:1, repeat:Infinity, ease:'linear' }}
                   style={{ width:48, height:48, borderRadius:'50%', border:'4px solid var(--primary-subtle)', borderTop:'4px solid var(--primary)', margin:'0 auto 16px' }} />
               </div>
-            ) : ritualData && (
-              <div style={{ ...cardStyleSolid, padding:0, overflow:'hidden' }}>
-                <div style={{ overflowX:'auto' }}>
-                  <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
-                    <thead>
-                      <tr style={{ background:'linear-gradient(135deg,#1a0000,#5a0e0e)', color:'white' }}>
-                        {['#','Name','Phone','Amount','Status','Payment Date','Mode','Receipt No.','Actions'].map(h=>(
-                          <th key={h} style={{ padding:'12px 10px', textAlign:'left', fontWeight:700, fontSize:12 }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(ritualData.members.filter(m => !ritualSearch || (m.name && m.name.toLowerCase().includes(ritualSearch.toLowerCase())) || (m.receiptNumber && m.receiptNumber.toLowerCase().includes(ritualSearch.toLowerCase())))).map((m,i)=>(
-                        <tr key={m.userId||i} style={{ borderBottom:'1px solid var(--border)', background: i%2===0 ? 'white' : 'var(--neutral-50)' }}>
-                          <td style={{ padding:'10px', color:'var(--text-muted)' }}>{i+1}</td>
-                          <td style={{ padding:'10px', fontWeight:600, color:'var(--maroon)' }}>{m.name}</td>
-                          <td style={{ padding:'10px' }}>{m.phone || '—'}</td>
-                          <td style={{ padding:'10px', fontWeight:700 }}>₹{(m.amount||annualFee).toLocaleString()}</td>
-                          <td style={{ padding:'10px' }}>
-                            <span style={{ padding:'4px 12px', borderRadius:99, fontSize:11, fontWeight:700,
-                              background: m.status==='completed' ? 'var(--success-subtle)' : m.status==='pending' ? 'var(--warning-subtle)' : 'var(--error-subtle)',
-                              color: m.status==='completed' ? 'var(--success-text)' : m.status==='pending' ? 'var(--warning-text)' : 'var(--error-text)' }}>
-                              {m.status==='completed'?'Paid':m.status==='pending'?'Pending':'Not Paid'}
-                            </span>
-                          </td>
-                          <td style={{ padding:'10px' }}>{m.paymentDate ? new Date(m.paymentDate).toLocaleDateString('en-IN') : '—'}</td>
-                          <td style={{ padding:'10px' }}>{m.paymentMode || '—'}</td>
-                          <td style={{ padding:'10px', fontFamily:'monospace', fontSize:12 }}>{m.receiptNumber || '—'}</td>
-                          <td style={{ padding:'10px', whiteSpace:'nowrap', display:'flex', gap:6 }}>
-                            <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
-                              onClick={()=>openRitualModal(m)}
-                              style={{ ...adminBtn(m.status==='not_paid' ? 'linear-gradient(135deg,var(--success),#166534)' : 'linear-gradient(135deg,var(--primary),var(--maroon))'), padding:'6px 12px', fontSize:11 }}>
-                              {m.status==='not_paid' ? <><CurrencyCircleDollar size={12} /> Record</> : <><PencilSimple size={12} /> Edit</>}
-                            </motion.button>
-                            {m.receiptReady && (
-                              <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
-                                onClick={()=>downloadRitualReceipt(m)}
-                                style={{ ...adminBtn('linear-gradient(135deg,var(--info),#1e40af)'), padding:'6px 12px', fontSize:11 }}>
-                                <DownloadSimple size={12} /> Receipt
-                              </motion.button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            ) : ritualData && (() => {
+              const filteredMembers = ritualData.members.filter(m =>
+                !ritualSearch || (m.name && m.name.toLowerCase().includes(ritualSearch.toLowerCase())) ||
+                (m.receiptNumber && m.receiptNumber.toLowerCase().includes(ritualSearch.toLowerCase()))
+              )
+              return isMobile ? (
+                <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                  {filteredMembers.map((m,i)=>(
+                    <div key={m.userId||i} style={{ ...cardStyleSolid, padding:'14px 16px' }}>
+                      {/* Top: name + status */}
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6 }}>
+                        <span style={{ fontSize:14, fontWeight:700, color:'var(--maroon)', flex:1, marginRight:8 }}>{m.name}</span>
+                        <span style={{ padding:'3px 10px', borderRadius:99, fontSize:11, fontWeight:700, flexShrink:0,
+                          background: m.status==='completed' ? 'var(--success-subtle)' : m.status==='pending' ? 'var(--warning-subtle)' : 'var(--error-subtle)',
+                          color: m.status==='completed' ? 'var(--success-text)' : m.status==='pending' ? 'var(--warning-text)' : 'var(--error-text)' }}>
+                          {m.status==='completed'?'Paid':m.status==='pending'?'Pending':'Not Paid'}
+                        </span>
+                      </div>
+                      {/* Phone */}
+                      {m.phone && <div style={{ fontSize:12, color:'var(--text-secondary)', marginBottom:6 }}>{m.phone}</div>}
+                      {/* Amount + date + mode */}
+                      <div style={{ fontSize:12, display:'flex', flexWrap:'wrap', gap:4, alignItems:'center', marginBottom:6 }}>
+                        <span style={{ fontWeight:800, color:'var(--maroon)', fontSize:15 }}>₹{(m.amount||annualFee).toLocaleString()}</span>
+                        {m.paymentDate && <><span style={{ color:'var(--text-muted)' }}>•</span><span style={{ color:'var(--text-secondary)' }}>{new Date(m.paymentDate).toLocaleDateString('en-IN')}</span></>}
+                        {m.paymentMode && <><span style={{ color:'var(--text-muted)' }}>•</span><span style={{ color:'var(--text-secondary)' }}>{m.paymentMode}</span></>}
+                      </div>
+                      {/* Receipt number */}
+                      {m.receiptNumber && (
+                        <div style={{ fontSize:11, color:'var(--text-muted)', fontFamily:'monospace', marginBottom:10 }}>{m.receiptNumber}</div>
+                      )}
+                      {/* Actions */}
+                      <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
+                        <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
+                          onClick={()=>openRitualModal(m)}
+                          style={{ ...adminBtn(m.status==='not_paid' ? 'linear-gradient(135deg,var(--success),#166534)' : 'linear-gradient(135deg,var(--primary),var(--maroon))'), padding:'7px 14px', fontSize:12 }}>
+                          {m.status==='not_paid' ? <><CurrencyCircleDollar size={13} /> Record</> : <><PencilSimple size={13} /> Edit</>}
+                        </motion.button>
+                        {m.receiptReady && (
+                          <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
+                            onClick={()=>downloadRitualReceipt(m)}
+                            style={{ ...adminBtn('linear-gradient(135deg,var(--info),#1e40af)'), padding:'7px 14px', fontSize:12 }}>
+                            <DownloadSimple size={13} /> Receipt
+                          </motion.button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            )}
+              ) : (
+                <div style={{ ...cardStyleSolid, padding:0, overflow:'hidden' }}>
+                  <div style={{ overflowX:'auto' }}>
+                    <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
+                      <thead>
+                        <tr style={{ background:'linear-gradient(135deg,#1a0000,#5a0e0e)', color:'white' }}>
+                          {['#','Name','Phone','Amount','Status','Payment Date','Mode','Receipt No.','Actions'].map(h=>(
+                            <th key={h} style={{ padding:'12px 10px', textAlign:'left', fontWeight:700, fontSize:12 }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredMembers.map((m,i)=>(
+                          <tr key={m.userId||i} style={{ borderBottom:'1px solid var(--border)', background: i%2===0 ? 'white' : 'var(--neutral-50)' }}>
+                            <td style={{ padding:'10px', color:'var(--text-muted)' }}>{i+1}</td>
+                            <td style={{ padding:'10px', fontWeight:600, color:'var(--maroon)' }}>{m.name}</td>
+                            <td style={{ padding:'10px' }}>{m.phone || '—'}</td>
+                            <td style={{ padding:'10px', fontWeight:700 }}>₹{(m.amount||annualFee).toLocaleString()}</td>
+                            <td style={{ padding:'10px' }}>
+                              <span style={{ padding:'4px 12px', borderRadius:99, fontSize:11, fontWeight:700,
+                                background: m.status==='completed' ? 'var(--success-subtle)' : m.status==='pending' ? 'var(--warning-subtle)' : 'var(--error-subtle)',
+                                color: m.status==='completed' ? 'var(--success-text)' : m.status==='pending' ? 'var(--warning-text)' : 'var(--error-text)' }}>
+                                {m.status==='completed'?'Paid':m.status==='pending'?'Pending':'Not Paid'}
+                              </span>
+                            </td>
+                            <td style={{ padding:'10px' }}>{m.paymentDate ? new Date(m.paymentDate).toLocaleDateString('en-IN') : '—'}</td>
+                            <td style={{ padding:'10px' }}>{m.paymentMode || '—'}</td>
+                            <td style={{ padding:'10px', fontFamily:'monospace', fontSize:12 }}>{m.receiptNumber || '—'}</td>
+                            <td style={{ padding:'10px', whiteSpace:'nowrap', display:'flex', gap:6 }}>
+                              <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
+                                onClick={()=>openRitualModal(m)}
+                                style={{ ...adminBtn(m.status==='not_paid' ? 'linear-gradient(135deg,var(--success),#166534)' : 'linear-gradient(135deg,var(--primary),var(--maroon))'), padding:'6px 12px', fontSize:11 }}>
+                                {m.status==='not_paid' ? <><CurrencyCircleDollar size={12} /> Record</> : <><PencilSimple size={12} /> Edit</>}
+                              </motion.button>
+                              {m.receiptReady && (
+                                <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
+                                  onClick={()=>downloadRitualReceipt(m)}
+                                  style={{ ...adminBtn('linear-gradient(135deg,var(--info),#1e40af)'), padding:'6px 12px', fontSize:11 }}>
+                                  <DownloadSimple size={12} /> Receipt
+                                </motion.button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )
+            })()}
           </>
         )}
 

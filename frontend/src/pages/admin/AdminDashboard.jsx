@@ -10,7 +10,7 @@ import {
 } from '@phosphor-icons/react'
 import { cardStyleSolid, STATUS_COLORS } from '../../styles/theme'
 
-function useIsMobile() {
+export function useIsMobile() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth < 768)
