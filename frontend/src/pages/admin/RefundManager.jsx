@@ -4,6 +4,7 @@ import { AdminLayout, useIsMobile } from './AdminDashboard'
 import { adminAPI } from '../../utils/api'
 import { CurrencyCircleDollar, Tray, User, CalendarBlank, CheckCircle, WarningCircle, XCircle } from '@phosphor-icons/react'
 import { cardStyleSolid } from '../../styles/theme'
+import { ButtonSpinner } from '../../components/ButtonSpinner'
 const REFUND_FILTERS = ['All', 'Pending', 'Processed', 'Failed']
 
 const REFUND_STATUS = {
@@ -170,7 +171,9 @@ function RefundManager() {
                           display: 'flex', alignItems: 'center', gap: 6,
                           boxShadow: processingId === refund._id ? 'none' : '0 2px 10px rgba(5,150,105,0.28)' }}>
                         <CurrencyCircleDollar size={14} />
-                        {processingId === refund._id ? 'Processing…' : 'Process Refund'}
+                        {processingId === refund._id
+                          ? <><ButtonSpinner /> <span>Processing…</span></>
+                          : <><CurrencyCircleDollar size={14} /> Process Refund</>}
                       </motion.button>
                     )}
                   </div>

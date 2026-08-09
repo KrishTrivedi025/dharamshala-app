@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AdminLayout, useIsMobile } from './AdminDashboard'
+import { ButtonSpinner } from '../../components/ButtonSpinner'
 import { adminAPI } from '../../utils/api'
 import { LockSimple, LockOpen, Clock } from '@phosphor-icons/react'
 import { cardStyleSolid, adminCardStyle, modalOverlay, modalContent, inputStyle as themeInput } from '../../styles/theme'
@@ -160,8 +161,11 @@ function LockedDates() {
                     padding: '5px 12px', borderRadius: 8, border: 'none', flexShrink: 0,
                     cursor: 'pointer', fontSize: 12, fontWeight: 700,
                     color: 'var(--error-text)', background: 'var(--error-subtle)',
+                    display: 'flex', alignItems: 'center', gap: 4,
                   }}>
-                  {releasingId === lock._id ? '...' : 'Release'}
+                  {releasingId === lock._id
+                    ? <><ButtonSpinner light={false} size={11} /> <span>Releasing…</span></>
+                    : 'Release'}
                 </motion.button>
               </motion.div>
             ))}
@@ -260,7 +264,9 @@ function LockedDates() {
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                       background: submitting ? 'var(--neutral-300)' : 'linear-gradient(135deg, var(--primary), var(--maroon))',
                     }}>
-                    <LockSimple size={16} weight="fill" /> {submitting ? 'Locking...' : 'Lock Dates'}
+                    {submitting
+                      ? <><ButtonSpinner /> <span>Locking…</span></>
+                      : <><LockSimple size={16} weight="fill" /> Lock Dates</>}
                   </motion.button>
                 </div>
               </motion.div>

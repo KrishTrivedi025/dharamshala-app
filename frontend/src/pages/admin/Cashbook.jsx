@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AdminLayout, useIsMobile } from './AdminDashboard'
 import { CustomSelect } from '../../components/AdminSelect'
+import { ButtonSpinner } from '../../components/ButtonSpinner'
 import {
   BookOpen, ChartBar, CurrencyCircleDollar, ArrowUp, Wallet,
   Plus, DownloadSimple, Printer, PencilSimple, Trash,
@@ -61,6 +62,7 @@ function Cashbook() {
   const [ritualForm, setRitualForm] = useState({})
   const [ritualSaving, setRitualSaving] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [deletingId, setDeletingId] = useState(null)
   const tableRef = useRef(null)
   const [annualFee, setAnnualFee] = useState(1200)
   const [showFeeModal, setShowFeeModal] = useState(false)
@@ -170,9 +172,11 @@ function Cashbook() {
 
   const handleDelete = async (id) => {
     try {
+      setDeletingId(id)
       await cashbookAPI.deleteEntry(id)
       setDeleteConfirm(null); await fetchData()
     } catch (err) { setError(err.message) }
+    finally { setDeletingId(null) }
   }
 
   const fetchRituals = async () => {
@@ -948,7 +952,7 @@ function Cashbook() {
                   <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}} disabled={exporting}
                     onClick={handleExport}
                     style={{ flex:1, padding:13, borderRadius:12, border:'none', cursor:'pointer', fontSize:14, fontWeight:700, color:'white', background: exporting?'var(--neutral-300)':'linear-gradient(135deg,var(--primary),var(--maroon))' }}>
-                    {exporting ? 'Generating...' : 'Generate'}
+                    {exporting ? <><ButtonSpinner /> <span>Generating…</span></> : 'Generate'}
                   </motion.button>
                 </div>
               </motion.div>
@@ -1030,8 +1034,8 @@ function Cashbook() {
                   </motion.button>
                   <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}} disabled={saving}
                     onClick={handleSave}
-                    style={{ flex:1, padding:13, borderRadius:12, border:'none', cursor:'pointer', fontSize:14, fontWeight:700, color:'white', background: saving?'var(--neutral-300)':'linear-gradient(135deg,var(--primary),var(--maroon))' }}>
-                    {saving ? 'Saving...' : editEntry ? 'Update' : 'Create'}
+                    style={{ flex:1, padding:13, borderRadius:12, border:'none', cursor:'pointer', fontSize:14, fontWeight:700, color:'white', background: saving?'var(--neutral-300)':'linear-gradient(135deg,var(--primary),var(--maroon))', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                    {saving ? <><ButtonSpinner /> <span>Saving…</span></> : editEntry ? 'Update' : 'Create'}
                   </motion.button>
                 </div>
               </motion.div>
@@ -1067,7 +1071,7 @@ function Cashbook() {
                   <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}} disabled={feeSaving}
                     onClick={handleFeeUpdate}
                     style={{ flex:1, padding:13, borderRadius:12, border:'none', cursor:'pointer', fontSize:14, fontWeight:700, color:'white', display:'flex', alignItems:'center', justifyContent:'center', gap:8, background: feeSaving?'var(--neutral-300)':'linear-gradient(135deg,var(--primary),var(--maroon))' }}>
-                    <CheckCircle size={16} /> {feeSaving ? 'Saving...' : 'Update Fee'}
+                    {feeSaving ? <><ButtonSpinner /> <span>Saving…</span></> : <><CheckCircle size={16} /> Update Fee</>}
                   </motion.button>
                 </div>
               </motion.div>
@@ -1103,7 +1107,7 @@ function Cashbook() {
                   <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}} disabled={receiptNoSaving}
                     onClick={handleReceiptNoUpdate}
                     style={{ flex:1, padding:13, borderRadius:12, border:'none', cursor:'pointer', fontSize:14, fontWeight:700, color:'white', display:'flex', alignItems:'center', justifyContent:'center', gap:8, background: receiptNoSaving?'var(--neutral-300)':'linear-gradient(135deg,var(--primary),var(--maroon))' }}>
-                    <CheckCircle size={16} /> {receiptNoSaving ? 'Saving...' : 'Update'}
+                    {receiptNoSaving ? <><ButtonSpinner /> <span>Saving…</span></> : <><CheckCircle size={16} /> Update</>}
                   </motion.button>
                 </div>
               </motion.div>
@@ -1154,7 +1158,7 @@ function Cashbook() {
                   <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}} disabled={ritualSaving}
                     onClick={handleRitualSave}
                     style={{ flex:1, padding:13, borderRadius:12, border:'none', cursor:'pointer', fontSize:14, fontWeight:700, color:'white', display:'flex', alignItems:'center', justifyContent:'center', gap:8, background: ritualSaving?'var(--neutral-300)':'linear-gradient(135deg,var(--success),#166534)' }}>
-                    <CurrencyCircleDollar size={16} /> {ritualSaving ? 'Saving...' : 'Save Payment'}
+                    {ritualSaving ? <><ButtonSpinner /> <span>Saving…</span></> : <><CurrencyCircleDollar size={16} /> Save Payment</>}
                   </motion.button>
                 </div>
               </motion.div>
@@ -1174,10 +1178,13 @@ function Cashbook() {
                 <h3 style={{ fontSize:18, fontWeight:800, color:'var(--maroon)', marginBottom:8 }}>Delete Entry?</h3>
                 <p style={{ fontSize:14, color:'var(--text-muted)', marginBottom:20 }}>This action cannot be undone.</p>
                 <div style={{ display:'flex', gap:12 }}>
-                  <button onClick={()=>setDeleteConfirm(null)}
-                    style={{ flex:1, padding:12, borderRadius:12, border:'2px solid var(--border)', cursor:'pointer', fontSize:14, fontWeight:700, color:'var(--text-secondary)', background:'white' }}>Cancel</button>
-                  <button onClick={()=>handleDelete(deleteConfirm)}
-                    style={{ flex:1, padding:12, borderRadius:12, border:'none', cursor:'pointer', fontSize:14, fontWeight:700, color:'white', background:'var(--error)' }}>Delete</button>
+                  <button onClick={()=>!deletingId&&setDeleteConfirm(null)} disabled={!!deletingId}
+                    style={{ flex:1, padding:12, borderRadius:12, border:'2px solid var(--border)', cursor: deletingId ? 'not-allowed' : 'pointer', fontSize:14, fontWeight:700, color:'var(--text-secondary)', background:'white', opacity: deletingId ? 0.5 : 1 }}>Cancel</button>
+                  <button onClick={()=>handleDelete(deleteConfirm)} disabled={!!deletingId}
+                    style={{ flex:1, padding:12, borderRadius:12, border:'none', cursor: deletingId ? 'not-allowed' : 'pointer', fontSize:14, fontWeight:700, color:'white', background: deletingId ? 'var(--neutral-300)' : 'var(--error)',
+                      display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                    {deletingId ? <><ButtonSpinner /> <span>Deleting…</span></> : 'Delete'}
+                  </button>
                 </div>
               </motion.div>
             </motion.div>

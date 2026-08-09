@@ -7,6 +7,7 @@ import {
   CurrencyCircleDollar, CheckCircle, X, WarningCircle, Tray,
 } from '@phosphor-icons/react'
 import { cardStyleSolid, STATUS_COLORS, modalOverlay, modalContent, inputStyle as themeInput } from '../../styles/theme'
+import { ButtonSpinner } from '../../components/ButtonSpinner'
 
 const to12h = (t) => {
   if (!t) return ''
@@ -449,7 +450,9 @@ function BookingRequests() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                         background: actionLoading ? 'var(--neutral-300)' : 'linear-gradient(135deg, var(--success), #166534)',
                       }}>
-                      <CurrencyCircleDollar size={16} /> {actionLoading ? 'Saving...' : 'Set Price'}
+                      {actionLoading
+                        ? <><ButtonSpinner /> <span>Saving…</span></>
+                        : <><CurrencyCircleDollar size={16} /> Set Price</>}
                     </motion.button>
                   </div>
                 ) : (
@@ -469,7 +472,9 @@ function BookingRequests() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                         background: actionLoading ? 'var(--neutral-300)' : 'var(--error)',
                       }}>
-                      <X size={16} /> {actionLoading ? '...' : 'Reject'}
+                      {actionLoading
+                        ? <><ButtonSpinner /> <span>Rejecting…</span></>
+                        : <><X size={16} /> Reject</>}
                     </motion.button>
                     <motion.button
                       whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
@@ -480,7 +485,9 @@ function BookingRequests() {
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                         background: actionLoading ? 'var(--neutral-300)' : 'linear-gradient(135deg, var(--success), #166534)',
                       }}>
-                      <CheckCircle size={16} /> {actionLoading ? '...' : 'Approve'}
+                      {actionLoading
+                        ? <><ButtonSpinner /> <span>Approving…</span></>
+                        : <><CheckCircle size={16} /> Approve</>}
                     </motion.button>
                   </div>
                 )}

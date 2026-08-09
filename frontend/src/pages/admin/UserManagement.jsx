@@ -4,6 +4,7 @@ import { AdminLayout, useIsMobile } from './AdminDashboard'
 import { adminAPI } from '../../utils/api'
 import { MagnifyingGlass, Users, Crown, User } from '@phosphor-icons/react'
 import { cardStyleSolid } from '../../styles/theme'
+import { ButtonSpinner } from '../../components/ButtonSpinner'
 
 const PAGE_SIZE_UM = 10
 
@@ -168,8 +169,11 @@ function UserManagement() {
                     color: user.isActive ? 'var(--error-text)' : 'var(--success-text)',
                     background: user.isActive ? 'var(--error-subtle)' : 'var(--success-subtle)',
                     opacity: user.role === 'admin' ? 0.4 : 1,
+                    display: 'flex', alignItems: 'center', gap: 4,
                   }}>
-                  {togglingId === user._id ? '...' : user.isActive ? 'Deactivate' : 'Activate'}
+                  {togglingId === user._id
+                    ? <><ButtonSpinner light={false} size={11} /> <span>Saving…</span></>
+                    : user.isActive ? 'Deactivate' : 'Activate'}
                 </motion.button>
               </motion.div>
             ))}
