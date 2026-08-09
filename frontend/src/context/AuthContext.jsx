@@ -35,14 +35,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{
-      user,
-      token,
-      loading,
-      login,
-      logout,
-      updateUser,
-      isAdmin,
-      isLoggedIn,
+      user, token, loading, login, logout, updateUser, isAdmin, isLoggedIn,
     }}>
       {children}
     </AuthContext.Provider>
@@ -51,4 +44,4 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   return useContext(AuthContext)
-}                                       
+}
