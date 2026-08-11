@@ -22,10 +22,7 @@ const MONTHS = ['All Months','January','February','March','April','May','June','
 const TYPES = ['All','credit','debit']
 const SOURCES = ['All','booking','daan_peti','annual_ritual','manual']
 const SOURCE_LABELS = { booking:'Hall Booking', daan_peti:'Daan Peti', annual_ritual:'Annual Ritual', manual:'Manual' }
-const yearRange = (dateStr) => {
-  const yr = new Date(dateStr).getFullYear()
-  return `${yr}-${yr + 1}`
-}
+const yearRange = (dateStr) => String(new Date(dateStr).getFullYear())
 
 const LEDGER_FILTERS_KEY = 'cashbookLedgerFilters'
 const loadSavedLedgerFilters = () => {
@@ -58,9 +55,6 @@ function Cashbook() {
   const [tab, setTab] = useState('ledger')
   const [ritualData, setRitualData] = useState(null)
   const [ritualYear, setRitualYear] = useState(CURRENT_YEAR)
-  const [ritualModal, setRitualModal] = useState(null)
-  const [ritualForm, setRitualForm] = useState({})
-  const [ritualSaving, setRitualSaving] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
   const tableRef = useRef(null)
@@ -75,6 +69,7 @@ function Cashbook() {
   const [exportRange, setExportRange] = useState({ from: '', to: '' })
   const [exporting, setExporting] = useState(false)
   const [ritualSearch, setRitualSearch] = useState('')
+  const [ritualStatusFilter, setRitualStatusFilter] = useState('all')
   const [nextReceiptNo, setNextReceiptNo] = useState('')
   const [showReceiptModal, setShowReceiptModal] = useState(false)
   const [newReceiptNo, setNewReceiptNo] = useState('')
@@ -130,6 +125,22 @@ function Cashbook() {
     finally { setReceiptNoSaving(false) }
   }
 
+  const isPending = formData.status === 'pending'
+
+  const handleStatusChange = (newStatus) => {
+    setFormData(prev => {
+      const next = { ...prev, status: newStatus }
+      if (newStatus === 'pending') {
+        next.receiptNumber = ''
+        next.paymentDate = ''
+        next.paymentMode = 'cash'
+      } else if (prev.status === 'pending' && !next.receiptNumber) {
+        next.receiptNumber = editEntry ? '' : (nextReceiptNo || '')
+      }
+      return next
+    })
+  }
+
   const openAdd = () => {
     setEditEntry(null)
     setFormData({
@@ -163,9 +174,11 @@ function Cashbook() {
       const source = /annual\s*ritual/i.test(formData.category || '')
         ? 'annual_ritual' : (editEntry ? editEntry.source : 'manual')
       const payload = { ...formData, entryDate: formData.entryDate ? `${formData.entryDate}-01-01` : '', source }
+      if (!payload.receiptNumber) delete payload.receiptNumber
       if (editEntry) await cashbookAPI.updateEntry(editEntry._id, payload)
       else await cashbookAPI.createEntry(payload)
-      setShowModal(false); await fetchData(); await fetchNextReceipt()
+      setShowModal(false)
+      await Promise.all([fetchData(), fetchNextReceipt(), ...(source === 'annual_ritual' ? [fetchRituals()] : [])])
     } catch (err) { setError(err.message) }
     finally { setSaving(false) }
   }
@@ -174,7 +187,8 @@ function Cashbook() {
     try {
       setDeletingId(id)
       await cashbookAPI.deleteEntry(id)
-      setDeleteConfirm(null); await fetchData()
+      setDeleteConfirm(null)
+      await Promise.all([fetchData(), ...(tab === 'annual' ? [fetchRituals()] : [])])
     } catch (err) { setError(err.message) }
     finally { setDeletingId(null) }
   }
@@ -191,26 +205,27 @@ function Cashbook() {
 
   useEffect(() => { if (tab === 'annual') fetchRituals() }, [tab, ritualYear])
 
-  const openRitualModal = (member) => {
-    setRitualModal(member)
-    setRitualForm({
-      name: member.name, phone: member.phone || '',
-      userId: member.userId || '', year: ritualYear,
-      amount: member.amount || annualFee, paymentMode: member.paymentMode || 'cash',
-      status: member.status === 'not_paid' ? 'completed' : member.status,
-      paymentDate: new Date().toISOString().split('T')[0]
+  // Record/Edit for annual ritual rows (whether a Ledger entry or an Annual Ritual
+  // tab member) reuses the same general Add/Edit Entry modal as every other
+  // cashbook entry — Ledger rows key off `_id`/`isVirtual`, Annual Ritual member
+  // rows key off `entryId`, so normalize both shapes into one entry point.
+  const openRitualEntryModal = (row) => {
+    const realId = row.entryId !== undefined ? row.entryId : (row.isVirtual ? null : row._id)
+    const yearVal = row.year || (row.entryDate ? new Date(row.entryDate).getFullYear() : CURRENT_YEAR)
+    setEditEntry(realId ? { _id: realId } : null)
+    setFormData({
+      entryDate: String(yearVal),
+      paymentDate: row.paymentDate ? new Date(row.paymentDate).toISOString().split('T')[0] : '',
+      name: row.name, phone: row.phone || '',
+      category: row.category || 'Annual Ritual Payment (Pooja Shulk)',
+      paymentMode: row.paymentMode || 'cash',
+      type: row.type || 'credit',
+      amount: row.amount || annualFee,
+      status: realId ? row.status : 'completed',
+      description: row.description || '',
+      receiptNumber: row.receiptNumber || ''
     })
-  }
-
-  const handleRitualSave = async () => {
-    if (!ritualForm.amount) { setError('Amount is required'); return }
-    try {
-      setRitualSaving(true); setError(null)
-      if (ritualModal.entryId) await cashbookAPI.updateRitualPayment(ritualModal.entryId, ritualForm)
-      else await cashbookAPI.recordRitualPayment(ritualForm)
-      setRitualModal(null); await fetchRituals()
-    } catch (err) { setError(err.message) }
-    finally { setRitualSaving(false) }
+    setShowModal(true)
   }
 
   const handleFeeUpdate = async () => {
@@ -230,7 +245,7 @@ function Cashbook() {
         if (!ritualReceiptRef.current) return
         const canvas = await html2canvas(ritualReceiptRef.current, { scale: 2, backgroundColor: '#fff', logging: false })
         const link = document.createElement('a')
-        link.download = `Annual_Ritual_Receipt_${ritualYear}_${m.receiptNumber}.png`
+        link.download = `Annual_Ritual_Receipt_${m.year || ritualYear}_${m.receiptNumber}.png`
         link.href = canvas.toDataURL('image/png'); link.click()
       } catch (err) { console.error('Download error:', err) }
       finally { setDownloadingReceipt(null) }
@@ -266,10 +281,11 @@ function Cashbook() {
         }
       } else {
         const filteredMembers = ritualData ? ritualData.members.filter(m =>
-          !ritualSearch || (m.name && m.name.toLowerCase().includes(ritualSearch.toLowerCase())) ||
-          (m.receiptNumber && m.receiptNumber.toLowerCase().includes(ritualSearch.toLowerCase()))
+          (!ritualSearch || (m.name && m.name.toLowerCase().includes(ritualSearch.toLowerCase())) ||
+          (m.receiptNumber && m.receiptNumber.toLowerCase().includes(ritualSearch.toLowerCase()))) &&
+          (ritualStatusFilter === 'all' || (ritualStatusFilter === 'paid' ? m.status === 'completed' : m.status !== 'completed'))
         ) : []
-        dataToExport = filteredMembers; titleSuffix = `Annual Rituals ${ritualYear}`
+        dataToExport = filteredMembers; titleSuffix = ritualYear === 'all' ? 'All Years' : `Annual Rituals ${ritualYear}`
       }
 
       if (exportModal === 'pdf') {
@@ -279,10 +295,13 @@ function Cashbook() {
         let rows = [], head = []
         if (exportTarget === 'ledger') {
           head = [['Date','Name','Category','Payment Date','Receipt No.','Mode','Type','Amount','Status','Balance']]
-          rows = dataToExport.map(e => [yearRange(e.entryDate), e.name, e.category, e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '-', e.receiptNumber, e.paymentMode, e.type === 'credit' ? 'Credit' : 'Debit', `Rs.${e.amount.toLocaleString()}`, e.status, `Rs.${e.runningBalance.toLocaleString()}`])
+          rows = dataToExport.map(e => [yearRange(e.entryDate), e.name, e.category, e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '-', e.displayStatus==='completed' ? e.receiptNumber : 'N/A', e.displayStatus==='completed' ? e.paymentMode : '-', e.type === 'credit' ? 'Credit' : 'Debit', `Rs.${e.amount.toLocaleString()}`, e.displayStatus, `Rs.${e.runningBalance.toLocaleString()}`])
         } else {
-          head = [['Name','Phone','Amount','Status','Payment Date','Mode','Receipt No.']]
-          rows = dataToExport.map(m => [m.name, m.phone || '-', `Rs.${(m.amount||annualFee).toLocaleString()}`, m.status, m.paymentDate ? new Date(m.paymentDate).toLocaleDateString('en-IN') : '-', m.paymentMode || '-', m.receiptNumber || '-'])
+          head = ritualYear === 'all' ? [['Year','Name','Phone','Amount','Status','Payment Date','Mode','Receipt No.']] : [['Name','Phone','Amount','Status','Payment Date','Mode','Receipt No.']]
+          rows = dataToExport.map(m => {
+            const row = [m.name, m.phone || '-', `Rs.${(m.amount||annualFee).toLocaleString()}`, m.displayStatus, m.paymentDate ? new Date(m.paymentDate).toLocaleDateString('en-IN') : '-', m.displayStatus==='completed' ? (m.paymentMode || '-') : '-', m.displayStatus==='completed' ? (m.receiptNumber || '-') : 'N/A']
+            return ritualYear === 'all' ? [m.year, ...row] : row
+          })
         }
         autoTable(doc, { startY: 36, head, body: rows, styles: { fontSize: 8 }, headStyles: { fillColor: [139, 26, 26] } })
         doc.save(`${exportTarget}_${Date.now()}.pdf`)
@@ -291,10 +310,10 @@ function Cashbook() {
         html += `<h2>Shri Dharamshala Trust</h2><p>${exportTarget === 'ledger' ? 'Cashbook' : 'Annual Rituals'} - ${titleSuffix}</p>`
         if (exportTarget === 'ledger') {
           html += `<table><tr><th>Date</th><th>Name</th><th>Category</th><th>Payment Date</th><th>Receipt No.</th><th>Mode</th><th>Type</th><th>Amount</th><th>Status</th><th>Balance</th></tr>`
-          dataToExport.forEach(e => { html += `<tr><td>${yearRange(e.entryDate)}</td><td>${e.name}</td><td>${e.category}</td><td>${e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${e.receiptNumber}</td><td>${e.paymentMode}</td><td>${e.type}</td><td>Rs.${e.amount.toLocaleString()}</td><td>${e.status}</td><td>Rs.${e.runningBalance.toLocaleString()}</td></tr>` })
+          dataToExport.forEach(e => { html += `<tr><td>${yearRange(e.entryDate)}</td><td>${e.name}</td><td>${e.category}</td><td>${e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${e.displayStatus==='completed' ? e.receiptNumber : 'N/A'}</td><td>${e.displayStatus==='completed' ? e.paymentMode : '-'}</td><td>${e.type}</td><td>Rs.${e.amount.toLocaleString()}</td><td>${e.displayStatus}</td><td>Rs.${e.runningBalance.toLocaleString()}</td></tr>` })
         } else {
-          html += `<table><tr><th>Name</th><th>Phone</th><th>Amount</th><th>Status</th><th>Payment Date</th><th>Mode</th><th>Receipt No.</th></tr>`
-          dataToExport.forEach(m => { html += `<tr><td>${m.name}</td><td>${m.phone||'-'}</td><td>Rs.${(m.amount||annualFee).toLocaleString()}</td><td>${m.status}</td><td>${m.paymentDate ? new Date(m.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${m.paymentMode||'-'}</td><td>${m.receiptNumber||'-'}</td></tr>` })
+          html += `<table><tr>${ritualYear === 'all' ? '<th>Year</th>' : ''}<th>Name</th><th>Phone</th><th>Amount</th><th>Status</th><th>Payment Date</th><th>Mode</th><th>Receipt No.</th></tr>`
+          dataToExport.forEach(m => { html += `<tr>${ritualYear === 'all' ? `<td>${m.year}</td>` : ''}<td>${m.name}</td><td>${m.phone||'-'}</td><td>Rs.${(m.amount||annualFee).toLocaleString()}</td><td>${m.displayStatus}</td><td>${m.paymentDate ? new Date(m.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${m.displayStatus==='completed' ? (m.paymentMode||'-') : '-'}</td><td>${m.displayStatus==='completed' ? (m.receiptNumber||'-') : 'N/A'}</td></tr>` })
         }
         html += `</table></body></html>`
         saveAs(new Blob([html], { type: 'application/msword' }), `${exportTarget}_${Date.now()}.doc`)
@@ -302,11 +321,11 @@ function Cashbook() {
         const win = window.open('', '_blank')
         let contentHtml = ''
         if (exportTarget === 'ledger') {
-          let rowsHtml = dataToExport.map(e => `<tr><td>${yearRange(e.entryDate)}</td><td>${e.name}</td><td>${e.category}</td><td>${e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${e.receiptNumber}</td><td>${e.paymentMode}</td><td>${e.type}</td><td>Rs.${e.amount.toLocaleString()}</td><td>${e.status}</td><td>Rs.${e.runningBalance.toLocaleString()}</td></tr>`).join('')
+          let rowsHtml = dataToExport.map(e => `<tr><td>${yearRange(e.entryDate)}</td><td>${e.name}</td><td>${e.category}</td><td>${e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${e.displayStatus==='completed' ? e.receiptNumber : 'N/A'}</td><td>${e.displayStatus==='completed' ? e.paymentMode : '-'}</td><td>${e.type}</td><td>Rs.${e.amount.toLocaleString()}</td><td>${e.displayStatus}</td><td>Rs.${e.runningBalance.toLocaleString()}</td></tr>`).join('')
           contentHtml = `<table><tr><th>Date</th><th>Name</th><th>Category</th><th>Payment Date</th><th>Receipt No.</th><th>Mode</th><th>Type</th><th>Amount</th><th>Status</th><th>Balance</th></tr>${rowsHtml}</table>`
         } else {
-          let rowsHtml = dataToExport.map(m => `<tr><td>${m.name}</td><td>${m.phone||'-'}</td><td>Rs.${(m.amount||annualFee).toLocaleString()}</td><td>${m.status}</td><td>${m.paymentDate ? new Date(m.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${m.paymentMode||'-'}</td><td>${m.receiptNumber||'-'}</td></tr>`).join('')
-          contentHtml = `<table><tr><th>Name</th><th>Phone</th><th>Amount</th><th>Status</th><th>Payment Date</th><th>Mode</th><th>Receipt No.</th></tr>${rowsHtml}</table>`
+          let rowsHtml = dataToExport.map(m => `<tr>${ritualYear === 'all' ? `<td>${m.year}</td>` : ''}<td>${m.name}</td><td>${m.phone||'-'}</td><td>Rs.${(m.amount||annualFee).toLocaleString()}</td><td>${m.displayStatus}</td><td>${m.paymentDate ? new Date(m.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${m.displayStatus==='completed' ? (m.paymentMode||'-') : '-'}</td><td>${m.displayStatus==='completed' ? (m.receiptNumber||'-') : 'N/A'}</td></tr>`).join('')
+          contentHtml = `<table><tr>${ritualYear === 'all' ? '<th>Year</th>' : ''}<th>Name</th><th>Phone</th><th>Amount</th><th>Status</th><th>Payment Date</th><th>Mode</th><th>Receipt No.</th></tr>${rowsHtml}</table>`
         }
         win.document.write(`<html><head><title>${exportTarget.toUpperCase()}</title><style>body{font-family:Arial,sans-serif;padding:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#8B1A1A;color:white}h2{color:#8B1A1A}.summary{margin-bottom:10px;font-size:13px}</style></head><body><h2>Shri Dharamshala Trust — ${exportTarget === 'ledger' ? 'Cashbook' : 'Annual Rituals'}</h2><div class="summary">${titleSuffix}</div>${contentHtml}</body></html>`)
         win.document.close(); win.print()
@@ -540,21 +559,40 @@ function Cashbook() {
                           {e.type==='credit'?'Credit':'Debit'}
                         </span>
                         <span style={{ padding:'2px 8px', borderRadius:99, fontSize:10, fontWeight:700,
-                          background: e.status==='completed' ? 'var(--success-subtle)' : 'var(--warning-subtle)',
-                          color: e.status==='completed' ? 'var(--success-text)' : 'var(--warning-text)' }}>
-                          {e.status==='completed'?'Done':'Pending'}
+                          background: e.displayStatus==='completed' ? 'var(--success-subtle)' : e.displayStatus==='not_paid' ? 'var(--error-subtle)' : 'var(--warning-subtle)',
+                          color: e.displayStatus==='completed' ? 'var(--success-text)' : e.displayStatus==='not_paid' ? 'var(--error-text)' : 'var(--warning-text)' }}>
+                          {e.displayStatus==='completed'?'Done':e.displayStatus==='not_paid'?'Not Paid':'Pending'}
                         </span>
                       </div>
                       <div style={{ display:'flex', alignItems:'center', gap:4 }}>
-                        <span style={{ fontSize:15, fontWeight:900, color: e.type==='credit' ? 'var(--success-text)' : 'var(--error-text)' }}>
+                        <span style={{ fontSize:15, fontWeight:900, color: e.displayStatus!=='completed' ? 'var(--error-text)' : (e.type==='credit' ? 'var(--success-text)' : 'var(--error-text)') }}>
                           ₹{e.amount.toLocaleString()}
                         </span>
-                        <button onClick={()=>openEdit(e)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--primary)', padding:'2px 4px', display:'flex' }}>
-                          <PencilSimple size={14} weight="duotone" />
-                        </button>
-                        <button onClick={()=>setDeleteConfirm(e._id)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--error)', padding:'2px 4px', display:'flex' }}>
-                          <Trash size={14} weight="duotone" />
-                        </button>
+                        {e.source==='annual_ritual' && e.displayStatus!=='completed' ? (
+                          <>
+                            <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
+                              onClick={()=>openRitualEntryModal(e)}
+                              style={{ ...adminBtn(e.displayStatus==='not_paid' ? 'linear-gradient(135deg,var(--success),#166534)' : 'linear-gradient(135deg,var(--primary),var(--maroon))'), padding:'4px 10px', fontSize:10 }}>
+                              {e.displayStatus==='not_paid' ? <><CurrencyCircleDollar size={11} /> Record</> : <><PencilSimple size={11} /> Edit</>}
+                            </motion.button>
+                            {!e.isVirtual && (
+                              <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
+                                onClick={()=>setDeleteConfirm(e._id)}
+                                style={{ ...adminBtn('linear-gradient(135deg,var(--error),#991b1b)'), padding:'4px 8px', fontSize:10 }}>
+                                <Trash size={11} weight="duotone" />
+                              </motion.button>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <button onClick={()=>openEdit(e)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--primary)', padding:'2px 4px', display:'flex' }}>
+                              <PencilSimple size={14} weight="duotone" />
+                            </button>
+                            <button onClick={()=>setDeleteConfirm(e._id)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--error)', padding:'2px 4px', display:'flex' }}>
+                              <Trash size={14} weight="duotone" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                     {/* Row 2: Name + category */}
@@ -564,7 +602,7 @@ function Cashbook() {
                     <div style={{ fontSize:10, color:'var(--text-muted)', display:'flex', flexWrap:'wrap', gap:4, alignItems:'center' }}>
                       <span>{yearRange(e.entryDate)}</span>
                       {e.paymentDate && <><span>·</span><span>{new Date(e.paymentDate).toLocaleDateString('en-IN')}</span></>}
-                      {e.receiptNumber && (
+                      {e.displayStatus==='completed' && e.receiptNumber && (
                         <><span>·</span>
                         <span style={{ display:'flex', alignItems:'center', gap:2, color:'var(--text-secondary)' }}>
                           <Receipt size={9} weight="duotone" />{e.receiptNumber}
@@ -572,9 +610,9 @@ function Cashbook() {
                       )}
                       <span>·</span>
                       <span style={{ padding:'1px 6px', borderRadius:99, fontSize:9, fontWeight:700,
-                        background: e.paymentMode==='online' ? 'var(--info-subtle)' : 'var(--neutral-100)',
-                        color: e.paymentMode==='online' ? 'var(--info-text)' : 'var(--text-secondary)' }}>
-                        {e.paymentMode==='online'?'Online':'Cash'}
+                        background: e.displayStatus==='completed' && e.paymentMode==='online' ? 'var(--info-subtle)' : 'var(--neutral-100)',
+                        color: e.displayStatus==='completed' && e.paymentMode==='online' ? 'var(--info-text)' : 'var(--text-secondary)' }}>
+                        {e.displayStatus!=='completed' ? '—' : (e.paymentMode==='online'?'Online':e.paymentMode==='cash'?'Cash':'—')}
                       </span>
                       <span>·</span>
                       <span style={{ fontWeight:600, color: e.runningBalance>=0 ? 'var(--success-text)' : 'var(--error-text)' }}>
@@ -602,12 +640,12 @@ function Cashbook() {
                           <td style={{ padding:'10px', fontWeight:600, color:'var(--maroon)' }}>{e.name}</td>
                           <td style={{ padding:'10px', maxWidth:160, overflow:'hidden', textOverflow:'ellipsis' }}>{e.category}</td>
                           <td style={{ padding:'10px', whiteSpace:'nowrap' }}>{e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '—'}</td>
-                          <td style={{ padding:'10px', fontFamily:'monospace', fontSize:12, color:'var(--text-secondary)' }}>{e.receiptNumber}</td>
+                          <td style={{ padding:'10px', fontFamily:'monospace', fontSize:12, color:'var(--text-secondary)' }}>{e.displayStatus==='completed' ? e.receiptNumber : 'N/A'}</td>
                           <td style={{ padding:'10px' }}>
                             <span style={{ padding:'3px 10px', borderRadius:99, fontSize:11, fontWeight:700,
-                              background: e.paymentMode==='online' ? 'var(--info-subtle)' : 'var(--neutral-100)',
-                              color: e.paymentMode==='online' ? 'var(--info-text)' : 'var(--text-secondary)' }}>
-                              {e.paymentMode==='online'?'Online':'Cash'}
+                              background: e.displayStatus==='completed' && e.paymentMode==='online' ? 'var(--info-subtle)' : 'var(--neutral-100)',
+                              color: e.displayStatus==='completed' && e.paymentMode==='online' ? 'var(--info-text)' : 'var(--text-secondary)' }}>
+                              {e.displayStatus!=='completed' ? '—' : (e.paymentMode==='online'?'Online':e.paymentMode==='cash'?'Cash':'—')}
                             </span>
                           </td>
                           <td style={{ padding:'10px' }}>
@@ -617,26 +655,47 @@ function Cashbook() {
                               {e.type==='credit'?'↑ Credit':'↓ Debit'}
                             </span>
                           </td>
-                          <td style={{ padding:'10px', fontWeight:800, color: e.type==='credit' ? 'var(--success-text)' : 'var(--error-text)' }}>
+                          <td style={{ padding:'10px', fontWeight:800, color: e.displayStatus!=='completed' ? 'var(--error-text)' : (e.type==='credit' ? 'var(--success-text)' : 'var(--error-text)') }}>
                             ₹{e.amount.toLocaleString()}
                           </td>
                           <td style={{ padding:'10px' }}>
                             <span style={{ padding:'3px 10px', borderRadius:99, fontSize:11, fontWeight:700,
-                              background: e.status==='completed' ? 'var(--success-subtle)' : 'var(--warning-subtle)',
-                              color: e.status==='completed' ? 'var(--success-text)' : 'var(--warning-text)' }}>
-                              {e.status==='completed'?'Done':'Pending'}
+                              background: e.displayStatus==='completed' ? 'var(--success-subtle)' : e.displayStatus==='not_paid' ? 'var(--error-subtle)' : 'var(--warning-subtle)',
+                              color: e.displayStatus==='completed' ? 'var(--success-text)' : e.displayStatus==='not_paid' ? 'var(--error-text)' : 'var(--warning-text)' }}>
+                              {e.displayStatus==='completed'?'Done':e.displayStatus==='not_paid'?'Not Paid':'Pending'}
                             </span>
                           </td>
                           <td style={{ padding:'10px', fontWeight:700, color: e.runningBalance>=0 ? 'var(--success-text)' : 'var(--error-text)' }}>
                             ₹{e.runningBalance.toLocaleString()}
                           </td>
                           <td style={{ padding:'10px', whiteSpace:'nowrap' }}>
-                            <button onClick={()=>openEdit(e)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--primary)', marginRight:8 }} title="Edit">
-                              <PencilSimple size={16} weight="duotone" />
-                            </button>
-                            <button onClick={()=>setDeleteConfirm(e._id)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--error)' }} title="Delete">
-                              <Trash size={16} weight="duotone" />
-                            </button>
+                            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                              {e.source==='annual_ritual' && e.displayStatus!=='completed' ? (
+                                <>
+                                  <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
+                                    onClick={()=>openRitualEntryModal(e)}
+                                    style={{ ...adminBtn(e.displayStatus==='not_paid' ? 'linear-gradient(135deg,var(--success),#166534)' : 'linear-gradient(135deg,var(--primary),var(--maroon))'), padding:'6px 12px', fontSize:11 }}>
+                                    {e.displayStatus==='not_paid' ? <><CurrencyCircleDollar size={12} /> Record</> : <><PencilSimple size={12} /> Edit</>}
+                                  </motion.button>
+                                  {!e.isVirtual && (
+                                    <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
+                                      onClick={()=>setDeleteConfirm(e._id)} title="Delete"
+                                      style={{ ...adminBtn('linear-gradient(135deg,var(--error),#991b1b)'), padding:'6px 10px', fontSize:11 }}>
+                                      <Trash size={12} weight="duotone" />
+                                    </motion.button>
+                                  )}
+                                </>
+                              ) : (
+                                <>
+                                  <button onClick={()=>openEdit(e)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--primary)' }} title="Edit">
+                                    <PencilSimple size={16} weight="duotone" />
+                                  </button>
+                                  <button onClick={()=>setDeleteConfirm(e._id)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--error)' }} title="Delete">
+                                    <Trash size={16} weight="duotone" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -656,7 +715,7 @@ function Cashbook() {
                   <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                       <span style={{ fontWeight:700, color:'var(--maroon)', fontSize:13 }}>Year:</span>
-                      <CustomSelect value={ritualYear} onChange={v => setRitualYear(+v)} options={YEARS.map(y => ({ value: y, label: String(y) }))} minWidth={90} />
+                      <CustomSelect value={ritualYear} onChange={v => setRitualYear(v === 'all' ? 'all' : +v)} options={[{ value:'all', label:'All Years' }, ...YEARS.map(y => ({ value: y, label: String(y) }))]} minWidth={90} />
                     </div>
                     <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                       <span style={{ fontSize:12, fontWeight:600, color:'var(--text-secondary)' }}>Fee:</span>
@@ -693,6 +752,11 @@ function Cashbook() {
                       onChange={e=>setRitualSearch(e.target.value)}
                       style={{ ...themeInput(), width:'100%', paddingLeft:30 }} />
                   </div>
+                  {/* Row 3b: Status filter */}
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <span style={{ fontWeight:700, color:'var(--maroon)', fontSize:13 }}>Status:</span>
+                    <CustomSelect value={ritualStatusFilter} onChange={setRitualStatusFilter} options={[{ value:'all', label:'All' }, { value:'paid', label:'Paid' }, { value:'unpaid', label:'Unpaid' }]} minWidth={100} />
+                  </div>
                   {/* Row 4: Export buttons 3-column */}
                   <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
                     <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
@@ -713,7 +777,7 @@ function Cashbook() {
                 <>
                   <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
                     <span style={{ fontWeight:700, color:'var(--maroon)' }}>Year:</span>
-                    <CustomSelect value={ritualYear} onChange={v => setRitualYear(+v)} options={YEARS.map(y => ({ value: y, label: String(y) }))} minWidth={100} />
+                    <CustomSelect value={ritualYear} onChange={v => setRitualYear(v === 'all' ? 'all' : +v)} options={[{ value:'all', label:'All Years' }, ...YEARS.map(y => ({ value: y, label: String(y) }))]} minWidth={100} />
                     <div style={{ marginLeft:8, display:'flex', alignItems:'center', gap:8 }}>
                       <span style={{ fontSize:13, fontWeight:600, color:'var(--text-secondary)' }}>Annual Fee:</span>
                       <span style={{ fontSize:16, fontWeight:900, color:'var(--maroon)' }}>₹{annualFee.toLocaleString()}</span>
@@ -739,6 +803,10 @@ function Cashbook() {
                       <input placeholder="Search name or receipt..." value={ritualSearch}
                         onChange={e=>setRitualSearch(e.target.value)}
                         style={{ ...themeInput(), width:'auto', minWidth:250, paddingLeft:30 }} />
+                    </div>
+                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                      <span style={{ fontWeight:700, color:'var(--maroon)', fontSize:13 }}>Status:</span>
+                      <CustomSelect value={ritualStatusFilter} onChange={setRitualStatusFilter} options={[{ value:'all', label:'All' }, { value:'paid', label:'Paid' }, { value:'unpaid', label:'Unpaid' }]} minWidth={110} />
                     </div>
                     <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
                       <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
@@ -766,8 +834,9 @@ function Cashbook() {
               </div>
             ) : ritualData && (() => {
               const filteredMembers = ritualData.members.filter(m =>
-                !ritualSearch || (m.name && m.name.toLowerCase().includes(ritualSearch.toLowerCase())) ||
-                (m.receiptNumber && m.receiptNumber.toLowerCase().includes(ritualSearch.toLowerCase()))
+                (!ritualSearch || (m.name && m.name.toLowerCase().includes(ritualSearch.toLowerCase())) ||
+                (m.receiptNumber && m.receiptNumber.toLowerCase().includes(ritualSearch.toLowerCase()))) &&
+                (ritualStatusFilter === 'all' || (ritualStatusFilter === 'paid' ? m.status === 'completed' : m.status !== 'completed'))
               )
               return isMobile ? (
                 <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
@@ -782,18 +851,21 @@ function Cashbook() {
                       <div style={{ padding:'12px 14px 10px', display:'flex', alignItems:'center', justifyContent:'space-between',
                         borderBottom:'1px solid var(--border)' }}>
                         <div>
-                          <div style={{ fontSize:14, fontWeight:800, color:'var(--maroon)', marginBottom:1 }}>{m.name}</div>
+                          <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:1 }}>
+                            <span style={{ fontSize:14, fontWeight:800, color:'var(--maroon)' }}>{m.name}</span>
+                            {ritualYear === 'all' && <span style={{ fontSize:10, fontWeight:700, color:'var(--text-secondary)', background:'var(--neutral-100)', border:'1px solid var(--border)', borderRadius:6, padding:'1px 6px' }}>{m.year}</span>}
+                          </div>
                           {m.phone && <div style={{ fontSize:11, color:'var(--text-muted)', display:'flex', alignItems:'center', gap:4 }}>
                             <span>📞</span>{m.phone}
                           </div>}
                         </div>
                         <span style={{
                           padding:'4px 12px', borderRadius:99, fontSize:11, fontWeight:800, flexShrink:0,
-                          background: m.status==='completed' ? 'var(--success-subtle)' : m.status==='pending' ? 'var(--warning-subtle)' : 'var(--error-subtle)',
-                          color: m.status==='completed' ? 'var(--success-text)' : m.status==='pending' ? 'var(--warning-text)' : 'var(--error-text)',
-                          border: `1px solid ${m.status==='completed' ? 'rgba(5,150,105,0.2)' : m.status==='pending' ? 'rgba(217,119,6,0.2)' : 'rgba(220,38,38,0.2)'}`,
+                          background: m.displayStatus==='completed' ? 'var(--success-subtle)' : m.displayStatus==='pending' ? 'var(--warning-subtle)' : 'var(--error-subtle)',
+                          color: m.displayStatus==='completed' ? 'var(--success-text)' : m.displayStatus==='pending' ? 'var(--warning-text)' : 'var(--error-text)',
+                          border: `1px solid ${m.displayStatus==='completed' ? 'rgba(5,150,105,0.2)' : m.displayStatus==='pending' ? 'rgba(217,119,6,0.2)' : 'rgba(220,38,38,0.2)'}`,
                         }}>
-                          {m.status==='completed'?'Paid':m.status==='pending'?'Pending':'Not Paid'}
+                          {m.displayStatus==='completed'?'Paid':m.displayStatus==='pending'?'Pending':'Not Paid'}
                         </span>
                       </div>
 
@@ -801,7 +873,7 @@ function Cashbook() {
                       <div style={{ padding:'10px 14px 12px' }}>
                         {/* Amount row */}
                         <div style={{ display:'flex', alignItems:'baseline', gap:8, marginBottom:6 }}>
-                          <span style={{ fontSize:20, fontWeight:900, color:'var(--maroon)' }}>
+                          <span style={{ fontSize:20, fontWeight:900, color: m.displayStatus!=='completed' ? 'var(--error-text)' : 'var(--maroon)' }}>
                             ₹{(m.amount||annualFee).toLocaleString()}
                           </span>
                           {m.paymentDate && (
@@ -819,7 +891,7 @@ function Cashbook() {
                         </div>
 
                         {/* Receipt number — with icon label */}
-                        {m.receiptNumber && (
+                        {m.displayStatus==='completed' && m.receiptNumber ? (
                           <div style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'4px 10px', borderRadius:8,
                             background:'var(--neutral-100)', border:'1px solid var(--border)', marginBottom:12 }}>
                             <Receipt size={12} weight="duotone" color="var(--text-muted)" />
@@ -827,20 +899,19 @@ function Cashbook() {
                               {m.receiptNumber}
                             </span>
                           </div>
-                        )}
-                        {!m.receiptNumber && <div style={{ marginBottom:12 }} />}
+                        ) : <div style={{ marginBottom:12 }} />}
 
                         {/* Actions */}
                         <div style={{ display:'flex', gap:8 }}>
                           <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.95}}
-                            onClick={()=>openRitualModal(m)}
+                            onClick={()=>openRitualEntryModal(m)}
                             style={{ flex:1, padding:'8px 12px', borderRadius:10, border:'none', cursor:'pointer',
                               fontSize:12, fontWeight:700, color:'white', fontFamily:'inherit',
-                              background: m.status==='not_paid'
+                              background: m.displayStatus==='not_paid'
                                 ? 'linear-gradient(135deg,var(--success),#166534)'
                                 : 'linear-gradient(135deg,var(--primary),var(--maroon))',
                               display:'flex', alignItems:'center', justifyContent:'center', gap:5 }}>
-                            {m.status==='not_paid'
+                            {m.displayStatus==='not_paid'
                               ? <><CurrencyCircleDollar size={13} /> Record Payment</>
                               : <><PencilSimple size={13} /> Edit</>}
                           </motion.button>
@@ -854,6 +925,13 @@ function Cashbook() {
                               <DownloadSimple size={13} /> Receipt
                             </motion.button>
                           )}
+                          {m.entryId && (
+                            <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.95}}
+                              onClick={()=>setDeleteConfirm(m.entryId)}
+                              style={{ ...adminBtn('linear-gradient(135deg,var(--error),#991b1b)'), padding:'8px 10px', fontSize:12 }}>
+                              <Trash size={13} weight="duotone" />
+                            </motion.button>
+                          )}
                         </div>
                       </div>
                     </motion.div>
@@ -865,7 +943,7 @@ function Cashbook() {
                     <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
                       <thead>
                         <tr style={{ background:'linear-gradient(135deg,#1a0000,#5a0e0e)', color:'white' }}>
-                          {['#','Name','Phone','Amount','Status','Payment Date','Mode','Receipt No.','Actions'].map(h=>(
+                          {(ritualYear === 'all' ? ['#','Year','Name','Phone','Amount','Status','Payment Date','Mode','Receipt No.','Actions'] : ['#','Name','Phone','Amount','Status','Payment Date','Mode','Receipt No.','Actions']).map(h=>(
                             <th key={h} style={{ padding:'12px 10px', textAlign:'left', fontWeight:700, fontSize:12 }}>{h}</th>
                           ))}
                         </tr>
@@ -874,32 +952,42 @@ function Cashbook() {
                         {filteredMembers.map((m,i)=>(
                           <tr key={m.userId||i} style={{ borderBottom:'1px solid var(--border)', background: i%2===0 ? 'white' : 'var(--neutral-50)' }}>
                             <td style={{ padding:'10px', color:'var(--text-muted)' }}>{i+1}</td>
+                            {ritualYear === 'all' && <td style={{ padding:'10px', color:'var(--text-muted)' }}>{m.year}</td>}
                             <td style={{ padding:'10px', fontWeight:600, color:'var(--maroon)' }}>{m.name}</td>
                             <td style={{ padding:'10px' }}>{m.phone || '—'}</td>
-                            <td style={{ padding:'10px', fontWeight:700 }}>₹{(m.amount||annualFee).toLocaleString()}</td>
+                            <td style={{ padding:'10px', fontWeight:700, color: m.displayStatus!=='completed' ? 'var(--error-text)' : 'inherit' }}>₹{(m.amount||annualFee).toLocaleString()}</td>
                             <td style={{ padding:'10px' }}>
                               <span style={{ padding:'4px 12px', borderRadius:99, fontSize:11, fontWeight:700,
-                                background: m.status==='completed' ? 'var(--success-subtle)' : m.status==='pending' ? 'var(--warning-subtle)' : 'var(--error-subtle)',
-                                color: m.status==='completed' ? 'var(--success-text)' : m.status==='pending' ? 'var(--warning-text)' : 'var(--error-text)' }}>
-                                {m.status==='completed'?'Paid':m.status==='pending'?'Pending':'Not Paid'}
+                                background: m.displayStatus==='completed' ? 'var(--success-subtle)' : m.displayStatus==='pending' ? 'var(--warning-subtle)' : 'var(--error-subtle)',
+                                color: m.displayStatus==='completed' ? 'var(--success-text)' : m.displayStatus==='pending' ? 'var(--warning-text)' : 'var(--error-text)' }}>
+                                {m.displayStatus==='completed'?'Paid':m.displayStatus==='pending'?'Pending':'Not Paid'}
                               </span>
                             </td>
                             <td style={{ padding:'10px' }}>{m.paymentDate ? new Date(m.paymentDate).toLocaleDateString('en-IN') : '—'}</td>
                             <td style={{ padding:'10px' }}>{m.paymentMode || '—'}</td>
-                            <td style={{ padding:'10px', fontFamily:'monospace', fontSize:12 }}>{m.receiptNumber || '—'}</td>
-                            <td style={{ padding:'10px', whiteSpace:'nowrap', display:'flex', gap:6 }}>
-                              <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
-                                onClick={()=>openRitualModal(m)}
-                                style={{ ...adminBtn(m.status==='not_paid' ? 'linear-gradient(135deg,var(--success),#166534)' : 'linear-gradient(135deg,var(--primary),var(--maroon))'), padding:'6px 12px', fontSize:11 }}>
-                                {m.status==='not_paid' ? <><CurrencyCircleDollar size={12} /> Record</> : <><PencilSimple size={12} /> Edit</>}
-                              </motion.button>
-                              {m.receiptReady && (
+                            <td style={{ padding:'10px', fontFamily:'monospace', fontSize:12 }}>{m.displayStatus==='completed' ? (m.receiptNumber || '—') : 'N/A'}</td>
+                            <td style={{ padding:'10px', whiteSpace:'nowrap' }}>
+                              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                                 <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
-                                  onClick={()=>downloadRitualReceipt(m)}
-                                  style={{ ...adminBtn('linear-gradient(135deg,var(--info),#1e40af)'), padding:'6px 12px', fontSize:11 }}>
-                                  <DownloadSimple size={12} /> Receipt
+                                  onClick={()=>openRitualEntryModal(m)}
+                                  style={{ ...adminBtn(m.displayStatus==='not_paid' ? 'linear-gradient(135deg,var(--success),#166534)' : 'linear-gradient(135deg,var(--primary),var(--maroon))'), padding:'6px 12px', fontSize:11 }}>
+                                  {m.displayStatus==='not_paid' ? <><CurrencyCircleDollar size={12} /> Record</> : <><PencilSimple size={12} /> Edit</>}
                                 </motion.button>
-                              )}
+                                {m.receiptReady && (
+                                  <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
+                                    onClick={()=>downloadRitualReceipt(m)}
+                                    style={{ ...adminBtn('linear-gradient(135deg,var(--info),#1e40af)'), padding:'6px 12px', fontSize:11 }}>
+                                    <DownloadSimple size={12} /> Receipt
+                                  </motion.button>
+                                )}
+                                {m.entryId && (
+                                  <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
+                                    onClick={()=>setDeleteConfirm(m.entryId)} title="Delete"
+                                    style={{ ...adminBtn('linear-gradient(135deg,var(--error),#991b1b)'), padding:'6px 10px', fontSize:11 }}>
+                                    <Trash size={12} weight="duotone" />
+                                  </motion.button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -940,7 +1028,7 @@ function Cashbook() {
                 )}
                 {exportTarget === 'annual' && (
                   <div style={{ marginBottom: 20 }}>
-                    <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>This will export the list of annual rituals for {ritualYear}. Any current search filters will be applied.</p>
+                    <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>This will export the list of annual rituals for {ritualYear === 'all' ? 'all years' : ritualYear}. Any current search/status filters will be applied.</p>
                   </div>
                 )}
                 <div style={{ display:'flex', gap:12 }}>
@@ -983,22 +1071,28 @@ function Cashbook() {
                     { label:'Name *', key:'name', type:'text', full:false },
                     { label:'Phone', key:'phone', type:'text', full:false },
                     { label:'Category *', key:'category', type:'text', full:true, list:'cashbookCategoryOptions' },
-                    { label:'Receipt No.', key:'receiptNumber', type:'text', full:false },
+                    { label:'Receipt No.', key:'receiptNumber', type:'text', full:false, lockWhenPending:true },
                     { label:'Entry Date (Year)', key:'entryDate', type:'year', full:false },
-                    { label:'Payment Date', key:'paymentDate', type:'date', full:false },
+                    { label:'Payment Date', key:'paymentDate', type:'date', full:false, lockWhenPending:true },
                     { label:'Amount (₹) *', key:'amount', type:'number', full:false },
-                  ].map(f=>(
+                  ].map(f=>{
+                    const locked = f.lockWhenPending && isPending
+                    return (
                     <div key={f.key} style={{ gridColumn: f.full ? '1/-1' : 'auto' }}>
                       <label style={{ display:'block', fontSize:11, fontWeight:700, color:'var(--text-muted)', marginBottom:4, textTransform:'uppercase' }}>{f.label}</label>
                       {f.type === 'year' ? (
                         <select value={formData[f.key]||''} onChange={e=>setFormData({...formData,[f.key]:e.target.value})} style={themeInput()}>
-                          {YEARS.map(y => <option key={y} value={y}>{y}-{y+1}</option>)}
+                          {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                         </select>
                       ) : (
-                        <input type={f.type} list={f.list} value={formData[f.key]||''} onChange={e=>setFormData({...formData,[f.key]:e.target.value})} style={themeInput()} />
+                        <input type={f.type} list={f.list} value={locked ? '' : (formData[f.key]||'')}
+                          placeholder={locked ? 'N/A' : undefined}
+                          disabled={locked}
+                          onChange={e=>setFormData({...formData,[f.key]:e.target.value})}
+                          style={{ ...themeInput(), ...(locked ? { background:'var(--neutral-100)', color:'var(--text-muted)', cursor:'not-allowed' } : {}) }} />
                       )}
                     </div>
-                  ))}
+                  )})}
                   <div>
                     <label style={{ display:'block', fontSize:11, fontWeight:700, color:'var(--text-muted)', marginBottom:4, textTransform:'uppercase' }}>Type *</label>
                     <select value={formData.type} onChange={e=>setFormData({...formData,type:e.target.value})} style={themeInput()}>
@@ -1008,14 +1102,15 @@ function Cashbook() {
                   </div>
                   <div>
                     <label style={{ display:'block', fontSize:11, fontWeight:700, color:'var(--text-muted)', marginBottom:4, textTransform:'uppercase' }}>Payment Mode *</label>
-                    <select value={formData.paymentMode} onChange={e=>setFormData({...formData,paymentMode:e.target.value})} style={themeInput()}>
+                    <select value={formData.paymentMode} disabled={isPending} onChange={e=>setFormData({...formData,paymentMode:e.target.value})}
+                      style={{ ...themeInput(), ...(isPending ? { background:'var(--neutral-100)', color:'var(--text-muted)', cursor:'not-allowed' } : {}) }}>
                       <option value="cash">Cash</option>
                       <option value="online">Online</option>
                     </select>
                   </div>
                   <div>
                     <label style={{ display:'block', fontSize:11, fontWeight:700, color:'var(--text-muted)', marginBottom:4, textTransform:'uppercase' }}>Status</label>
-                    <select value={formData.status} onChange={e=>setFormData({...formData,status:e.target.value})} style={themeInput()}>
+                    <select value={formData.status} onChange={e=>handleStatusChange(e.target.value)} style={themeInput()}>
                       <option value="completed">Completed</option>
                       <option value="pending">Pending</option>
                     </select>
@@ -1115,57 +1210,6 @@ function Cashbook() {
           )}
         </AnimatePresence>
 
-        {/* Ritual Payment Modal */}
-        <AnimatePresence>
-          {ritualModal && (
-            <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
-              style={modalOverlay} onClick={()=>!ritualSaving&&setRitualModal(null)}>
-              <motion.div initial={{scale:0.9,opacity:0}} animate={{scale:1,opacity:1}} exit={{scale:0.9,opacity:0}}
-                onClick={e=>e.stopPropagation()}
-                style={{ ...modalContent, maxWidth:460 }}>
-                <h3 style={{ fontSize:18, fontWeight:800, color:'var(--maroon)', marginBottom:20 }}>
-                  🪔 {ritualModal.entryId ? 'Edit' : 'Record'} Annual Ritual Payment
-                </h3>
-                <p style={{ fontSize:14, color:'var(--text-secondary)', marginBottom:16 }}>Member: <strong>{ritualModal.name}</strong></p>
-                <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-                  <div>
-                    <label style={{ display:'block', fontSize:11, fontWeight:700, color:'var(--text-muted)', marginBottom:4, textTransform:'uppercase' }}>Amount (₹) *</label>
-                    <input type="number" value={ritualForm.amount||''} onChange={e=>setRitualForm({...ritualForm,amount:e.target.value})} style={themeInput()} />
-                  </div>
-                  <div>
-                    <label style={{ display:'block', fontSize:11, fontWeight:700, color:'var(--text-muted)', marginBottom:4, textTransform:'uppercase' }}>Payment Mode</label>
-                    <select value={ritualForm.paymentMode} onChange={e=>setRitualForm({...ritualForm,paymentMode:e.target.value})} style={themeInput()}>
-                      <option value="cash">Cash</option><option value="online">Online</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display:'block', fontSize:11, fontWeight:700, color:'var(--text-muted)', marginBottom:4, textTransform:'uppercase' }}>Status</label>
-                    <select value={ritualForm.status} onChange={e=>setRitualForm({...ritualForm,status:e.target.value})} style={themeInput()}>
-                      <option value="completed">Paid</option><option value="pending">Pending</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display:'block', fontSize:11, fontWeight:700, color:'var(--text-muted)', marginBottom:4, textTransform:'uppercase' }}>Payment Date</label>
-                    <input type="date" value={ritualForm.paymentDate||''} onChange={e=>setRitualForm({...ritualForm,paymentDate:e.target.value})} style={themeInput()} />
-                  </div>
-                </div>
-                <div style={{ display:'flex', gap:12, marginTop:20 }}>
-                  <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}} disabled={ritualSaving}
-                    onClick={()=>setRitualModal(null)}
-                    style={{ flex:1, padding:13, borderRadius:12, border:'2px solid var(--border)', cursor:'pointer', fontSize:14, fontWeight:700, color:'var(--text-secondary)', background:'white' }}>
-                    Cancel
-                  </motion.button>
-                  <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}} disabled={ritualSaving}
-                    onClick={handleRitualSave}
-                    style={{ flex:1, padding:13, borderRadius:12, border:'none', cursor:'pointer', fontSize:14, fontWeight:700, color:'white', display:'flex', alignItems:'center', justifyContent:'center', gap:8, background: ritualSaving?'var(--neutral-300)':'linear-gradient(135deg,var(--success),#166534)' }}>
-                    {ritualSaving ? <><ButtonSpinner /> <span>Saving…</span></> : <><CurrencyCircleDollar size={16} /> Save Payment</>}
-                  </motion.button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Delete Confirm */}
         <AnimatePresence>
           {deleteConfirm && (
@@ -1222,7 +1266,7 @@ function Cashbook() {
                 {[
                   { label: 'Name', value: downloadingReceipt.name || '-' },
                   { label: 'Phone', value: downloadingReceipt.phone || '-' },
-                  { label: 'Year', value: ritualYear },
+                  { label: 'Year', value: downloadingReceipt.year || ritualYear },
                   { label: 'Payment Mode', value: downloadingReceipt.paymentMode === 'online' ? 'Online (Razorpay)' : 'Cash' },
                   { label: 'Category', value: 'Annual Ritual (Pooja Shulk)' },
                 ].map((row, i) => (

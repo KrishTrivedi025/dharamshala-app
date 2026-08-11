@@ -5,6 +5,59 @@ import Settings from '../models/Settings.js'
 // @desc    Get all cashbook entries (with filters)
 // @route   GET /api/cashbook
 // @access  Private (Admin only)
+const ANNUAL_RITUAL_START_YEAR = 2020
+
+// Build placeholder "not yet paid" annual ritual rows for eligible members who have
+// no real CashbookEntry for a given year, so they remain visible in the ledger
+// instead of only being discoverable via the Annual Ritual tab. A member is only
+// "eligible" for a year if their account already existed by then. The row is
+// labelled 'not_paid' while it's still the current year (open ask) and flips to
+// 'pending' once the year has passed (overdue), with no code change needed as time goes on.
+const buildUnpaidRitualEntries = async (years, search) => {
+  const CURRENT_YEAR = new Date().getFullYear()
+  const [allUsers, existingRitualEntries, annualFee] = await Promise.all([
+    User.find({ isActive: true, role: 'user' }).select('name phone createdAt'),
+    CashbookEntry.find({ source: 'annual_ritual', year: { $in: years } }).select('userId year'),
+    Settings.get('annualRitualFee', 1200)
+  ])
+
+  const virtuals = []
+  years.forEach(y => {
+    const eligibleUsers = allUsers.filter(u => u.createdAt.getFullYear() <= y)
+    eligibleUsers.forEach(user => {
+      const hasEntry = existingRitualEntries.some(
+        e => e.userId && e.userId.toString() === user._id.toString() && e.year === y
+      )
+      if (!hasEntry) {
+        virtuals.push({
+          _id: `virtual-ritual-${y}-${user._id}`,
+          entryDate: new Date(y, 0, 1),
+          paymentDate: null,
+          name: user.name,
+          phone: user.phone || '',
+          userId: user._id,
+          category: 'Annual Ritual Payment (Pooja Shulk)',
+          receiptNumber: null,
+          paymentMode: null,
+          type: 'credit',
+          amount: annualFee,
+          status: 'not_paid',
+          displayStatus: y === CURRENT_YEAR ? 'not_paid' : 'pending',
+          description: '',
+          source: 'annual_ritual',
+          year: y,
+          month: 1,
+          isVirtual: true
+        })
+      }
+    })
+  })
+
+  if (!search) return virtuals
+  const re = new RegExp(search, 'i')
+  return virtuals.filter(v => re.test(v.name) || re.test(v.category))
+}
+
 export const getEntries = async (req, res) => {
   try {
     const {
@@ -36,17 +89,51 @@ export const getEntries = async (req, res) => {
       ]
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit)
-
-    const entries = await CashbookEntry.find(query)
-      .sort(sort)
-      .skip(skip)
-      .limit(parseInt(limit))
+    let allEntries = await CashbookEntry.find(query)
       .populate('userId', 'name email phone')
       .populate('createdBy', 'name')
       .populate('updatedBy', 'name')
 
-    const total = await CashbookEntry.countDocuments(query)
+    // Only inject unpaid-member placeholder rows when the active filters don't
+    // already exclude them (a real entry status/date-range/month/debit filter has
+    // nothing to do with members who have no entry at all).
+    const includeUnpaid = !status && !fromDate && !toDate && !month && type !== 'debit' &&
+      (!source || source === 'annual_ritual')
+    if (includeUnpaid) {
+      const CURRENT_YEAR = new Date().getFullYear()
+      const years = year
+        ? [parseInt(year)]
+        : Array.from({ length: CURRENT_YEAR - ANNUAL_RITUAL_START_YEAR + 1 }, (_, i) => ANNUAL_RITUAL_START_YEAR + i)
+      const unpaidEntries = await buildUnpaidRitualEntries(years, search)
+      allEntries = [...allEntries, ...unpaidEntries]
+    }
+
+    // Attach a year-aware `displayStatus` to every row: annual ritual entries that
+    // aren't completed read 'not_paid' while still the current ask year and flip to
+    // 'pending' (overdue) once the year has passed, regardless of whether they're a
+    // real cash-request entry or a virtual placeholder. Other entries pass through
+    // their real status untouched.
+    const CURRENT_YEAR_FOR_DISPLAY = new Date().getFullYear()
+    allEntries = allEntries.map(e => {
+      const obj = e.toObject ? e.toObject() : e
+      if (obj.source === 'annual_ritual' && obj.status !== 'completed') {
+        obj.displayStatus = obj.year === CURRENT_YEAR_FOR_DISPLAY ? 'not_paid' : 'pending'
+        if (obj.status !== 'not_paid') {
+          obj.paymentMode = null
+        }
+      } else {
+        obj.displayStatus = obj.status
+      }
+      return obj
+    })
+
+    const sortField = sort.startsWith('-') ? sort.slice(1) : sort
+    const sortDir = sort.startsWith('-') ? -1 : 1
+    allEntries.sort((a, b) => (new Date(a[sortField]) - new Date(b[sortField])) * sortDir)
+
+    const total = allEntries.length
+    const skip = (parseInt(page) - 1) * parseInt(limit)
+    const entries = allEntries.slice(skip, skip + parseInt(limit))
 
     res.status(200).json({
       success: true,
@@ -276,69 +363,104 @@ export const getNextReceipt = async (req, res) => {
 // @access  Private (Admin only)
 export const getAnnualRituals = async (req, res) => {
   try {
-    const year = parseInt(req.params.year)
+    const yearParam = req.params.year
+    const isAllYears = yearParam === 'all'
+    const CURRENT_YEAR = new Date().getFullYear()
+    const START_YEAR = 2020
 
     // Get all active non-admin users (members of the samaj)
     const allUsers = await User.find({ isActive: true, role: 'user' })
-      .select('name email phone')
+      .select('name email phone createdAt')
       .sort({ name: 1 })
-
-    // Get all annual ritual entries for this year
-    const ritualEntries = await CashbookEntry.find({
-      source: 'annual_ritual',
-      year: year
-    }).populate('userId', 'name email phone')
 
     // Get the configured annual ritual fee
     const annualFee = await Settings.get('annualRitualFee', 1200)
 
-    // Build member list with payment status
-    const members = allUsers.map(user => {
-      const entry = ritualEntries.find(
-        e => e.userId && e.userId._id.toString() === user._id.toString()
-      )
-      return {
-        userId: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        status: entry ? entry.status : 'not_paid',
-        amount: entry ? entry.amount : annualFee,
-        paymentDate: entry ? entry.paymentDate : null,
-        paymentMode: entry ? entry.paymentMode : null,
-        receiptNumber: entry ? entry.receiptNumber : null,
-        entryId: entry ? entry._id : null,
-        receiptReady: entry ? (entry.status === 'completed') : false
-      }
-    })
+    // Build the member list for a single year — only members whose account
+    // already existed that year are included, so new signups don't retroactively
+    // show as "not paid" for years before they joined.
+    // The raw `status` field always reflects the true DB value ('completed'/'pending',
+    // or the 'not_paid' sentinel when no entry exists at all) and must stay untouched
+    // since it's echoed back into the record/edit form and re-submitted on save.
+    // `displayStatus` is the year-aware label actually shown in the UI: any unpaid
+    // entry (real 'pending' cash-request or virtual no-entry) reads 'not_paid' while
+    // it's still the current ask year, and flips to 'pending' (overdue) once the
+    // year has passed — no code change needed as time goes on.
+    const computeDisplayStatus = (rawStatus, year) =>
+      rawStatus === 'completed' ? 'completed' : (year === CURRENT_YEAR ? 'not_paid' : 'pending')
 
-    // Also include non-registered members (entries with no userId but with name)
-    const guestEntries = ritualEntries.filter(e => !e.userId)
-    guestEntries.forEach(entry => {
-      members.push({
-        userId: null,
-        name: entry.name,
-        email: '',
-        phone: entry.phone || '',
-        status: entry.status,
-        amount: entry.amount,
-        paymentDate: entry.paymentDate,
-        paymentMode: entry.paymentMode,
-        receiptNumber: entry.receiptNumber,
-        entryId: entry._id,
-        receiptReady: entry.status === 'completed'
+    const buildMembersForYear = (year, yearEntries) => {
+      const eligibleUsers = allUsers.filter(u => u.createdAt.getFullYear() <= year)
+
+      const yearMembers = eligibleUsers.map(user => {
+        const entry = yearEntries.find(
+          e => e.userId && e.userId._id.toString() === user._id.toString()
+        )
+        const rawStatus = entry ? entry.status : 'not_paid'
+        return {
+          userId: user._id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          year,
+          status: rawStatus,
+          displayStatus: computeDisplayStatus(rawStatus, year),
+          amount: entry ? entry.amount : annualFee,
+          paymentDate: entry && entry.status === 'completed' ? entry.paymentDate : null,
+          paymentMode: entry && entry.status === 'completed' ? entry.paymentMode : null,
+          receiptNumber: entry ? entry.receiptNumber : null,
+          entryId: entry ? entry._id : null,
+          receiptReady: entry ? (entry.status === 'completed') : false
+        }
       })
-    })
+
+      // Also include non-registered members (entries with no userId but with name)
+      const guestEntries = yearEntries.filter(e => !e.userId)
+      guestEntries.forEach(entry => {
+        yearMembers.push({
+          userId: null,
+          name: entry.name,
+          email: '',
+          phone: entry.phone || '',
+          year,
+          status: entry.status,
+          displayStatus: computeDisplayStatus(entry.status, year),
+          amount: entry.amount,
+          paymentDate: entry.status === 'completed' ? entry.paymentDate : null,
+          paymentMode: entry.status === 'completed' ? entry.paymentMode : null,
+          receiptNumber: entry.receiptNumber,
+          entryId: entry._id,
+          receiptReady: entry.status === 'completed'
+        })
+      })
+
+      return yearMembers
+    }
+
+    let members = []
+    if (isAllYears) {
+      const allEntries = await CashbookEntry.find({ source: 'annual_ritual' }).populate('userId', 'name email phone')
+      for (let y = START_YEAR; y <= CURRENT_YEAR; y++) {
+        members = members.concat(buildMembersForYear(y, allEntries.filter(e => e.year === y)))
+      }
+    } else {
+      const year = parseInt(yearParam)
+      const yearEntries = await CashbookEntry.find({
+        source: 'annual_ritual',
+        year
+      }).populate('userId', 'name email phone')
+      members = buildMembersForYear(year, yearEntries)
+    }
 
     res.status(200).json({
       success: true,
       data: {
-        year,
+        year: isAllYears ? 'all' : parseInt(yearParam),
         annualFee,
         totalMembers: members.length,
-        paid: members.filter(m => m.status === 'completed').length,
-        pending: members.filter(m => m.status === 'pending').length,
-        notPaid: members.filter(m => m.status === 'not_paid').length,
+        paid: members.filter(m => m.displayStatus === 'completed').length,
+        pending: members.filter(m => m.displayStatus === 'pending').length,
+        notPaid: members.filter(m => m.displayStatus === 'not_paid').length,
         members
       }
     })
