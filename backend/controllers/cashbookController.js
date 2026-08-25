@@ -173,12 +173,25 @@ export const createEntry = async (req, res) => {
       ? customReceiptNumber.trim()
       : await CashbookEntry.generateReceiptNumber(yr)
 
+    // If no registered account was explicitly linked, fall back to an exact
+    // (case-insensitive) name match so this entry counts as "paid" for that
+    // account and the Annual Ritual tab doesn't also show them as a separate
+    // unpaid placeholder row.
+    let linkedUserId = userId || null
+    if (!linkedUserId && name) {
+      const matchedUser = await User.findOne({
+        isActive: true, role: 'user',
+        name: new RegExp(`^${name.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')
+      }).select('_id')
+      if (matchedUser) linkedUserId = matchedUser._id
+    }
+
     const entry = await CashbookEntry.create({
       entryDate: dateObj,
       paymentDate: paymentDate ? new Date(paymentDate) : (status === 'completed' ? dateObj : null),
       name,
       phone: phone || '',
-      userId: userId || null,
+      userId: linkedUserId,
       category,
       receiptNumber,
       paymentMode,
@@ -202,7 +215,7 @@ export const createEntry = async (req, res) => {
     })
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(400).json({ success: false, message: 'Receipt number already exists. Please use a different one.' })
+      return res.status(400).json({ success: false, message: 'This receipt number is already used for this year. Please use a different one.' })
     }
     console.error('Create cashbook entry error:', error)
     res.status(500).json({ success: false, message: 'Server error while creating cashbook entry' })
@@ -259,7 +272,7 @@ export const updateEntry = async (req, res) => {
     })
   } catch (error) {
     if (error.code === 11000) {
-      return res.status(400).json({ success: false, message: 'Receipt number already exists. Please use a different one.' })
+      return res.status(400).json({ success: false, message: 'This receipt number is already used for this year. Please use a different one.' })
     }
     console.error('Update cashbook entry error:', error)
     res.status(500).json({ success: false, message: 'Server error while updating cashbook entry' })

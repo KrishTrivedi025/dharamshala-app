@@ -8,7 +8,7 @@ import {
   Plus, DownloadSimple, Printer, PencilSimple, Trash,
   MagnifyingGlass, Receipt, WarningCircle, CheckCircle, X,
 } from '@phosphor-icons/react'
-import { cashbookAPI, settingsAPI, memberAPI } from '../../utils/api'
+import { cashbookAPI, settingsAPI, memberAPI, adminAPI } from '../../utils/api'
 import { cardStyleSolid, modalOverlay, modalContent, inputStyle as themeInput } from '../../styles/theme'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
@@ -75,12 +75,31 @@ function Cashbook() {
   const [newReceiptNo, setNewReceiptNo] = useState('')
   const [receiptNoSaving, setReceiptNoSaving] = useState(false)
   const [members, setMembers] = useState([])
+  const [registeredUsers, setRegisteredUsers] = useState([])
   const [showMemberPicker, setShowMemberPicker] = useState(false)
   const [memberPickerSearch, setMemberPickerSearch] = useState('')
 
   useEffect(() => {
     memberAPI.getAll().then(res => setMembers(res.data || [])).catch(() => {})
+    adminAPI.getAllUsers().then(res => setRegisteredUsers((res.data || []).filter(u => u.role === 'user'))).catch(() => {})
+    settingsAPI.getRitualFee().then(res => {
+      if (res.data?.annualRitualFee) setAnnualFee(res.data.annualRitualFee)
+    }).catch(() => {})
   }, [])
+
+  // Picker list: registered website accounts first (so admin prefers linking
+  // to the real account when one exists — this is what prevents the Annual
+  // Ritual tab from also showing a separate "not paid" placeholder for them),
+  // then the plain Members directory, skipping any member whose name exactly
+  // matches a registered account already listed.
+  const pickerList = (() => {
+    const users = registeredUsers.map(u => ({ _id: u._id, name: u.name, phone: u.phone, userId: u._id, isRegistered: true }))
+    const usedNames = new Set(users.map(u => u.name.trim().toLowerCase()))
+    const plainMembers = members
+      .filter(m => !usedNames.has(m.name.trim().toLowerCase()))
+      .map(m => ({ _id: m._id, name: m.name, phone: m.phone, userId: null, isRegistered: false }))
+    return [...users, ...plainMembers]
+  })()
 
   const fetchNextReceipt = async () => {
     try {
@@ -152,7 +171,8 @@ function Cashbook() {
     setEditEntry(null)
     setFormData({
       entryDate: String(CURRENT_YEAR), paymentDate: '',
-      name: member?.name || '', phone: member?.phone || '', category:'', paymentMode:'cash',
+      name: member?.name || '', phone: member?.phone || '', userId: member?.userId || null,
+      category:'', paymentMode:'cash',
       type:'credit', amount:'', status:'completed', description:'',
       receiptNumber: nextReceiptNo || ''
     })
@@ -1084,9 +1104,9 @@ function Cashbook() {
                   </div>
                 </div>
                 <div style={{ flex:1, overflowY:'auto', padding:'8px 10px' }}>
-                  {members
+                  {pickerList
                     .filter(m => m.name?.toLowerCase().includes(memberPickerSearch.trim().toLowerCase()))
-                    .sort((a,b) => a.name.localeCompare(b.name))
+                    .sort((a,b) => (a.isRegistered === b.isRegistered) ? a.name.localeCompare(b.name) : (a.isRegistered ? -1 : 1))
                     .map(m => (
                       <motion.div key={m._id} whileHover={{ background:'var(--primary-subtle)' }} whileTap={{scale:0.98}}
                         onClick={()=>selectMemberForEntry(m)}
@@ -1095,14 +1115,21 @@ function Cashbook() {
                           {m.name?.charAt(0).toUpperCase() || '?'}
                         </div>
                         <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontSize:13.5, fontWeight:700, color:'var(--maroon)' }}>{m.name}</div>
+                          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                            <div style={{ fontSize:13.5, fontWeight:700, color:'var(--maroon)' }}>{m.name}</div>
+                            {m.isRegistered && (
+                              <span style={{ fontSize:9, fontWeight:800, textTransform:'uppercase', letterSpacing:0.3, padding:'2px 6px', borderRadius:99, background:'var(--success-subtle)', color:'var(--success-text)' }}>
+                                Registered
+                              </span>
+                            )}
+                          </div>
                           {m.phone && <div style={{ fontSize:11, color:'var(--text-muted)' }}>{m.phone}</div>}
                         </div>
                       </motion.div>
                     ))}
-                  {members.filter(m => m.name?.toLowerCase().includes(memberPickerSearch.trim().toLowerCase())).length === 0 && (
+                  {pickerList.filter(m => m.name?.toLowerCase().includes(memberPickerSearch.trim().toLowerCase())).length === 0 && (
                     <div style={{ textAlign:'center', padding:'40px 20px', color:'var(--text-muted)', fontSize:13 }}>
-                      {members.length === 0 ? 'No members added yet.' : 'No matching members.'}
+                      {pickerList.length === 0 ? 'No members added yet.' : 'No matching members.'}
                     </div>
                   )}
                 </div>
@@ -1136,7 +1163,7 @@ function Cashbook() {
                   <option value="Donation" />
                 </datalist>
                 <datalist id="cashbookMemberOptions">
-                  {members.map(m => <option key={m._id} value={m.name} />)}
+                  {pickerList.map(m => <option key={m._id} value={m.name} />)}
                 </datalist>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                   {[
@@ -1163,8 +1190,13 @@ function Cashbook() {
                           onChange={e=>{
                             const val = e.target.value
                             if (f.key === 'name') {
-                              const match = members.find(mm => mm.name === val)
-                              setFormData(prev => ({ ...prev, name: val, phone: match?.phone ? match.phone : prev.phone }))
+                              const match = pickerList.find(mm => mm.name === val)
+                              setFormData(prev => ({ ...prev, name: val, phone: match?.phone ? match.phone : prev.phone, userId: match?.userId || null }))
+                            } else if (f.key === 'category') {
+                              setFormData(prev => ({
+                                ...prev, category: val,
+                                amount: (/annual\s*ritual/i.test(val) && !prev.amount) ? annualFee : prev.amount
+                              }))
                             } else {
                               setFormData({...formData,[f.key]:val})
                             }

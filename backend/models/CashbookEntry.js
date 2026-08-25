@@ -35,7 +35,6 @@ const cashbookEntrySchema = new mongoose.Schema({
   },
   receiptNumber: {
     type: String,
-    unique: true,
     required: [true, 'Receipt number is required']
   },
   paymentMode: {
@@ -105,7 +104,12 @@ const cashbookEntrySchema = new mongoose.Schema({
 
 // Indexes for fast querying
 cashbookEntrySchema.index({ year: 1, month: 1 })
-cashbookEntrySchema.index({ receiptNumber: 1 })
+// Receipt numbers only need to be unique within a given year, not globally —
+// the same number can be reused across different years.
+cashbookEntrySchema.index(
+  { year: 1, receiptNumber: 1 },
+  { unique: true, partialFilterExpression: { receiptNumber: { $exists: true } } }
+)
 cashbookEntrySchema.index({ type: 1, year: 1 })
 cashbookEntrySchema.index({ source: 1 })
 cashbookEntrySchema.index({ status: 1 })
