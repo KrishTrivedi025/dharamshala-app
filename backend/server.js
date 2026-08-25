@@ -9,6 +9,7 @@ import cashbookRoutes from './routes/cashbookRoutes.js'
 import daanPetiRoutes from './routes/daanPetiRoutes.js'
 import settingsRoutes from './routes/settingsRoutes.js'
 import ritualRoutes from './routes/ritualRoutes.js'
+import memberRoutes from './routes/memberRoutes.js'
 
 dotenv.config()
 
@@ -54,6 +55,7 @@ app.use('/api/cashbook', cashbookRoutes)
 app.use('/api/daan-peti', daanPetiRoutes)
 app.use('/api/settings', settingsRoutes)
 app.use('/api/ritual', ritualRoutes)
+app.use('/api/members', memberRoutes)
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' })

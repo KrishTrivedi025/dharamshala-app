@@ -264,6 +264,36 @@ export const settingsAPI = {
     }).then(handleResponse),
 }
 
+export const memberAPI = {
+  getAll: (search = '') =>
+    fetch(`${BASE_URL}/members${search ? `?search=${encodeURIComponent(search)}` : ''}`, {
+      headers: headers(true),
+    }).then(handleResponse),
+
+  create: (data) =>
+    fetch(`${BASE_URL}/members`, {
+      method: 'POST', headers: headers(true),
+      body: JSON.stringify(data),
+    }).then(handleResponse),
+
+  bulkCreate: (members) =>
+    fetch(`${BASE_URL}/members/bulk`, {
+      method: 'POST', headers: headers(true),
+      body: JSON.stringify({ members }),
+    }).then(handleResponse),
+
+  update: (id, data) =>
+    fetch(`${BASE_URL}/members/${id}`, {
+      method: 'PUT', headers: headers(true),
+      body: JSON.stringify(data),
+    }).then(handleResponse),
+
+  delete: (id) =>
+    fetch(`${BASE_URL}/members/${id}`, {
+      method: 'DELETE', headers: headers(true),
+    }).then(handleResponse),
+}
+
 export const ritualAPI = {
   getMyStatus: () =>
     fetch(`${BASE_URL}/ritual/my-status`, { headers: headers(true) }).then(handleResponse),

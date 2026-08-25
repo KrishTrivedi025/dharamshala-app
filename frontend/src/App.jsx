@@ -21,6 +21,7 @@ const LockedDates     = lazy(() => import('./pages/admin/LockedDates'))
 const UserManagement  = lazy(() => import('./pages/admin/UserManagement'))
 const RefundManager   = lazy(() => import('./pages/admin/RefundManager'))
 const Cashbook        = lazy(() => import('./pages/admin/Cashbook'))
+const Members         = lazy(() => import('./pages/admin/Members'))
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
         <Route path="/admin/users" element={<ProtectedRoute adminOnly><UserManagement /></ProtectedRoute>} />
         <Route path="/admin/refunds" element={<ProtectedRoute adminOnly><RefundManager /></ProtectedRoute>} />
         <Route path="/admin/cashbook" element={<ProtectedRoute adminOnly><Cashbook /></ProtectedRoute>} />
+        <Route path="/admin/members" element={<ProtectedRoute adminOnly><Members /></ProtectedRoute>} />
         <Route path="/daan-peti" element={<DaanPeti />} />
       </Routes>
     </Suspense>

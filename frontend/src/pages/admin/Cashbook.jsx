@@ -8,7 +8,7 @@ import {
   Plus, DownloadSimple, Printer, PencilSimple, Trash,
   MagnifyingGlass, Receipt, WarningCircle, CheckCircle, X,
 } from '@phosphor-icons/react'
-import { cashbookAPI, settingsAPI } from '../../utils/api'
+import { cashbookAPI, settingsAPI, memberAPI } from '../../utils/api'
 import { cardStyleSolid, modalOverlay, modalContent, inputStyle as themeInput } from '../../styles/theme'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
@@ -74,6 +74,13 @@ function Cashbook() {
   const [showReceiptModal, setShowReceiptModal] = useState(false)
   const [newReceiptNo, setNewReceiptNo] = useState('')
   const [receiptNoSaving, setReceiptNoSaving] = useState(false)
+  const [members, setMembers] = useState([])
+  const [showMemberPicker, setShowMemberPicker] = useState(false)
+  const [memberPickerSearch, setMemberPickerSearch] = useState('')
+
+  useEffect(() => {
+    memberAPI.getAll().then(res => setMembers(res.data || [])).catch(() => {})
+  }, [])
 
   const fetchNextReceipt = async () => {
     try {
@@ -141,16 +148,20 @@ function Cashbook() {
     })
   }
 
-  const openAdd = () => {
+  const openAdd = (member = null) => {
     setEditEntry(null)
     setFormData({
       entryDate: String(CURRENT_YEAR), paymentDate: '',
-      name:'', phone:'', category:'', paymentMode:'cash',
+      name: member?.name || '', phone: member?.phone || '', category:'', paymentMode:'cash',
       type:'credit', amount:'', status:'completed', description:'',
       receiptNumber: nextReceiptNo || ''
     })
     setShowModal(true)
   }
+
+  const openMemberPicker = () => { setMemberPickerSearch(''); setShowMemberPicker(true) }
+  const selectMemberForEntry = (member) => { setShowMemberPicker(false); openAdd(member) }
+  const skipMemberPicker = () => { setShowMemberPicker(false); openAdd(null) }
 
   const openEdit = (entry) => {
     setEditEntry(entry)
@@ -455,7 +466,7 @@ function Cashbook() {
                   </div>
                   {/* Row 5: Add Entry hero + 3-col export */}
                   <motion.button whileHover={{scale:1.02}} whileTap={{scale:0.97}}
-                    onClick={openAdd}
+                    onClick={openMemberPicker}
                     style={{ width:'100%', padding:'13px', borderRadius:12, border:'none', cursor:'pointer',
                       fontSize:14, fontWeight:800, color:'white', fontFamily:'inherit',
                       background:'linear-gradient(135deg, var(--primary), var(--maroon))',
@@ -506,7 +517,7 @@ function Cashbook() {
                   </div>
                   <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
                     <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
-                      onClick={openAdd} style={adminBtn()}>
+                      onClick={openMemberPicker} style={adminBtn()}>
                       <Plus size={14} weight="bold" /> Add Entry
                     </motion.button>
                     <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
@@ -1048,6 +1059,64 @@ function Cashbook() {
           )}
         </AnimatePresence>
 
+        {/* Member Picker Modal */}
+        <AnimatePresence>
+          {showMemberPicker && (
+            <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+              style={modalOverlay} onClick={()=>setShowMemberPicker(false)}>
+              <motion.div initial={{y:40,opacity:0}} animate={{y:0,opacity:1}} exit={{y:40,opacity:0}}
+                transition={{ type:'spring', stiffness:340, damping:30 }}
+                onClick={e=>e.stopPropagation()}
+                style={{ ...modalContent, maxWidth:480, maxHeight:'80vh', display:'flex', flexDirection:'column', padding:0, overflow:'hidden' }}>
+                <div style={{ padding:'20px 20px 12px', borderBottom:'1px solid var(--border)', flexShrink:0 }}>
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+                    <h3 style={{ fontSize:18, fontWeight:800, color:'var(--maroon)' }}>Select Member</h3>
+                    <motion.button whileTap={{scale:0.9}} onClick={()=>setShowMemberPicker(false)}
+                      style={{ background:'var(--neutral-100)', border:'none', borderRadius:8, width:28, height:28, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                      <X size={14} />
+                    </motion.button>
+                  </div>
+                  <div style={{ position:'relative', display:'flex', alignItems:'center' }}>
+                    <MagnifyingGlass size={15} color="var(--text-muted)" style={{ position:'absolute', left:12, pointerEvents:'none' }} />
+                    <input autoFocus type="text" placeholder="Search member name..."
+                      value={memberPickerSearch} onChange={e=>setMemberPickerSearch(e.target.value)}
+                      style={{ ...themeInput(), paddingLeft:34 }} />
+                  </div>
+                </div>
+                <div style={{ flex:1, overflowY:'auto', padding:'8px 10px' }}>
+                  {members
+                    .filter(m => m.name?.toLowerCase().includes(memberPickerSearch.trim().toLowerCase()))
+                    .sort((a,b) => a.name.localeCompare(b.name))
+                    .map(m => (
+                      <motion.div key={m._id} whileHover={{ background:'var(--primary-subtle)' }} whileTap={{scale:0.98}}
+                        onClick={()=>selectMemberForEntry(m)}
+                        style={{ display:'flex', alignItems:'center', gap:10, padding:'10px', borderRadius:10, cursor:'pointer' }}>
+                        <div style={{ width:32, height:32, borderRadius:'50%', flexShrink:0, background:'linear-gradient(135deg, var(--primary), var(--maroon))', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:800, color:'white' }}>
+                          {m.name?.charAt(0).toUpperCase() || '?'}
+                        </div>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:13.5, fontWeight:700, color:'var(--maroon)' }}>{m.name}</div>
+                          {m.phone && <div style={{ fontSize:11, color:'var(--text-muted)' }}>{m.phone}</div>}
+                        </div>
+                      </motion.div>
+                    ))}
+                  {members.filter(m => m.name?.toLowerCase().includes(memberPickerSearch.trim().toLowerCase())).length === 0 && (
+                    <div style={{ textAlign:'center', padding:'40px 20px', color:'var(--text-muted)', fontSize:13 }}>
+                      {members.length === 0 ? 'No members added yet.' : 'No matching members.'}
+                    </div>
+                  )}
+                </div>
+                <div style={{ padding:'12px 16px', borderTop:'1px solid var(--border)', flexShrink:0 }}>
+                  <motion.button whileHover={{scale:1.01}} whileTap={{scale:0.97}} onClick={skipMemberPicker}
+                    style={{ width:'100%', padding:'11px', borderRadius:10, border:'1.5px dashed var(--border)', background:'transparent', cursor:'pointer', fontSize:13, fontWeight:700, color:'var(--text-secondary)', display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                    <Plus size={14} weight="bold" /> Enter manually (not a member)
+                  </motion.button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Add/Edit Modal */}
         <AnimatePresence>
           {showModal && (
@@ -1066,9 +1135,12 @@ function Cashbook() {
                   <option value="Maintenance" />
                   <option value="Donation" />
                 </datalist>
+                <datalist id="cashbookMemberOptions">
+                  {members.map(m => <option key={m._id} value={m.name} />)}
+                </datalist>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                   {[
-                    { label:'Name *', key:'name', type:'text', full:false },
+                    { label:'Name *', key:'name', type:'text', full:false, list:'cashbookMemberOptions' },
                     { label:'Phone', key:'phone', type:'text', full:false },
                     { label:'Category *', key:'category', type:'text', full:true, list:'cashbookCategoryOptions' },
                     { label:'Receipt No.', key:'receiptNumber', type:'text', full:false, lockWhenPending:true },
@@ -1088,7 +1160,15 @@ function Cashbook() {
                         <input type={f.type} list={f.list} value={locked ? '' : (formData[f.key]||'')}
                           placeholder={locked ? 'N/A' : undefined}
                           disabled={locked}
-                          onChange={e=>setFormData({...formData,[f.key]:e.target.value})}
+                          onChange={e=>{
+                            const val = e.target.value
+                            if (f.key === 'name') {
+                              const match = members.find(mm => mm.name === val)
+                              setFormData(prev => ({ ...prev, name: val, phone: match?.phone ? match.phone : prev.phone }))
+                            } else {
+                              setFormData({...formData,[f.key]:val})
+                            }
+                          }}
                           style={{ ...themeInput(), ...(locked ? { background:'var(--neutral-100)', color:'var(--text-muted)', cursor:'not-allowed' } : {}) }} />
                       )}
                     </div>

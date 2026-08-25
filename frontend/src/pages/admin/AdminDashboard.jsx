@@ -6,7 +6,7 @@ import { adminAPI } from '../../utils/api'
 import {
   ChartBar, ClipboardText, CalendarBlank, LockSimple, Users,
   CurrencyCircleDollar, BookOpen, House, HourglassMedium,
-  CheckCircle, Building, Tray, List, X,
+  CheckCircle, Building, Tray, List, X, UsersThree,
 } from '@phosphor-icons/react'
 import { cardStyleSolid, STATUS_COLORS } from '../../styles/theme'
 
@@ -28,6 +28,7 @@ const adminLinks = [
   { path: '/admin/users',       label: 'User Management',  Icon: Users },
   { path: '/admin/refunds',     label: 'Refund Manager',   Icon: CurrencyCircleDollar },
   { path: '/admin/cashbook',    label: 'Cashbook',         Icon: BookOpen },
+  { path: '/admin/members',     label: 'Members',          Icon: UsersThree },
 ]
 
 function AdminSidebarContent({ onClose, isMobile }) {
