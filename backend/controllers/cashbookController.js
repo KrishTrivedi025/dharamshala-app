@@ -2,6 +2,8 @@ import CashbookEntry from '../models/CashbookEntry.js'
 import User from '../models/User.js'
 import Settings from '../models/Settings.js'
 
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
 // @desc    Get all cashbook entries (with filters)
 // @route   GET /api/cashbook
 // @access  Private (Admin only)
@@ -181,9 +183,25 @@ export const createEntry = async (req, res) => {
     if (!linkedUserId && name) {
       const matchedUser = await User.findOne({
         isActive: true, role: 'user',
-        name: new RegExp(`^${name.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i')
+        name: new RegExp(`^${escapeRegex(name.trim())}$`, 'i')
       }).select('_id')
       if (matchedUser) linkedUserId = matchedUser._id
+    }
+
+    // Prevent double-submits (e.g. a double-tap on Save) from creating two
+    // annual ritual entries for the same person + year.
+    const effectiveSource = source || 'manual'
+    if (effectiveSource === 'annual_ritual') {
+      const dupQuery = linkedUserId
+        ? { source: 'annual_ritual', year: yr, userId: linkedUserId }
+        : { source: 'annual_ritual', year: yr, userId: null, name: new RegExp(`^${escapeRegex(name.trim())}$`, 'i') }
+      const existing = await CashbookEntry.findOne(dupQuery)
+      if (existing) {
+        return res.status(400).json({
+          success: false,
+          message: `${name} already has an annual ritual entry for ${yr} (${existing.status}). Edit that entry instead of adding a new one.`
+        })
+      }
     }
 
     const entry = await CashbookEntry.create({
@@ -199,7 +217,7 @@ export const createEntry = async (req, res) => {
       amount: parseFloat(amount),
       status: status || 'completed',
       description: description || '',
-      source: source || 'manual',
+      source: effectiveSource,
       createdBy: req.user.id,
       year: yr,
       month: dateObj.getMonth() + 1
@@ -412,9 +430,12 @@ export const getAnnualRituals = async (req, res) => {
         const rawStatus = entry ? entry.status : 'not_paid'
         return {
           userId: user._id,
-          name: user.name,
+          // Prefer the entry's own name/phone (the admin may have edited them
+          // after the entry was auto-linked to this account) over the account's,
+          // so search and display stay consistent with what was actually saved.
+          name: entry ? entry.name : user.name,
           email: user.email,
-          phone: user.phone,
+          phone: entry?.phone || user.phone,
           year,
           status: rawStatus,
           displayStatus: computeDisplayStatus(rawStatus, year),
