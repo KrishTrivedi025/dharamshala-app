@@ -1,5 +1,7 @@
 import Member from '../models/Member.js'
 
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
 // @desc    Get all members (with optional search)
 // @route   GET /api/members
 // @access  Private (Admin only)
@@ -8,10 +10,11 @@ export const getMembers = async (req, res) => {
     const { search } = req.query
     const query = {}
     if (search) {
+      const searchRe = escapeRegex(search)
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { phone: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
+        { name: { $regex: searchRe, $options: 'i' } },
+        { phone: { $regex: searchRe, $options: 'i' } },
+        { email: { $regex: searchRe, $options: 'i' } }
       ]
     }
 

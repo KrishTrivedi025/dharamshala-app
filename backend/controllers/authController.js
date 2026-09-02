@@ -1,4 +1,7 @@
 import User from '../models/User.js'
+import CashbookEntry from '../models/CashbookEntry.js'
+import Booking from '../models/Booking.js'
+import DaanPetiDonation from '../models/DaanPetiDonation.js'
 import jwt from 'jsonwebtoken'
 
 const generateToken = (userId) => {
@@ -152,6 +155,45 @@ export const logout = async (req, res) => {
   } catch (error) {
     console.error('Logout error:', error)
     res.status(500).json({ success: false, message: 'Server error during logout' })
+  }
+}
+
+// @desc    Permanently delete the logged-in user's own account and their data
+// @route   DELETE /api/auth/me
+// @access  Private
+export const deleteMyAccount = async (req, res) => {
+  try {
+    const user = req.user
+    if (user.role === 'admin') {
+      return res.status(403).json({ success: false, message: 'Admin accounts cannot be self-deleted.' })
+    }
+
+    // Records with real money already attached (a paid annual ritual entry, an
+    // approved/paid booking, a completed donation) are the trust's financial
+    // trail and survive account deletion — only unlinked from the account.
+    // Anything still pending/unpaid was just a placeholder tied to this
+    // account and is removed along with it.
+    await CashbookEntry.deleteMany({ userId: user._id, status: { $ne: 'completed' } })
+    await CashbookEntry.updateMany({ userId: user._id, status: 'completed' }, { $set: { userId: null } })
+
+    await DaanPetiDonation.deleteMany({ userId: user._id, status: { $ne: 'completed' } })
+    await DaanPetiDonation.updateMany({ userId: user._id, status: 'completed' }, { $set: { userId: null } })
+
+    // Booking.user is a required field, so kept bookings stay linked — each
+    // already stores its own contactName/contactPhone/contactEmail, so the
+    // dangling reference doesn't affect anything user-facing.
+    await Booking.deleteMany({
+      user: user._id,
+      status: { $nin: ['approved', 'completed'] },
+      paymentStatus: { $nin: ['paid', 'partial', 'refunded'] }
+    })
+
+    await User.findByIdAndDelete(user._id)
+
+    res.status(200).json({ success: true, message: 'Your account and associated data have been deleted' })
+  } catch (error) {
+    console.error('Delete account error:', error)
+    res.status(500).json({ success: false, message: 'Server error while deleting account' })
   }
 }
 

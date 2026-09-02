@@ -6,6 +6,7 @@ import {
 } from '@phosphor-icons/react'
 import { ritualAPI } from '../utils/api'
 import html2canvas from 'html2canvas'
+import { ReceiptHeader } from './ReceiptHeader'
 
 function ReceiptDownloader({ receipt, onClose }) {
   const receiptRef = useRef(null)
@@ -52,20 +53,7 @@ function ReceiptDownloader({ receipt, onClose }) {
           background: 'white', boxShadow: 'var(--shadow-xl)',
           border: '1.5px solid var(--border)', textAlign: 'left', fontFamily: 'sans-serif',
         }}>
-          <div style={{
-            background: 'linear-gradient(135deg, #1a0000 0%, #5a0e0e 60%, var(--maroon) 100%)',
-            padding: '28px 28px 20px', textAlign: 'center',
-          }}>
-            <div style={{ fontSize: 40, marginBottom: 6 }}>🛕</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: '#F7C948', letterSpacing: '0.5px' }}>
-              Shri Dharamshala Trust
-            </div>
-            <div style={{
-              marginTop: 14, display: 'inline-block', padding: '6px 16px', borderRadius: 99,
-              background: 'rgba(247,201,72,0.2)', border: '1px solid rgba(247,201,72,0.4)',
-              fontSize: 14, fontWeight: 700, color: '#F7C948',
-            }}>ANNUAL RITUAL RECEIPT</div>
-          </div>
+          <ReceiptHeader badge="ANNUAL RITUAL RECEIPT" />
           <div style={{ padding: '24px 28px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 16, borderBottom: '1px dashed #f5ede0' }}>
               <div>

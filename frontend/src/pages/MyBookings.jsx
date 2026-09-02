@@ -12,6 +12,7 @@ import {
 } from '@phosphor-icons/react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import { ReceiptHeader } from '../components/ReceiptHeader'
 import { bookingAPI } from '../utils/api'
 import { useLanguage } from '../context/LanguageContext'
 
@@ -410,11 +411,7 @@ function MyBookings() {
       {downloadingReceipt && (
         <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
           <div ref={receiptRef} style={{ width: '500px', borderRadius: 24, overflow: 'hidden', background: 'white', border: '1.5px solid #ede8e0', textAlign: 'left', fontFamily: 'sans-serif' }}>
-            <div style={{ background: 'linear-gradient(135deg, #1a0000 0%, #5a0e0e 60%, #8B1A1A 100%)', padding: '28px 28px 20px', textAlign: 'center' }}>
-              <div style={{ fontSize: 40, marginBottom: 7 }}>🛕</div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: '#F7C948' }}>Shri Dharamshala Trust</div>
-              <div style={{ marginTop: 12, display: 'inline-block', padding: '5px 16px', borderRadius: 99, background: 'rgba(247,201,72,0.18)', border: '1px solid rgba(247,201,72,0.3)', fontSize: 13, fontWeight: 800, color: '#F7C948' }}>HALL BOOKING RECEIPT</div>
-            </div>
+            <ReceiptHeader badge="HALL BOOKING RECEIPT" />
             <div style={{ padding: '24px 28px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 16, borderBottom: '1px dashed #f5ede0' }}>
                 <div>

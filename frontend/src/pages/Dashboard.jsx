@@ -1,30 +1,47 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Building, ClipboardText, Bell, UserCircle,
   Hourglass, CheckCircle, XCircle, DownloadSimple,
-  CreditCard, ArrowRight, X,
+  CreditCard, ArrowRight, X, WarningOctagon, Trash,
 } from '@phosphor-icons/react'
 import { useIsMobile } from './admin/AdminDashboard'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
-import { bookingAPI, ritualAPI } from '../utils/api'
+import { bookingAPI, ritualAPI, authAPI } from '../utils/api'
 import RitualPaymentModal from '../components/RitualPaymentModal'
-import { STATUS_COLORS, cardStyle } from '../styles/theme'
+import { STATUS_COLORS, cardStyle, modalOverlay, modalContent } from '../styles/theme'
 
 function Dashboard() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const { t } = useLanguage()
   const isMobile = useIsMobile()
+  const navigate = useNavigate()
   const [stats, setStats] = useState({ total: 0, pending: 0, approved: 0, rejected: 0 })
   const [recentBookings, setRecentBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [ritualStatus, setRitualStatus] = useState(null)
   const [showRitualModal, setShowRitualModal] = useState(false)
   const [bannerDismissed, setBannerDismissed] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
+
+  const handleDeleteAccount = async () => {
+    try {
+      setDeleting(true); setDeleteError(null)
+      await authAPI.deleteAccount()
+      logout()
+      navigate('/')
+    } catch (err) {
+      setDeleteError(err.message)
+      setDeleting(false)
+    }
+  }
 
   const quickActions = [
     { icon: <Building size={24} weight="duotone" />, label: t.dashboard.book_hall, desc: t.dashboard.book_hall_desc, path: '/booking', color: 'var(--primary)', colorRaw: '#FF6B35' },
@@ -342,9 +359,101 @@ function Dashboard() {
             </motion.button>
           </Link>
         </motion.div>
+
+        {/* Danger Zone — delete account */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
+          style={{
+            marginTop: 24, borderRadius: 'var(--radius-lg)', padding: isMobile ? '18px 18px' : '22px 26px',
+            background: 'rgba(220,38,38,0.05)', border: '1.5px solid rgba(220,38,38,0.22)',
+            display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap',
+          }}>
+          <WarningOctagon size={26} weight="fill" color="#dc2626" style={{ flexShrink: 0, marginTop: 2 }} />
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ fontSize: 'var(--text-base)', fontWeight: 800, color: '#dc2626', marginBottom: 4 }}>Delete Account</div>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              Also, your account and all your data will be deleted if you really want to delete your account. This action is permanent and cannot be undone.
+            </p>
+          </div>
+          <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+            onClick={() => { setDeleteConfirmText(''); setDeleteError(null); setShowDeleteModal(true) }}
+            style={{
+              padding: '9px 20px', borderRadius: 'var(--radius-full)',
+              border: '1.5px solid rgba(220,38,38,0.4)',
+              cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 600,
+              color: '#dc2626', background: 'transparent', fontFamily: 'inherit', flexShrink: 0,
+            }}>
+            Delete Account
+          </motion.button>
+        </motion.div>
       </div>
 
       <Footer />
+
+      {/* Delete Account confirmation modal */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={modalOverlay} onClick={() => !deleting && setShowDeleteModal(false)}>
+            <motion.div initial={{ opacity: 0, y: 20, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.97 }}
+              style={{ ...modalContent, maxWidth: 460 }} onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                <WarningOctagon size={28} weight="fill" color="#dc2626" />
+                <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 900, color: '#dc2626' }}>Delete Your Account?</h3>
+              </div>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 16 }}>
+                Also, your account and all your data will be deleted if you really want to delete your account. This cannot be undone — your profile,
+                bookings, and any pending or unpaid Annual Puja entries will be permanently removed. Payments you've already made stay on record
+                as required for our accounts.
+              </p>
+
+              {deleteError && (
+                <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-md)', background: 'var(--error-subtle)', color: 'var(--error-text)', fontSize: 13, fontWeight: 600, marginBottom: 14 }}>
+                  {deleteError}
+                </div>
+              )}
+
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                Type <strong>DELETE</strong> to confirm
+              </label>
+              <input
+                value={deleteConfirmText}
+                onChange={e => setDeleteConfirmText(e.target.value)}
+                placeholder="DELETE"
+                autoFocus
+                style={{
+                  width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)',
+                  border: '1.5px solid var(--border)', outline: 'none', fontSize: 14, fontFamily: 'inherit',
+                  boxSizing: 'border-box', marginBottom: 20,
+                }}
+              />
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowDeleteModal(false)} disabled={deleting}
+                  style={{
+                    flex: 1, padding: '12px', borderRadius: 'var(--radius-full)', border: '1.5px solid var(--border)',
+                    cursor: deleting ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 700, color: 'var(--text-secondary)',
+                    background: 'transparent', fontFamily: 'inherit',
+                  }}>
+                  Cancel
+                </motion.button>
+                <motion.button whileHover={{ scale: deleteConfirmText === 'DELETE' ? 1.02 : 1 }} whileTap={{ scale: deleteConfirmText === 'DELETE' ? 0.98 : 1 }}
+                  onClick={handleDeleteAccount} disabled={deleteConfirmText !== 'DELETE' || deleting}
+                  style={{
+                    flex: 1, padding: '12px', borderRadius: 'var(--radius-full)', border: 'none',
+                    cursor: (deleteConfirmText === 'DELETE' && !deleting) ? 'pointer' : 'not-allowed',
+                    fontSize: 14, fontWeight: 800, color: 'white',
+                    background: deleteConfirmText === 'DELETE' ? '#dc2626' : 'var(--neutral-300)',
+                    fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                  }}>
+                  <Trash size={15} weight="bold" /> {deleting ? 'Deleting…' : 'Delete Forever'}
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <RitualPaymentModal
         isOpen={showRitualModal}
         onClose={() => setShowRitualModal(false)}

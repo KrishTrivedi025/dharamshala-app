@@ -10,6 +10,8 @@ import {
 } from '@phosphor-icons/react'
 import { cashbookAPI, settingsAPI, memberAPI, adminAPI } from '../../utils/api'
 import { cardStyleSolid, modalOverlay, modalContent, inputStyle as themeInput } from '../../styles/theme'
+import { ReceiptHeader } from '../../components/ReceiptHeader'
+import { getReceiptHeaderDataUrl, RECEIPT_HEADER_RATIO } from '../../utils/receiptAssets'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import autoTable from 'jspdf-autotable'
@@ -47,6 +49,7 @@ function Cashbook() {
   const [typeFilter, setTypeFilter] = useState(savedFilters.typeFilter ?? 'All')
   const [sourceFilter, setSourceFilter] = useState(savedFilters.sourceFilter ?? 'All')
   const [search, setSearch] = useState('')
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [editEntry, setEditEntry] = useState(null)
   const [formData, setFormData] = useState({})
@@ -69,6 +72,7 @@ function Cashbook() {
   const [exportRange, setExportRange] = useState({ from: '', to: '' })
   const [exporting, setExporting] = useState(false)
   const [ritualSearch, setRitualSearch] = useState('')
+  const [showRitualSearchSuggestions, setShowRitualSearchSuggestions] = useState(false)
   const [ritualStatusFilter, setRitualStatusFilter] = useState('all')
   const [nextReceiptNo, setNextReceiptNo] = useState('')
   const [showReceiptModal, setShowReceiptModal] = useState(false)
@@ -108,7 +112,7 @@ function Cashbook() {
     } catch { /* non-critical */ }
   }
 
-  const fetchData = async () => {
+  const fetchData = async (searchOverride) => {
     try {
       setLoading(true)
       const params = { sort: 'entryDate' }
@@ -116,7 +120,8 @@ function Cashbook() {
       if (month > 0) params.month = month
       if (typeFilter !== 'All') params.type = typeFilter
       if (sourceFilter !== 'All') params.source = sourceFilter
-      if (search.trim()) params.search = search.trim()
+      const searchTerm = searchOverride !== undefined ? searchOverride : search
+      if (searchTerm.trim()) params.search = searchTerm.trim()
       params.limit = 500
       const [entriesRes, summaryRes] = await Promise.all([
         cashbookAPI.getEntries(params),
@@ -136,7 +141,28 @@ function Cashbook() {
     localStorage.setItem(LEDGER_FILTERS_KEY, JSON.stringify({ year, month, typeFilter, sourceFilter }))
   }, [year, month, typeFilter, sourceFilter])
 
-  const handleSearch = (e) => { if (e.key === 'Enter') fetchData() }
+  const handleSearch = (e) => { if (e.key === 'Enter') { setShowSearchSuggestions(false); fetchData() } }
+
+  // Prefix match against the Members directory (e.g. "SH" -> "Shyam Sharma"),
+  // so admins can jump straight to one member's entries without typing the full name.
+  const searchSuggestions = search.trim()
+    ? members.filter(m => m.name?.toLowerCase().startsWith(search.trim().toLowerCase())).slice(0, 8)
+    : []
+
+  const selectSearchSuggestion = (name) => {
+    setSearch(name)
+    setShowSearchSuggestions(false)
+    fetchData(name)
+  }
+
+  const ritualSearchSuggestions = ritualSearch.trim()
+    ? members.filter(m => m.name?.toLowerCase().startsWith(ritualSearch.trim().toLowerCase())).slice(0, 8)
+    : []
+
+  const selectRitualSearchSuggestion = (name) => {
+    setRitualSearch(name)
+    setShowRitualSearchSuggestions(false)
+  }
 
   const openReceiptModal = () => { setNewReceiptNo(nextReceiptNo); setShowReceiptModal(true) }
 
@@ -321,8 +347,19 @@ function Cashbook() {
 
       if (exportModal === 'pdf') {
         const doc = new jsPDF('l', 'mm', 'a4')
-        doc.setFontSize(18); doc.text('Shri Dharamshala Trust', 14, 18)
-        doc.setFontSize(11); doc.text(exportTarget === 'ledger' ? `Cashbook - ${titleSuffix}` : `Annual Rituals - ${titleSuffix}`, 14, 26)
+        const pageWidth = 297, margin = 14
+        let contentStartY = 36
+        try {
+          const headerImg = await getReceiptHeaderDataUrl()
+          const imgW = pageWidth - margin * 2, imgH = imgW / RECEIPT_HEADER_RATIO, imgY = 12
+          doc.addImage(headerImg, 'PNG', margin, imgY, imgW, imgH)
+          const lineY = imgY + imgH + 8
+          doc.setDrawColor(139, 26, 26); doc.setLineWidth(0.6); doc.line(margin, lineY, pageWidth - margin, lineY)
+          contentStartY = lineY + 8
+        } catch {
+          doc.setFontSize(18); doc.text('Shri Dharamshala Trust', margin, 18)
+          doc.setFontSize(11); doc.text(exportTarget === 'ledger' ? `Cashbook - ${titleSuffix}` : `Annual Rituals - ${titleSuffix}`, margin, 26)
+        }
         let rows = [], head = []
         if (exportTarget === 'ledger') {
           head = [['Date','Name','Category','Payment Date','Receipt No.','Mode','Type','Amount','Status','Balance']]
@@ -334,11 +371,16 @@ function Cashbook() {
             return ritualYear === 'all' ? [m.year, ...row] : row
           })
         }
-        autoTable(doc, { startY: 36, head, body: rows, styles: { fontSize: 8 }, headStyles: { fillColor: [139, 26, 26] } })
+        autoTable(doc, { startY: contentStartY, head, body: rows, styles: { fontSize: 8 }, headStyles: { fillColor: [139, 26, 26] } })
         doc.save(`${exportTarget}_${Date.now()}.pdf`)
       } else if (exportModal === 'doc') {
+        const headerImg = await getReceiptHeaderDataUrl().catch(() => null)
         let html = `<html><head><meta charset="utf-8"><style>table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:4px 6px;font-size:11px}th{background:#8B1A1A;color:white}</style></head><body>`
-        html += `<h2>Shri Dharamshala Trust</h2><p>${exportTarget === 'ledger' ? 'Cashbook' : 'Annual Rituals'} - ${titleSuffix}</p>`
+        if (headerImg) {
+          html += `<div style="margin:0 0 18px"><img src="${headerImg}" style="width:100%;display:block" /></div><hr style="border:none;border-top:2px solid #8B1A1A;margin:0 0 18px" />`
+        } else {
+          html += `<h2 style="color:#8B1A1A">Shri Dharamshala Trust</h2><p>${exportTarget === 'ledger' ? 'Cashbook' : 'Annual Rituals'} - ${titleSuffix}</p>`
+        }
         if (exportTarget === 'ledger') {
           html += `<table><tr><th>Date</th><th>Name</th><th>Category</th><th>Payment Date</th><th>Receipt No.</th><th>Mode</th><th>Type</th><th>Amount</th><th>Status</th><th>Balance</th></tr>`
           dataToExport.forEach(e => { html += `<tr><td>${yearRange(e.entryDate)}</td><td>${e.name}</td><td>${e.category}</td><td>${e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${e.displayStatus==='completed' ? e.receiptNumber : 'N/A'}</td><td>${e.displayStatus==='completed' ? e.paymentMode : '-'}</td><td>${e.type}</td><td>Rs.${e.amount.toLocaleString()}</td><td>${e.displayStatus}</td><td>Rs.${e.runningBalance.toLocaleString()}</td></tr>` })
@@ -349,6 +391,7 @@ function Cashbook() {
         html += `</table></body></html>`
         saveAs(new Blob([html], { type: 'application/msword' }), `${exportTarget}_${Date.now()}.doc`)
       } else if (exportModal === 'print') {
+        const headerImg = await getReceiptHeaderDataUrl().catch(() => null)
         const win = window.open('', '_blank')
         let contentHtml = ''
         if (exportTarget === 'ledger') {
@@ -358,7 +401,10 @@ function Cashbook() {
           let rowsHtml = dataToExport.map(m => `<tr>${ritualYear === 'all' ? `<td>${m.year}</td>` : ''}<td>${m.name}</td><td>${m.phone||'-'}</td><td>Rs.${(m.amount||annualFee).toLocaleString()}</td><td>${m.displayStatus}</td><td>${m.paymentDate ? new Date(m.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${m.displayStatus==='completed' ? (m.paymentMode||'-') : '-'}</td><td>${m.displayStatus==='completed' ? (m.receiptNumber||'-') : 'N/A'}</td></tr>`).join('')
           contentHtml = `<table><tr>${ritualYear === 'all' ? '<th>Year</th>' : ''}<th>Name</th><th>Phone</th><th>Amount</th><th>Status</th><th>Payment Date</th><th>Mode</th><th>Receipt No.</th></tr>${rowsHtml}</table>`
         }
-        win.document.write(`<html><head><title>${exportTarget.toUpperCase()}</title><style>body{font-family:Arial,sans-serif;padding:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#8B1A1A;color:white}h2{color:#8B1A1A}.summary{margin-bottom:10px;font-size:13px}</style></head><body><h2>Shri Dharamshala Trust — ${exportTarget === 'ledger' ? 'Cashbook' : 'Annual Rituals'}</h2><div class="summary">${titleSuffix}</div>${contentHtml}</body></html>`)
+        const headerHtml = headerImg
+          ? `<img src="${headerImg}" style="width:100%;display:block;margin-bottom:18px" /><hr style="border:none;border-top:2px solid #8B1A1A;margin:0 0 18px" />`
+          : `<h2>Shri Dharamshala Trust — ${exportTarget === 'ledger' ? 'Cashbook' : 'Annual Rituals'}</h2><div class="summary">${titleSuffix}</div>`
+        win.document.write(`<html><head><title>${exportTarget.toUpperCase()}</title><style>body{font-family:Arial,sans-serif;padding:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#8B1A1A;color:white}h2{color:#8B1A1A}.summary{margin-bottom:10px;font-size:13px}</style></head><body>${headerHtml}${contentHtml}</body></html>`)
         win.document.close(); win.print()
       }
       setExportModal(null)
@@ -465,11 +511,25 @@ function Cashbook() {
                     <div style={{ position:'relative', flex:1 }}>
                       <MagnifyingGlass size={14} color="var(--text-muted)" style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', pointerEvents:'none' }} />
                       <input placeholder="Search name, receipt..." value={search}
-                        onChange={e=>setSearch(e.target.value)} onKeyDown={handleSearch}
+                        onChange={e=>{ setSearch(e.target.value); setShowSearchSuggestions(true) }}
+                        onFocus={()=>setShowSearchSuggestions(true)}
+                        onBlur={()=>setTimeout(()=>setShowSearchSuggestions(false), 150)}
+                        onKeyDown={handleSearch}
                         style={{ ...themeInput(), width:'100%', paddingLeft:30 }} />
+                      {showSearchSuggestions && searchSuggestions.length > 0 && (
+                        <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, background:'white', border:'1px solid var(--border)', borderRadius:10, boxShadow:'0 8px 24px rgba(0,0,0,0.14)', zIndex:50, maxHeight:220, overflowY:'auto' }}>
+                          {searchSuggestions.map(m => (
+                            <div key={m._id} onMouseDown={e=>e.preventDefault()} onClick={()=>selectSearchSuggestion(m.name)}
+                              style={{ padding:'9px 14px', fontSize:13, fontWeight:600, color:'var(--text-primary)', cursor:'pointer', borderBottom:'1px solid var(--neutral-100)', display:'flex', justifyContent:'space-between', gap:8 }}>
+                              <span>{m.name}</span>
+                              {m.phone && <span style={{ fontSize:11, fontWeight:500, color:'var(--text-muted)' }}>{m.phone}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
-                      onClick={fetchData} style={adminBtn()}>
+                      onClick={()=>fetchData()} style={adminBtn()}>
                       <MagnifyingGlass size={14} />
                     </motion.button>
                   </div>
@@ -515,14 +575,28 @@ function Cashbook() {
                   <CustomSelect value={month} onChange={v => setMonth(+v)} options={MONTHS.map((m, i) => ({ value: i, label: m }))} minWidth={140} />
                   <CustomSelect value={typeFilter} onChange={v => setTypeFilter(v)} options={TYPES.map(t => ({ value: t, label: t === 'All' ? 'All Types' : t === 'credit' ? 'Credit ↑' : 'Debit ↓' }))} minWidth={120} />
                   <CustomSelect value={sourceFilter} onChange={v => setSourceFilter(v)} options={SOURCES.map(s => ({ value: s, label: s === 'All' ? 'All Sources' : SOURCE_LABELS[s] || s }))} minWidth={140} />
-                  <div style={{ position:'relative', display:'flex', alignItems:'center' }}>
+                  <div style={{ position:'relative', display:'flex', alignItems:'center', flex:'1 1 280px', maxWidth:420 }}>
                     <MagnifyingGlass size={14} color="var(--text-muted)" style={{ position:'absolute', left:10, pointerEvents:'none' }} />
                     <input placeholder="Search name, receipt..." value={search}
-                      onChange={e=>setSearch(e.target.value)} onKeyDown={handleSearch}
-                      style={{ ...themeInput(), width:'auto', minWidth:180, paddingLeft:30 }} />
+                      onChange={e=>{ setSearch(e.target.value); setShowSearchSuggestions(true) }}
+                      onFocus={()=>setShowSearchSuggestions(true)}
+                      onBlur={()=>setTimeout(()=>setShowSearchSuggestions(false), 150)}
+                      onKeyDown={handleSearch}
+                      style={{ ...themeInput(), width:'100%', paddingLeft:30 }} />
+                    {showSearchSuggestions && searchSuggestions.length > 0 && (
+                      <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, background:'white', border:'1px solid var(--border)', borderRadius:10, boxShadow:'0 8px 24px rgba(0,0,0,0.14)', zIndex:50, maxHeight:220, overflowY:'auto' }}>
+                        {searchSuggestions.map(m => (
+                          <div key={m._id} onMouseDown={e=>e.preventDefault()} onClick={()=>selectSearchSuggestion(m.name)}
+                            style={{ padding:'9px 14px', fontSize:13, fontWeight:600, color:'var(--text-primary)', cursor:'pointer', borderBottom:'1px solid var(--neutral-100)', display:'flex', justifyContent:'space-between', gap:8, whiteSpace:'nowrap' }}>
+                            <span>{m.name}</span>
+                            {m.phone && <span style={{ fontSize:11, fontWeight:500, color:'var(--text-muted)' }}>{m.phone}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.97}}
-                    onClick={fetchData} style={adminBtn()}>
+                    onClick={()=>fetchData()} style={adminBtn()}>
                     <MagnifyingGlass size={14} />
                   </motion.button>
                   <div style={{ display:'flex', alignItems:'center', gap:8, padding:'9px 14px', borderRadius:10, background:'var(--maroon-subtle)', border:'1px solid rgba(139,26,26,0.15)' }}>
@@ -567,8 +641,12 @@ function Cashbook() {
             ) : entriesWithBalance.length === 0 ? (
               <div style={{ ...cardStyleSolid, textAlign:'center', padding:'60px' }}>
                 <BookOpen size={56} weight="duotone" color="var(--text-muted)" style={{ marginBottom:16 }} />
-                <h3 style={{ fontSize:18, fontWeight:800, color:'var(--maroon)', marginBottom:8 }}>No entries found</h3>
-                <p style={{ fontSize:14, color:'var(--text-muted)' }}>Add your first cashbook entry to get started</p>
+                <h3 style={{ fontSize:18, fontWeight:800, color:'var(--maroon)', marginBottom:8 }}>
+                  {search.trim() ? 'No matching entries' : 'No entries found'}
+                </h3>
+                <p style={{ fontSize:14, color:'var(--text-muted)' }}>
+                  {search.trim() ? `No entries match "${search.trim()}" — try a different name or clear the search` : 'Add your first cashbook entry to get started'}
+                </p>
               </div>
             ) : isMobile ? (
               <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
@@ -780,8 +858,21 @@ function Cashbook() {
                   <div style={{ position:'relative' }}>
                     <MagnifyingGlass size={14} color="var(--text-muted)" style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', pointerEvents:'none' }} />
                     <input placeholder="Search name or receipt..." value={ritualSearch}
-                      onChange={e=>setRitualSearch(e.target.value)}
+                      onChange={e=>{ setRitualSearch(e.target.value); setShowRitualSearchSuggestions(true) }}
+                      onFocus={()=>setShowRitualSearchSuggestions(true)}
+                      onBlur={()=>setTimeout(()=>setShowRitualSearchSuggestions(false), 150)}
                       style={{ ...themeInput(), width:'100%', paddingLeft:30 }} />
+                    {showRitualSearchSuggestions && ritualSearchSuggestions.length > 0 && (
+                      <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, background:'white', border:'1px solid var(--border)', borderRadius:10, boxShadow:'0 8px 24px rgba(0,0,0,0.14)', zIndex:50, maxHeight:220, overflowY:'auto' }}>
+                        {ritualSearchSuggestions.map(m => (
+                          <div key={m._id} onMouseDown={e=>e.preventDefault()} onClick={()=>selectRitualSearchSuggestion(m.name)}
+                            style={{ padding:'9px 14px', fontSize:13, fontWeight:600, color:'var(--text-primary)', cursor:'pointer', borderBottom:'1px solid var(--neutral-100)', display:'flex', justifyContent:'space-between', gap:8 }}>
+                            <span>{m.name}</span>
+                            {m.phone && <span style={{ fontSize:11, fontWeight:500, color:'var(--text-muted)' }}>{m.phone}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {/* Row 3b: Status filter */}
                   <div style={{ display:'flex', alignItems:'center', gap:8 }}>
@@ -829,11 +920,24 @@ function Cashbook() {
                     )}
                   </div>
                   <div style={{ display:'flex', gap:10, marginTop:16, alignItems:'center', flexWrap:'wrap' }}>
-                    <div style={{ position:'relative', display:'flex', alignItems:'center' }}>
+                    <div style={{ position:'relative', display:'flex', alignItems:'center', flex:'1 1 280px', maxWidth:420 }}>
                       <MagnifyingGlass size={14} color="var(--text-muted)" style={{ position:'absolute', left:10, pointerEvents:'none' }} />
                       <input placeholder="Search name or receipt..." value={ritualSearch}
-                        onChange={e=>setRitualSearch(e.target.value)}
-                        style={{ ...themeInput(), width:'auto', minWidth:250, paddingLeft:30 }} />
+                        onChange={e=>{ setRitualSearch(e.target.value); setShowRitualSearchSuggestions(true) }}
+                        onFocus={()=>setShowRitualSearchSuggestions(true)}
+                        onBlur={()=>setTimeout(()=>setShowRitualSearchSuggestions(false), 150)}
+                        style={{ ...themeInput(), width:'100%', paddingLeft:30 }} />
+                      {showRitualSearchSuggestions && ritualSearchSuggestions.length > 0 && (
+                        <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, right:0, background:'white', border:'1px solid var(--border)', borderRadius:10, boxShadow:'0 8px 24px rgba(0,0,0,0.14)', zIndex:50, maxHeight:220, overflowY:'auto' }}>
+                          {ritualSearchSuggestions.map(m => (
+                            <div key={m._id} onMouseDown={e=>e.preventDefault()} onClick={()=>selectRitualSearchSuggestion(m.name)}
+                              style={{ padding:'9px 14px', fontSize:13, fontWeight:600, color:'var(--text-primary)', cursor:'pointer', borderBottom:'1px solid var(--neutral-100)', display:'flex', justifyContent:'space-between', gap:8, whiteSpace:'nowrap' }}>
+                              <span>{m.name}</span>
+                              {m.phone && <span style={{ fontSize:11, fontWeight:500, color:'var(--text-muted)' }}>{m.phone}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                       <span style={{ fontWeight:700, color:'var(--maroon)', fontSize:13 }}>Status:</span>
@@ -1355,13 +1459,7 @@ function Cashbook() {
               boxShadow: '0 20px 60px rgba(139,26,26,0.12)', border: '1.5px solid rgba(255,107,53,0.1)',
               textAlign: 'left', fontFamily: 'sans-serif'
             }}>
-              <div style={{ background: 'linear-gradient(135deg, #1a0000 0%, #5a0e0e 60%, #8B1A1A 100%)', padding: '28px 28px 20px', textAlign: 'center' }}>
-                <div style={{ fontSize: 40, marginBottom: 6 }}>🛕</div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: '#F7C948', letterSpacing: '0.5px' }}>Shri Dharamshala Trust</div>
-                <div style={{ marginTop: 14, display: 'inline-block', padding: '6px 16px', borderRadius: 99, background: 'rgba(247,201,72,0.2)', border: '1px solid rgba(247,201,72,0.4)', fontSize: 14, fontWeight: 700, color: '#F7C948' }}>
-                  ANNUAL RITUAL RECEIPT
-                </div>
-              </div>
+              <ReceiptHeader badge="ANNUAL RITUAL RECEIPT" />
               <div style={{ padding: '24px 28px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 16, borderBottom: '1px dashed #f5ede0' }}>
                   <div>

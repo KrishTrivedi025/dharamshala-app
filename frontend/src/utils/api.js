@@ -52,6 +52,11 @@ export const authAPI = {
       method: 'POST', headers: headers(true),
     }).then(handleResponse),
 
+  deleteAccount: () =>
+    fetch(`${BASE_URL}/auth/me`, {
+      method: 'DELETE', headers: headers(true),
+    }).then(handleResponse),
+
   getAllUsers: () =>
     fetch(`${BASE_URL}/auth/users`, { headers: headers(true) }).then(handleResponse),
 

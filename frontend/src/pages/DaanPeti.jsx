@@ -5,6 +5,7 @@ import { daanPetiAPI } from '../utils/api'
 import html2canvas from 'html2canvas'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
+import { ReceiptHeader } from '../components/ReceiptHeader'
 import {
   WarningCircle, X, CheckCircle, DownloadSimple,
   LockSimple, Receipt, User, Heart,
@@ -395,18 +396,10 @@ function DaanPeti() {
                   boxShadow: '0 20px 60px rgba(139,26,26,0.12)',
                   border: '1.5px solid rgba(255,107,53,0.1)',
                 }}>
-                  <div style={{
-                    background: 'linear-gradient(135deg, #1a0000 0%, #5a0e0e 60%, #8B1A1A 100%)',
-                    padding: '28px 28px 20px', textAlign: 'center',
-                  }}>
-                    <div style={{ fontSize: 40, marginBottom: 6 }}>🛕</div>
-                    <div style={{ fontSize: 20, fontWeight: 900, color: '#F7C948', letterSpacing: '0.5px' }}>{DHARAMSHALA_INFO.name}</div>
-                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 4 }}>{DHARAMSHALA_INFO.address}</div>
-                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{DHARAMSHALA_INFO.phone} | {DHARAMSHALA_INFO.email}</div>
-                    <div style={{ marginTop: 14, display: 'inline-block', padding: '4px 16px', borderRadius: 99, background: 'rgba(247,201,72,0.2)', border: '1px solid rgba(247,201,72,0.4)', fontSize: 13, fontWeight: 700, color: '#F7C948' }}>
-                      DONATION RECEIPT
-                    </div>
-                  </div>
+                  <ReceiptHeader
+                    badge="DONATION RECEIPT"
+                    subtitle={`${DHARAMSHALA_INFO.address} · ${DHARAMSHALA_INFO.phone} | ${DHARAMSHALA_INFO.email}`}
+                  />
 
                   <div style={{ padding: '24px 28px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 16, borderBottom: '1px dashed #f5ede0' }}>

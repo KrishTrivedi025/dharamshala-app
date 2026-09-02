@@ -56,7 +56,7 @@ const buildUnpaidRitualEntries = async (years, search) => {
   })
 
   if (!search) return virtuals
-  const re = new RegExp(search, 'i')
+  const re = new RegExp(escapeRegex(search), 'i')
   return virtuals.filter(v => re.test(v.name) || re.test(v.category))
 }
 
@@ -83,11 +83,12 @@ export const getEntries = async (req, res) => {
     }
 
     if (search) {
+      const searchRe = escapeRegex(search)
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { category: { $regex: search, $options: 'i' } },
-        { receiptNumber: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
+        { name: { $regex: searchRe, $options: 'i' } },
+        { category: { $regex: searchRe, $options: 'i' } },
+        { receiptNumber: { $regex: searchRe, $options: 'i' } },
+        { description: { $regex: searchRe, $options: 'i' } }
       ]
     }
 
