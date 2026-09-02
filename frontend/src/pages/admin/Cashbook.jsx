@@ -26,6 +26,15 @@ const SOURCES = ['All','booking','daan_peti','annual_ritual','manual']
 const SOURCE_LABELS = { booking:'Hall Booking', daan_peti:'Daan Peti', annual_ritual:'Annual Ritual', manual:'Manual' }
 const yearRange = (dateStr) => String(new Date(dateStr).getFullYear())
 
+// Status badge colors: completed = green, pending = dark yellow, not_paid = red.
+// Labels stay as-is in markup — textTransform:'uppercase' below renders them ALL CAPS.
+const STATUS_STYLES = {
+  completed: { bg: 'rgba(5,150,105,0.12)',  color: '#059669', border: 'rgba(5,150,105,0.3)' },
+  pending:   { bg: 'rgba(161,98,7,0.12)',   color: '#a16207', border: 'rgba(161,98,7,0.35)' },
+  not_paid:  { bg: 'rgba(220,38,38,0.12)',  color: '#dc2626', border: 'rgba(220,38,38,0.3)' },
+}
+const statusStyle = (displayStatus) => STATUS_STYLES[displayStatus] || STATUS_STYLES.pending
+
 const LEDGER_FILTERS_KEY = 'cashbookLedgerFilters'
 const loadSavedLedgerFilters = () => {
   try { return JSON.parse(localStorage.getItem(LEDGER_FILTERS_KEY) || '{}') } catch { return {} }
@@ -667,9 +676,8 @@ function Cashbook() {
                           color: e.type==='credit' ? 'var(--success-text)' : 'var(--error-text)' }}>
                           {e.type==='credit'?'Credit':'Debit'}
                         </span>
-                        <span style={{ padding:'2px 8px', borderRadius:99, fontSize:10, fontWeight:700,
-                          background: e.displayStatus==='completed' ? 'var(--success-subtle)' : e.displayStatus==='not_paid' ? 'var(--error-subtle)' : 'var(--warning-subtle)',
-                          color: e.displayStatus==='completed' ? 'var(--success-text)' : e.displayStatus==='not_paid' ? 'var(--error-text)' : 'var(--warning-text)' }}>
+                        <span style={{ padding:'2px 8px', borderRadius:99, fontSize:20, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.3px',
+                          background: statusStyle(e.displayStatus).bg, color: statusStyle(e.displayStatus).color }}>
                           {e.displayStatus==='completed'?'Done':e.displayStatus==='not_paid'?'Not Paid':'Pending'}
                         </span>
                       </div>
@@ -705,7 +713,7 @@ function Cashbook() {
                       </div>
                     </div>
                     {/* Row 2: Name + category */}
-                    <div style={{ fontSize:13, fontWeight:700, color:'var(--maroon)', marginBottom:1 }}>{e.name}</div>
+                    <div style={{ fontSize:18, fontWeight:700, color:'var(--maroon)', marginBottom:1 }}>{e.name}</div>
                     <div style={{ fontSize:11, color:'var(--text-secondary)', marginBottom:6 }}>{e.category}</div>
                     {/* Row 3: meta */}
                     <div style={{ fontSize:10, color:'var(--text-muted)', display:'flex', flexWrap:'wrap', gap:4, alignItems:'center' }}>
@@ -734,7 +742,7 @@ function Cashbook() {
             ) : (
               <div style={{ ...cardStyleSolid, padding:0, overflow:'hidden' }}>
                 <div style={{ overflowX:'auto' }}>
-                  <table ref={tableRef} style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
+                  <table ref={tableRef} style={{ width:'100%', borderCollapse:'collapse', fontSize:18 }}>
                     <thead>
                       <tr style={{ background:'linear-gradient(135deg,#1a0000,#5a0e0e)', color:'white' }}>
                         {['Date','Name','Category','Payment Date','Receipt No.','Mode','Type','Amount','Status','Balance','Actions'].map(h=>(
@@ -768,9 +776,8 @@ function Cashbook() {
                             ₹{e.amount.toLocaleString()}
                           </td>
                           <td style={{ padding:'10px' }}>
-                            <span style={{ padding:'3px 10px', borderRadius:99, fontSize:11, fontWeight:700,
-                              background: e.displayStatus==='completed' ? 'var(--success-subtle)' : e.displayStatus==='not_paid' ? 'var(--error-subtle)' : 'var(--warning-subtle)',
-                              color: e.displayStatus==='completed' ? 'var(--success-text)' : e.displayStatus==='not_paid' ? 'var(--error-text)' : 'var(--warning-text)' }}>
+                            <span style={{ padding:'3px 10px', borderRadius:99, fontSize:20, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.3px',
+                              background: statusStyle(e.displayStatus).bg, color: statusStyle(e.displayStatus).color }}>
                               {e.displayStatus==='completed'?'Done':e.displayStatus==='not_paid'?'Not Paid':'Pending'}
                             </span>
                           </td>
@@ -987,7 +994,7 @@ function Cashbook() {
                         borderBottom:'1px solid var(--border)' }}>
                         <div>
                           <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:1 }}>
-                            <span style={{ fontSize:14, fontWeight:800, color:'var(--maroon)' }}>{m.name}</span>
+                            <span style={{ fontSize:18, fontWeight:800, color:'var(--maroon)' }}>{m.name}</span>
                             {ritualYear === 'all' && <span style={{ fontSize:10, fontWeight:700, color:'var(--text-secondary)', background:'var(--neutral-100)', border:'1px solid var(--border)', borderRadius:6, padding:'1px 6px' }}>{m.year}</span>}
                           </div>
                           {m.phone && <div style={{ fontSize:11, color:'var(--text-muted)', display:'flex', alignItems:'center', gap:4 }}>
@@ -995,10 +1002,9 @@ function Cashbook() {
                           </div>}
                         </div>
                         <span style={{
-                          padding:'4px 12px', borderRadius:99, fontSize:11, fontWeight:800, flexShrink:0,
-                          background: m.displayStatus==='completed' ? 'var(--success-subtle)' : m.displayStatus==='pending' ? 'var(--warning-subtle)' : 'var(--error-subtle)',
-                          color: m.displayStatus==='completed' ? 'var(--success-text)' : m.displayStatus==='pending' ? 'var(--warning-text)' : 'var(--error-text)',
-                          border: `1px solid ${m.displayStatus==='completed' ? 'rgba(5,150,105,0.2)' : m.displayStatus==='pending' ? 'rgba(217,119,6,0.2)' : 'rgba(220,38,38,0.2)'}`,
+                          padding:'4px 12px', borderRadius:99, fontSize:20, fontWeight:800, flexShrink:0, textTransform:'uppercase', letterSpacing:'0.3px',
+                          background: statusStyle(m.displayStatus).bg, color: statusStyle(m.displayStatus).color,
+                          border: `1px solid ${statusStyle(m.displayStatus).border}`,
                         }}>
                           {m.displayStatus==='completed'?'Paid':m.displayStatus==='pending'?'Pending':'Not Paid'}
                         </span>
@@ -1075,7 +1081,7 @@ function Cashbook() {
               ) : (
                 <div style={{ ...cardStyleSolid, padding:0, overflow:'hidden' }}>
                   <div style={{ overflowX:'auto' }}>
-                    <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
+                    <table style={{ width:'100%', borderCollapse:'collapse', fontSize:18 }}>
                       <thead>
                         <tr style={{ background:'linear-gradient(135deg,#1a0000,#5a0e0e)', color:'white' }}>
                           {(ritualYear === 'all' ? ['#','Year','Name','Phone','Amount','Status','Payment Date','Mode','Receipt No.','Actions'] : ['#','Name','Phone','Amount','Status','Payment Date','Mode','Receipt No.','Actions']).map(h=>(
@@ -1092,9 +1098,8 @@ function Cashbook() {
                             <td style={{ padding:'10px' }}>{m.phone || '—'}</td>
                             <td style={{ padding:'10px', fontWeight:700, color: m.displayStatus!=='completed' ? 'var(--error-text)' : 'inherit' }}>₹{(m.amount||annualFee).toLocaleString()}</td>
                             <td style={{ padding:'10px' }}>
-                              <span style={{ padding:'4px 12px', borderRadius:99, fontSize:11, fontWeight:700,
-                                background: m.displayStatus==='completed' ? 'var(--success-subtle)' : m.displayStatus==='pending' ? 'var(--warning-subtle)' : 'var(--error-subtle)',
-                                color: m.displayStatus==='completed' ? 'var(--success-text)' : m.displayStatus==='pending' ? 'var(--warning-text)' : 'var(--error-text)' }}>
+                              <span style={{ padding:'4px 12px', borderRadius:99, fontSize:20, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.3px',
+                                background: statusStyle(m.displayStatus).bg, color: statusStyle(m.displayStatus).color }}>
                                 {m.displayStatus==='completed'?'Paid':m.displayStatus==='pending'?'Pending':'Not Paid'}
                               </span>
                             </td>
