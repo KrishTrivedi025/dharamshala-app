@@ -35,6 +35,21 @@ const STATUS_STYLES = {
 }
 const statusStyle = (displayStatus) => STATUS_STYLES[displayStatus] || STATUS_STYLES.pending
 
+// Same three-color scheme, in jsPDF's [r,g,b] / RGB-array form, for the PDF export table.
+const PDF_STATUS_COLORS = {
+  completed: { text: [5, 150, 105], fill: [209, 250, 229] },
+  pending:   { text: [161, 98, 7],  fill: [254, 243, 199] },
+  not_paid:  { text: [220, 38, 38], fill: [254, 226, 226] },
+}
+const pdfStatusColor = (displayStatus) => PDF_STATUS_COLORS[displayStatus] || PDF_STATUS_COLORS.pending
+const STATUS_LABEL_LEDGER = { completed: 'DONE', pending: 'PENDING', not_paid: 'NOT PAID' }
+const STATUS_LABEL_RITUAL = { completed: 'PAID', pending: 'PENDING', not_paid: 'NOT PAID' }
+// Same badge, rendered as inline-styled HTML, for the DOC/Print exports.
+const statusBadgeHtml = (raw, labelMap) => {
+  const s = statusStyle(raw)
+  return `<span style="display:inline-block;padding:4px 14px;border-radius:12px;font-weight:700;font-size:20px;text-transform:uppercase;letter-spacing:0.3px;background:${s.bg};color:${s.color}">${labelMap[raw] || String(raw).toUpperCase()}</span>`
+}
+
 const LEDGER_FILTERS_KEY = 'cashbookLedgerFilters'
 const loadSavedLedgerFilters = () => {
   try { return JSON.parse(localStorage.getItem(LEDGER_FILTERS_KEY) || '{}') } catch { return {} }
@@ -369,22 +384,40 @@ function Cashbook() {
           doc.setFontSize(18); doc.text('Shri Dharamshala Trust', margin, 18)
           doc.setFontSize(11); doc.text(exportTarget === 'ledger' ? `Cashbook - ${titleSuffix}` : `Annual Rituals - ${titleSuffix}`, margin, 26)
         }
-        let rows = [], head = []
+        let rows = [], head = [], statusColIndex = 0, statusRaw = []
         if (exportTarget === 'ledger') {
           head = [['Date','Name','Category','Payment Date','Receipt No.','Mode','Type','Amount','Status','Balance']]
-          rows = dataToExport.map(e => [yearRange(e.entryDate), e.name, e.category, e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '-', e.displayStatus==='completed' ? e.receiptNumber : 'N/A', e.displayStatus==='completed' ? e.paymentMode : '-', e.type === 'credit' ? 'Credit' : 'Debit', `Rs.${e.amount.toLocaleString()}`, e.displayStatus, `Rs.${e.runningBalance.toLocaleString()}`])
+          statusColIndex = 8
+          statusRaw = dataToExport.map(e => e.displayStatus)
+          rows = dataToExport.map(e => [yearRange(e.entryDate), e.name, e.category, e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '-', e.displayStatus==='completed' ? e.receiptNumber : 'N/A', e.displayStatus==='completed' ? e.paymentMode : '-', e.type === 'credit' ? 'Credit' : 'Debit', `Rs.${e.amount.toLocaleString()}`, STATUS_LABEL_LEDGER[e.displayStatus] || e.displayStatus.toUpperCase(), `Rs.${e.runningBalance.toLocaleString()}`])
         } else {
           head = ritualYear === 'all' ? [['Year','Name','Phone','Amount','Status','Payment Date','Mode','Receipt No.']] : [['Name','Phone','Amount','Status','Payment Date','Mode','Receipt No.']]
+          statusColIndex = ritualYear === 'all' ? 4 : 3
+          statusRaw = dataToExport.map(m => m.displayStatus)
           rows = dataToExport.map(m => {
-            const row = [m.name, m.phone || '-', `Rs.${(m.amount||annualFee).toLocaleString()}`, m.displayStatus, m.paymentDate ? new Date(m.paymentDate).toLocaleDateString('en-IN') : '-', m.displayStatus==='completed' ? (m.paymentMode || '-') : '-', m.displayStatus==='completed' ? (m.receiptNumber || '-') : 'N/A']
+            const row = [m.name, m.phone || '-', `Rs.${(m.amount||annualFee).toLocaleString()}`, STATUS_LABEL_RITUAL[m.displayStatus] || m.displayStatus.toUpperCase(), m.paymentDate ? new Date(m.paymentDate).toLocaleDateString('en-IN') : '-', m.displayStatus==='completed' ? (m.paymentMode || '-') : '-', m.displayStatus==='completed' ? (m.receiptNumber || '-') : 'N/A']
             return ritualYear === 'all' ? [m.year, ...row] : row
           })
         }
-        autoTable(doc, { startY: contentStartY, head, body: rows, styles: { fontSize: 8 }, headStyles: { fillColor: [139, 26, 26] } })
+        autoTable(doc, {
+          startY: contentStartY, head, body: rows,
+          styles: { fontSize: 11, cellPadding: 3 },
+          headStyles: { fillColor: [139, 26, 26], fontSize: 12, fontStyle: 'bold' },
+          didParseCell: (data) => {
+            if (data.section === 'body' && data.column.index === statusColIndex) {
+              const sc = pdfStatusColor(statusRaw[data.row.index])
+              data.cell.styles.textColor = sc.text
+              data.cell.styles.fillColor = sc.fill
+              data.cell.styles.fontStyle = 'bold'
+              data.cell.styles.fontSize = 13
+              data.cell.styles.halign = 'center'
+            }
+          },
+        })
         doc.save(`${exportTarget}_${Date.now()}.pdf`)
       } else if (exportModal === 'doc') {
         const headerImg = await getReceiptHeaderDataUrl().catch(() => null)
-        let html = `<html><head><meta charset="utf-8"><style>table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:4px 6px;font-size:11px}th{background:#8B1A1A;color:white}</style></head><body>`
+        let html = `<html><head><meta charset="utf-8"><style>table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:6px 8px;font-size:18px}th{background:#8B1A1A;color:white}</style></head><body>`
         if (headerImg) {
           html += `<div style="margin:0 0 18px"><img src="${headerImg}" style="width:100%;display:block" /></div><hr style="border:none;border-top:2px solid #8B1A1A;margin:0 0 18px" />`
         } else {
@@ -392,10 +425,10 @@ function Cashbook() {
         }
         if (exportTarget === 'ledger') {
           html += `<table><tr><th>Date</th><th>Name</th><th>Category</th><th>Payment Date</th><th>Receipt No.</th><th>Mode</th><th>Type</th><th>Amount</th><th>Status</th><th>Balance</th></tr>`
-          dataToExport.forEach(e => { html += `<tr><td>${yearRange(e.entryDate)}</td><td>${e.name}</td><td>${e.category}</td><td>${e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${e.displayStatus==='completed' ? e.receiptNumber : 'N/A'}</td><td>${e.displayStatus==='completed' ? e.paymentMode : '-'}</td><td>${e.type}</td><td>Rs.${e.amount.toLocaleString()}</td><td>${e.displayStatus}</td><td>Rs.${e.runningBalance.toLocaleString()}</td></tr>` })
+          dataToExport.forEach(e => { html += `<tr><td>${yearRange(e.entryDate)}</td><td>${e.name}</td><td>${e.category}</td><td>${e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${e.displayStatus==='completed' ? e.receiptNumber : 'N/A'}</td><td>${e.displayStatus==='completed' ? e.paymentMode : '-'}</td><td>${e.type}</td><td>Rs.${e.amount.toLocaleString()}</td><td>${statusBadgeHtml(e.displayStatus, STATUS_LABEL_LEDGER)}</td><td>Rs.${e.runningBalance.toLocaleString()}</td></tr>` })
         } else {
           html += `<table><tr>${ritualYear === 'all' ? '<th>Year</th>' : ''}<th>Name</th><th>Phone</th><th>Amount</th><th>Status</th><th>Payment Date</th><th>Mode</th><th>Receipt No.</th></tr>`
-          dataToExport.forEach(m => { html += `<tr>${ritualYear === 'all' ? `<td>${m.year}</td>` : ''}<td>${m.name}</td><td>${m.phone||'-'}</td><td>Rs.${(m.amount||annualFee).toLocaleString()}</td><td>${m.displayStatus}</td><td>${m.paymentDate ? new Date(m.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${m.displayStatus==='completed' ? (m.paymentMode||'-') : '-'}</td><td>${m.displayStatus==='completed' ? (m.receiptNumber||'-') : 'N/A'}</td></tr>` })
+          dataToExport.forEach(m => { html += `<tr>${ritualYear === 'all' ? `<td>${m.year}</td>` : ''}<td>${m.name}</td><td>${m.phone||'-'}</td><td>Rs.${(m.amount||annualFee).toLocaleString()}</td><td>${statusBadgeHtml(m.displayStatus, STATUS_LABEL_RITUAL)}</td><td>${m.paymentDate ? new Date(m.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${m.displayStatus==='completed' ? (m.paymentMode||'-') : '-'}</td><td>${m.displayStatus==='completed' ? (m.receiptNumber||'-') : 'N/A'}</td></tr>` })
         }
         html += `</table></body></html>`
         saveAs(new Blob([html], { type: 'application/msword' }), `${exportTarget}_${Date.now()}.doc`)
@@ -404,16 +437,16 @@ function Cashbook() {
         const win = window.open('', '_blank')
         let contentHtml = ''
         if (exportTarget === 'ledger') {
-          let rowsHtml = dataToExport.map(e => `<tr><td>${yearRange(e.entryDate)}</td><td>${e.name}</td><td>${e.category}</td><td>${e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${e.displayStatus==='completed' ? e.receiptNumber : 'N/A'}</td><td>${e.displayStatus==='completed' ? e.paymentMode : '-'}</td><td>${e.type}</td><td>Rs.${e.amount.toLocaleString()}</td><td>${e.displayStatus}</td><td>Rs.${e.runningBalance.toLocaleString()}</td></tr>`).join('')
+          let rowsHtml = dataToExport.map(e => `<tr><td>${yearRange(e.entryDate)}</td><td>${e.name}</td><td>${e.category}</td><td>${e.paymentDate ? new Date(e.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${e.displayStatus==='completed' ? e.receiptNumber : 'N/A'}</td><td>${e.displayStatus==='completed' ? e.paymentMode : '-'}</td><td>${e.type}</td><td>Rs.${e.amount.toLocaleString()}</td><td>${statusBadgeHtml(e.displayStatus, STATUS_LABEL_LEDGER)}</td><td>Rs.${e.runningBalance.toLocaleString()}</td></tr>`).join('')
           contentHtml = `<table><tr><th>Date</th><th>Name</th><th>Category</th><th>Payment Date</th><th>Receipt No.</th><th>Mode</th><th>Type</th><th>Amount</th><th>Status</th><th>Balance</th></tr>${rowsHtml}</table>`
         } else {
-          let rowsHtml = dataToExport.map(m => `<tr>${ritualYear === 'all' ? `<td>${m.year}</td>` : ''}<td>${m.name}</td><td>${m.phone||'-'}</td><td>Rs.${(m.amount||annualFee).toLocaleString()}</td><td>${m.displayStatus}</td><td>${m.paymentDate ? new Date(m.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${m.displayStatus==='completed' ? (m.paymentMode||'-') : '-'}</td><td>${m.displayStatus==='completed' ? (m.receiptNumber||'-') : 'N/A'}</td></tr>`).join('')
+          let rowsHtml = dataToExport.map(m => `<tr>${ritualYear === 'all' ? `<td>${m.year}</td>` : ''}<td>${m.name}</td><td>${m.phone||'-'}</td><td>Rs.${(m.amount||annualFee).toLocaleString()}</td><td>${statusBadgeHtml(m.displayStatus, STATUS_LABEL_RITUAL)}</td><td>${m.paymentDate ? new Date(m.paymentDate).toLocaleDateString('en-IN') : '-'}</td><td>${m.displayStatus==='completed' ? (m.paymentMode||'-') : '-'}</td><td>${m.displayStatus==='completed' ? (m.receiptNumber||'-') : 'N/A'}</td></tr>`).join('')
           contentHtml = `<table><tr>${ritualYear === 'all' ? '<th>Year</th>' : ''}<th>Name</th><th>Phone</th><th>Amount</th><th>Status</th><th>Payment Date</th><th>Mode</th><th>Receipt No.</th></tr>${rowsHtml}</table>`
         }
         const headerHtml = headerImg
           ? `<img src="${headerImg}" style="width:100%;display:block;margin-bottom:18px" /><hr style="border:none;border-top:2px solid #8B1A1A;margin:0 0 18px" />`
           : `<h2>Shri Dharamshala Trust — ${exportTarget === 'ledger' ? 'Cashbook' : 'Annual Rituals'}</h2><div class="summary">${titleSuffix}</div>`
-        win.document.write(`<html><head><title>${exportTarget.toUpperCase()}</title><style>body{font-family:Arial,sans-serif;padding:20px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left}th{background:#8B1A1A;color:white}h2{color:#8B1A1A}.summary{margin-bottom:10px;font-size:13px}</style></head><body>${headerHtml}${contentHtml}</body></html>`)
+        win.document.write(`<html><head><title>${exportTarget.toUpperCase()}</title><style>body{font-family:Arial,sans-serif;padding:20px}table{width:100%;border-collapse:collapse;font-size:18px}th,td{border:1px solid #ddd;padding:8px 10px;text-align:left}th{background:#8B1A1A;color:white}h2{color:#8B1A1A}.summary{margin-bottom:10px;font-size:13px}</style></head><body>${headerHtml}${contentHtml}</body></html>`)
         win.document.close(); win.print()
       }
       setExportModal(null)
