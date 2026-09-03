@@ -135,8 +135,9 @@ body {
 }
 @media (max-width: 767px) {
   .home-hero { height: 480px; }
-  /* Mobile crop is narrower, so 100% (far right) drags in empty sky/blur
-     past the deity — pull the crop window left so it frames the deity
-     with the empty strip cut off instead of just cropping wider. */
-  .home-hero img { object-position: 35% center; }
+  /* Horizontal crop position, 0-100. 0 = show the image's left edge
+     (all blank sky, deity cut off), 100 = show the right edge (deity
+     hugs the edge, empty strip beyond her still shows). Currently 78 —
+     tell me a new number and I'll swap it in. */
+  .home-hero img { object-position: 78% center; }
 }
