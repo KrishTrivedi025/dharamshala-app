@@ -12,7 +12,7 @@ import {
 } from '@phosphor-icons/react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { ReceiptHeader } from '../components/ReceiptHeader'
+import { ReceiptHeader, SANSTHAN_NAME } from '../components/ReceiptHeader'
 import { bookingAPI } from '../utils/api'
 import { useLanguage } from '../context/LanguageContext'
 
@@ -63,6 +63,7 @@ function MyBookings() {
     setDownloadingReceipt(booking)
     setTimeout(async () => {
       if (receiptRef.current) {
+        await document.fonts.ready
         const canvas = await html2canvas(receiptRef.current, { useCORS: true, scale: 2, backgroundColor: '#ffffff' })
         const link = document.createElement('a')
         link.href = canvas.toDataURL('image/png')
@@ -436,12 +437,13 @@ function MyBookings() {
                 </div>
               ))}
               <div style={{ marginTop: 22, padding: '18px 22px', borderRadius: 14, background: 'rgba(22,163,74,0.06)', border: '1.5px solid rgba(22,163,74,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 16, fontWeight: 800, color: '#16a34a' }}>Total Amount Paid</span>
-                <span style={{ fontSize: 24, fontWeight: 900, color: '#16a34a' }}>₹{downloadingReceipt.totalAmount?.toLocaleString()}</span>
+                <span style={{ fontSize: 16, fontWeight: 800, color: '#16a34a', lineHeight: 1 }}>Total Amount Paid</span>
+                <span style={{ fontSize: 24, fontWeight: 900, color: '#16a34a', lineHeight: 1 }}>₹{downloadingReceipt.totalAmount?.toLocaleString()}</span>
               </div>
               <div style={{ textAlign: 'center', marginTop: 28 }}>
                 <div style={{ fontSize: 22, marginBottom: 8 }}>🙏</div>
-                <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6, margin: 0 }}>Thank you for choosing <strong>Shri Dharamshala Trust</strong>.</p>
+                <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6, margin: '0 0 4px' }}>Thank you for choosing</p>
+                <p style={{ fontFamily: "'Cinzel', 'Segoe UI', serif", fontWeight: 700, fontSize: 15, color: '#8B1A1A', lineHeight: 1.4, margin: 0 }}>{SANSTHAN_NAME}</p>
                 <div style={{ marginTop: 20, fontSize: 10, color: '#d1d5db', fontStyle: 'italic' }}>This is a digital receipt and does not require a physical signature.</div>
               </div>
             </div>

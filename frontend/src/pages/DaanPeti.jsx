@@ -5,7 +5,7 @@ import { daanPetiAPI } from '../utils/api'
 import html2canvas from 'html2canvas'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
-import { ReceiptHeader } from '../components/ReceiptHeader'
+import { ReceiptHeader, SANSTHAN_NAME } from '../components/ReceiptHeader'
 import {
   WarningCircle, X, CheckCircle, DownloadSimple,
   LockSimple, Receipt, User, Heart,
@@ -16,9 +16,9 @@ import { useIsMobile } from './admin/AdminDashboard'
 const PRESET_AMOUNTS = [101, 251, 501, 1001, 2100, 5001]
 
 const DHARAMSHALA_INFO = {
-  name: 'Shri Dharamshala Trust',
-  address: '123, Temple Road, City, State - 000000',
-  phone: '+91 98765 43210',
+  name: SANSTHAN_NAME,
+  address: 'Mahalakshmi Temple, Brahmpuri, Sanderao - 306708, Tehsil Sumerpur, District Pali (Raj.)',
+  phone: '+91 97699 22866',
   email: 'info@dharamshala.org',
 }
 
@@ -145,6 +145,7 @@ function DaanPeti() {
   const downloadReceipt = async () => {
     if (!receiptRef.current) return
     try {
+      await document.fonts.ready
       const canvas = await html2canvas(receiptRef.current, { scale: 2, backgroundColor: '#fff', logging: false })
       const link = document.createElement('a')
       link.download = `Daan-Receipt-${receipt.receiptNumber}.png`
@@ -430,14 +431,19 @@ function DaanPeti() {
                     ))}
 
                     <div style={{ marginTop: 20, padding: '16px 20px', borderRadius: 14, background: 'linear-gradient(135deg, rgba(22,163,74,0.08), rgba(22,163,74,0.04))', border: '1.5px solid rgba(22,163,74,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 16, fontWeight: 800, color: '#16a34a' }}>Amount Donated</span>
-                      <span style={{ fontSize: 24, fontWeight: 900, color: '#16a34a' }}>₹{receipt.amount.toLocaleString()}</span>
+                      <span style={{ fontSize: 16, fontWeight: 800, color: '#16a34a', lineHeight: 1 }}>Amount Donated</span>
+                      <span style={{ fontSize: 24, fontWeight: 900, color: '#16a34a', lineHeight: 1 }}>₹{receipt.amount.toLocaleString()}</span>
                     </div>
 
                     <div style={{ textAlign: 'center', marginTop: 20, padding: '12px' }}>
                       <div style={{ fontSize: 20, marginBottom: 6 }}>🙏</div>
+                      <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.6, marginBottom: 4 }}>
+                        Thank you for your generous contribution to
+                      </p>
+                      <p style={{ fontFamily: "'Cinzel', 'Segoe UI', serif", fontWeight: 700, fontSize: 15, color: '#8B1A1A', lineHeight: 1.4, marginBottom: 8 }}>
+                        {DHARAMSHALA_INFO.name}
+                      </p>
                       <p style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.6 }}>
-                        Thank you for your generous contribution to <strong>{DHARAMSHALA_INFO.name}</strong>.<br />
                         Your kindness helps us serve the community with devotion.
                       </p>
                       <div style={{ marginTop: 12, fontSize: 11, color: '#d1d5db', fontStyle: 'italic' }}>

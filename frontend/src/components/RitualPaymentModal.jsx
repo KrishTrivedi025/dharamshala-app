@@ -6,7 +6,7 @@ import {
 } from '@phosphor-icons/react'
 import { ritualAPI } from '../utils/api'
 import html2canvas from 'html2canvas'
-import { ReceiptHeader } from './ReceiptHeader'
+import { ReceiptHeader, SANSTHAN_NAME } from './ReceiptHeader'
 
 function ReceiptDownloader({ receipt, onClose }) {
   const receiptRef = useRef(null)
@@ -14,6 +14,7 @@ function ReceiptDownloader({ receipt, onClose }) {
   const downloadReceipt = async () => {
     if (!receiptRef.current) return
     try {
+      await document.fonts.ready
       const canvas = await html2canvas(receiptRef.current, { scale: 2, backgroundColor: '#fff', logging: false })
       const link = document.createElement('a')
       link.download = `Annual_Ritual_Receipt_${receipt.year}_${receipt.receiptNumber}.png`
@@ -53,7 +54,7 @@ function ReceiptDownloader({ receipt, onClose }) {
           background: 'white', boxShadow: 'var(--shadow-xl)',
           border: '1.5px solid var(--border)', textAlign: 'left', fontFamily: 'sans-serif',
         }}>
-          <ReceiptHeader badge="ANNUAL RITUAL RECEIPT" />
+          <ReceiptHeader />
           <div style={{ padding: '24px 28px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 16, borderBottom: '1px dashed #f5ede0' }}>
               <div>
@@ -87,13 +88,16 @@ function ReceiptDownloader({ receipt, onClose }) {
               background: 'rgba(22,163,74,0.06)', border: '1.5px solid rgba(22,163,74,0.2)',
               display: 'flex', justifyContent: 'space-between', alignItems: 'center',
             }}>
-              <span style={{ fontSize: 16, fontWeight: 800, color: '#16a34a' }}>Amount Paid</span>
-              <span style={{ fontSize: 24, fontWeight: 900, color: '#16a34a' }}>₹{receipt.amount?.toLocaleString()}</span>
+              <span style={{ fontSize: 16, fontWeight: 800, color: '#16a34a', lineHeight: 1 }}>Amount Paid</span>
+              <span style={{ fontSize: 24, fontWeight: 900, color: '#16a34a', lineHeight: 1 }}>₹{receipt.amount?.toLocaleString()}</span>
             </div>
             <div style={{ textAlign: 'center', marginTop: 24, padding: '12px' }}>
               <div style={{ fontSize: 20, marginBottom: 8 }}>🙏</div>
-              <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6 }}>
-                Thank you for your annual contribution to <strong>Shri Dharamshala Trust</strong>.
+              <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6, marginBottom: 4 }}>
+                Thank you for your annual contribution to
+              </p>
+              <p style={{ fontFamily: "'Cinzel', 'Segoe UI', serif", fontWeight: 700, fontSize: 15, color: '#8B1A1A', lineHeight: 1.4 }}>
+                {SANSTHAN_NAME}
               </p>
               <div style={{ marginTop: 16, fontSize: 11, color: '#d1d5db', fontStyle: 'italic' }}>
                 This is a computer-generated receipt and does not require a signature.

@@ -1,5 +1,7 @@
 import { RECEIPT_HEADER_IMAGE, RECEIPT_HEADER_RATIO } from '../utils/receiptAssets'
 
+export const SANSTHAN_NAME = 'Shree Mahalaxmi Shreemali Brahman Seva Sansthan, Sanderao'
+
 // Shared hero header for every downloadable receipt (hall booking, daan peti,
 // annual ritual). Height is a percentage of width (classic responsive
 // aspect-ratio box) so it fills whatever card width it's dropped into,
@@ -14,11 +16,15 @@ export function ReceiptHeader({ badge, subtitle }) {
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
       />
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 26px' }}>
-        <div style={{ fontSize: 21, fontWeight: 900, color: '#8B1A1A', letterSpacing: '0.3px' }}>
-          Shri Dharamshala Trust
+        <div style={{
+          fontFamily: "'Cinzel', 'Segoe UI', serif", fontWeight: 700,
+          fontSize: 19, lineHeight: 1.3, letterSpacing: '0.2px',
+          color: '#8B1A1A', maxWidth: '62%',
+        }}>
+          {SANSTHAN_NAME}
         </div>
         {subtitle && (
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#6b4040', marginTop: 3, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#6b4040', marginTop: 6, lineHeight: 1.5, maxWidth: '62%' }}>
             {subtitle}
           </div>
         )}
