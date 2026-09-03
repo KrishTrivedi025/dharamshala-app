@@ -134,5 +134,9 @@ body {
   object-position: 100% center;
 }
 @media (max-width: 767px) {
-  .home-hero { height: 360px; }
+  .home-hero { height: 480px; }
+  /* Mobile crop is narrower, so 100% (far right) drags in empty sky/blur
+     past the deity — pull the crop window left so it frames the deity
+     with the empty strip cut off instead of just cropping wider. */
+  .home-hero img { object-position: 35% center; }
 }
