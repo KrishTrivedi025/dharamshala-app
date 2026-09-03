@@ -192,17 +192,30 @@ body {
 }
 
 @media (max-width: 767px) {
-  .home-hero { height: 800px; }
-  /* Horizontal crop position, 0-100. 0 = show the image's left edge
-     (all blank sky, deity cut off), 100 = show the right edge (deity
-     hugs the edge, empty strip beyond her still shows). Currently 78 —
-     tell me a new number and I'll swap it in. */
-  .home-hero img { object-position: 78% center; }
-
-  /* Baseline only — full mobile pass comes once desktop is approved. */
-  .home-hero-content { margin-left: 6%; margin-right: 6%; max-width: none; }
+  /* The overlay-on-photo layout doesn't survive a narrow screen — the deity
+     crop and the text block both need the full width. Stack instead: photo
+     on top as its own clean moment, copy below it on the plain page
+     background, so nothing fights the image for contrast. */
+  .home-hero {
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+    overflow: visible;
+  }
+  .home-hero img {
+    position: static;
+    height: 420px;
+    /* Horizontal crop position, 0-100. 0 = left edge (blank sky), 100 =
+       right edge (deity hugs the edge). Currently 82 — tell me a new
+       number and I'll swap it in. */
+    object-position: 82% center;
+  }
+  .home-hero-content {
+    margin: 28px 20px 40px;
+    max-width: none;
+  }
   .home-hero-eyebrow { font-size: 12px; letter-spacing: 2px; margin-bottom: 8px; }
-  .home-hero-title { font-size: clamp(22px, 6.5vw, 28px); margin-bottom: 12px; }
-  .home-hero-desc { font-size: 14px; line-height: 1.6; max-width: none; margin-bottom: 20px; }
-  .home-hero-cta { padding: 13px 28px; font-size: 14px; }
+  .home-hero-title { font-size: clamp(22px, 6.5vw, 28px); margin-bottom: 14px; }
+  .home-hero-desc { font-size: 14.5px; line-height: 1.65; max-width: none; margin-bottom: 24px; }
+  .home-hero-cta { width: 100%; justify-content: center; padding: 15px 28px; font-size: 15px; }
 }

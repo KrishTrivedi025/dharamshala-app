@@ -52,7 +52,7 @@ const getCalendarData = () => {
 }
 
 const contactItems = [
-  { icon: <MapPin size={28} weight="duotone" />, label: 'Address', value: '123 Samaj Nagar, Rajasthan, India', color: 'var(--primary)' },
+  { icon: <MapPin size={28} weight="duotone" />, label: 'Address', value: 'Mahalakshmi Temple, Brahmpuri, Sanderao - 306708, Tehsil Sumerpur, District Pali (Raj.)', color: 'var(--primary)' },
   { icon: <Phone size={28} weight="duotone" />, label: 'Phone', value: '+91 97699 22866', color: 'var(--maroon)' },
   { icon: <Envelope size={28} weight="duotone" />, label: 'Email', value: 'info@dharamshala.com', color: 'var(--secondary)' },
 ]

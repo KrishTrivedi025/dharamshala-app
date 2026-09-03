@@ -22,7 +22,7 @@ function Footer() {
   ]
 
   const contactInfo = [
-    { icon: <MapPin size={16} weight="fill" />, text: '123 Samaj Nagar, Rajasthan, India' },
+    { icon: <MapPin size={16} weight="fill" />, text: 'Mahalakshmi Temple, Brahmpuri, Sanderao - 306708, Tehsil Sumerpur, District Pali (Raj.)' },
     { icon: <Phone size={16} weight="fill" />, text: '+91 97699 22866' },
     { icon: <Envelope size={16} weight="fill" />, text: 'info@dharamshala.com' },
   ]
