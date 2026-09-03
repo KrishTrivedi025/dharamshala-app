@@ -94,6 +94,10 @@
   --z-toast:        500;
 }
 
+html, body {
+  overflow-x: hidden;
+}
+
 body {
   background-color: var(--background);
   color: var(--text);
@@ -103,18 +107,32 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-::-webkit-scrollbar {
-  width: 6px;
+/* No visible scrollbars anywhere on the site — scrolling still works, the
+   thumb/track is just hidden (Firefox, IE/Edge legacy, and Webkit). */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-
-::-webkit-scrollbar-track {
-  background: var(--background);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--primary);
-  border-radius: var(--radius-full);
+*::-webkit-scrollbar {
+  display: none;
 }
 
 /* ── Navbar link hover ── */
 .nav-link-item:hover span { color: var(--primary); }
+
+/* ── Home hero banner — responsive height, image always anchored right ── */
+.home-hero {
+  width: 100%;
+  height: 800px;
+  overflow: hidden;
+}
+.home-hero img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: 100% center;
+}
+@media (max-width: 767px) {
+  .home-hero { height: 360px; }
+}

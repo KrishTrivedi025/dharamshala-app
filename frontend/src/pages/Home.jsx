@@ -4,8 +4,7 @@ import { motion } from 'framer-motion'
 import {
   PencilLine, SealCheck, CreditCard,
   MapPin, Phone, Envelope,
-  CaretDown, ArrowRight,
-  Sparkle, Heart, Briefcase,
+  ArrowRight,
 } from '@phosphor-icons/react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -13,6 +12,7 @@ import { useAuth } from '../context/AuthContext'
 import RitualFloatingIcon from '../components/RitualFloatingIcon'
 import RitualPaymentModal from '../components/RitualPaymentModal'
 import { ritualAPI } from '../utils/api'
+import heroBannerImg from '../assets/hero-banner.png'
 
 const steps = [
   {
@@ -51,13 +51,6 @@ const getCalendarData = () => {
   return { daysInMonth, firstDay, bookedDates, lockedDates, month, year }
 }
 
-const heroFeatures = [
-  { icon: <Sparkle size={20} weight="duotone" />, text: 'Weddings & Celebrations' },
-  { icon: <span style={{ fontSize: 18, lineHeight: 1 }}>🙏</span>, text: 'Religious Functions' },
-  { icon: <Heart size={20} weight="duotone" />, text: 'Birthday Parties' },
-  { icon: <Briefcase size={20} weight="duotone" />, text: 'Meetings & Conferences' },
-]
-
 const contactItems = [
   { icon: <MapPin size={28} weight="duotone" />, label: 'Address', value: '123 Samaj Nagar, Rajasthan, India', color: 'var(--primary)' },
   { icon: <Phone size={28} weight="duotone" />, label: 'Phone', value: '+91 98765 43210', color: 'var(--maroon)' },
@@ -86,7 +79,6 @@ function Home() {
     fetchRitual()
   }, [isLoggedIn])
 
-  const handleBookNow = () => navigate(isLoggedIn ? '/booking' : '/login')
   const handleCreateAccount = () => navigate(isLoggedIn ? '/booking' : '/signup')
   const handleLoginOrDashboard = () => navigate(isLoggedIn ? '/dashboard' : '/login')
 
@@ -112,206 +104,18 @@ function Home() {
     return { ...base, background: 'var(--success-subtle)', color: 'var(--success)' }
   }
 
-  const scrollToHow = () => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })
-
   return (
     <div style={{ backgroundColor: 'var(--background)', minHeight: '100vh' }}>
       <Navbar />
 
       {/* ── HERO ── */}
-      <div style={{
-        background: 'linear-gradient(160deg, #1a0000 0%, #5a0e0e 40%, #c94a1a 80%, var(--primary) 100%)',
-        minHeight: '100vh', display: 'flex', alignItems: 'center',
-        position: 'relative', overflow: 'hidden',
-      }}>
-        {/* Background orbs */}
-        {[...Array(3)].map((_, i) => (
-          <motion.div key={i} style={{
-            position: 'absolute', borderRadius: '50%',
-            background: `rgba(247,201,72,${0.04 + i * 0.02})`,
-            width: 300 + i * 180, height: 300 + i * 180,
-            top: `${-15 + i * 28}%`, left: `${-8 + i * 22}%`,
-          }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: 22 + i * 6, repeat: Infinity, ease: 'linear' }}
-          />
-        ))}
-        <motion.div style={{
-          position: 'absolute', top: '18%', right: '4%',
-          width: 260, height: 260, borderRadius: '50%',
-          background: 'rgba(255,107,53,0.06)',
-        }}
-          animate={{ y: [-18, 18, -18], scale: [1, 1.04, 1] }}
-          transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
-        />
-
-        {/* Hero grid — Tailwind responsive, no more @media hack */}
-        <div
-          className="grid grid-cols-1 lg:grid-cols-2 items-center"
-          style={{
-            maxWidth: 1200, margin: '0 auto',
-            padding: '100px 32px 80px',
-            width: '100%', position: 'relative', zIndex: 10,
-            gap: 'clamp(0px, 5vw, 60px)',
-          }}
-        >
-          {/* Left — copy + CTAs */}
-          <motion.div initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}>
-            <motion.div
-              animate={{ y: [0, -10, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-              style={{ fontSize: 76, marginBottom: 18, display: 'block', lineHeight: 1 }}
-            >🛕</motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                padding: '5px 16px', borderRadius: 'var(--radius-full)',
-                background: 'rgba(247,201,72,0.12)', border: '1px solid rgba(247,201,72,0.28)',
-                color: 'var(--secondary)', fontSize: 'var(--text-sm)',
-                fontWeight: 600, marginBottom: 20, letterSpacing: '0.3px',
-              }}
-            >
-              <Sparkle size={13} weight="fill" />
-              Community Hall Booking Platform
-            </motion.div>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-              style={{
-                fontSize: 'clamp(30px, 4vw, 52px)', fontWeight: 900, color: 'white',
-                lineHeight: 1.12, marginBottom: 18, letterSpacing: '-1px',
-              }}
-            >
-              Welcome to Our<br />
-              <span style={{ color: 'var(--secondary)' }}>Dharamshala</span>
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-              style={{ fontSize: 'var(--text-md)', color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, marginBottom: 34, maxWidth: 460 }}
-            >
-              Book our beautiful community hall for your most special occasions — weddings, celebrations, meetings and more.
-            </motion.p>
-
-            {/* CTAs — Tailwind responsive */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
-              className="flex flex-col sm:flex-row flex-wrap"
-              style={{ gap: 12 }}
-            >
-              <motion.button
-                whileHover={{ scale: 1.04, boxShadow: '0 18px 44px rgba(255,107,53,0.55)' }}
-                whileTap={{ scale: 0.97 }}
-                onClick={handleBookNow}
-                className="w-full sm:w-auto"
-                style={{
-                  padding: '15px 34px', borderRadius: 'var(--radius-full)', border: 'none',
-                  cursor: 'pointer', fontSize: 'var(--text-md)', fontWeight: 800, color: 'white',
-                  background: 'linear-gradient(135deg, var(--primary) 0%, var(--maroon) 100%)',
-                  boxShadow: '0 8px 28px var(--primary-border)',
-                  display: 'inline-flex', alignItems: 'center', gap: 8, fontFamily: 'inherit',
-                }}
-              >
-                Book Now <ArrowRight size={16} weight="bold" />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.04, backgroundColor: 'rgba(255,255,255,0.14)' }}
-                whileTap={{ scale: 0.97 }}
-                onClick={scrollToHow}
-                className="w-full sm:w-auto"
-                style={{
-                  padding: '15px 34px', borderRadius: 'var(--radius-full)',
-                  border: '1.5px solid rgba(255,255,255,0.28)',
-                  cursor: 'pointer', fontSize: 'var(--text-md)', fontWeight: 700, color: 'white',
-                  background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(10px)',
-                  display: 'inline-flex', alignItems: 'center', gap: 8, fontFamily: 'inherit',
-                }}
-              >
-                Learn More <CaretDown size={14} weight="bold" />
-              </motion.button>
-            </motion.div>
-
-            {/* Stats — Tailwind responsive gap */}
-            <motion.div
-              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
-              className="flex flex-wrap"
-              style={{ gap: 'clamp(20px, 3vw, 36px)', marginTop: 44 }}
-            >
-              {[{ n: '500+', l: 'Members' }, { n: '200+', l: 'Events Hosted' }, { n: '10+', l: 'Years Service' }, { n: '5★', l: 'Rating' }].map((s, i) => (
-                <div key={i}>
-                  <div style={{ fontSize: 'var(--text-2xl)', fontWeight: 900, color: 'var(--secondary)' }}>{s.n}</div>
-                  <div style={{ fontSize: 'var(--text-xs)', color: 'rgba(255,255,255,0.48)', marginTop: 2 }}>{s.l}</div>
-                </div>
-              ))}
-            </motion.div>
-          </motion.div>
-
-          {/* Right — venue card — hidden on mobile */}
-          <motion.div
-            className="hidden lg:flex justify-center"
-            initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: [0.4, 0, 0.2, 1] }}
-          >
-            <div style={{
-              borderRadius: 'var(--radius-xl)', padding: 28, width: '100%', maxWidth: 380,
-              background: 'rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 30px 80px rgba(0,0,0,0.28)',
-            }}>
-              <div style={{ textAlign: 'center', marginBottom: 20, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.09)' }}>
-                <div style={{ fontSize: 'var(--text-md)', fontWeight: 700, color: 'white', marginBottom: 3 }}>Main Hall</div>
-                <div style={{ fontSize: 'var(--text-sm)', color: 'rgba(255,255,255,0.45)' }}>Capacity: 500+ Guests</div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {heroFeatures.map((f, i) => (
-                  <motion.div key={i}
-                    initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.55 + i * 0.1, ease: [0.4, 0, 0.2, 1] }}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      padding: '11px 14px', borderRadius: 'var(--radius-md)',
-                      background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
-                      color: 'rgba(255,255,255,0.55)',
-                    }}
-                  >
-                    <span style={{ color: 'var(--primary)', flexShrink: 0 }}>{f.icon}</span>
-                    <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'rgba(255,255,255,0.8)' }}>{f.text}</span>
-                  </motion.div>
-                ))}
-              </div>
-              <div style={{
-                marginTop: 16, padding: '12px 14px', borderRadius: 'var(--radius-md)',
-                background: 'var(--primary-subtle)',
-                border: '1px solid var(--primary-border)',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              }}>
-                <div style={{ fontSize: 'var(--text-xs)', color: 'rgba(255,255,255,0.55)' }}>Next Available</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--secondary)' }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--success)', display: 'inline-block' }} />
-                  Tomorrow onwards
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Scroll indicator */}
-        <motion.button
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          onClick={scrollToHow}
-          style={{
-            position: 'absolute', bottom: 28, left: '50%', transform: 'translateX(-50%)',
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: 'rgba(255,255,255,0.35)', display: 'flex', flexDirection: 'column',
-            alignItems: 'center', gap: 4, fontSize: 'var(--text-xs)', fontFamily: 'inherit',
-          }}
-        >
-          Scroll to explore
-          <CaretDown size={16} weight="bold" />
-        </motion.button>
-      </div>
+      {/* Height: 800px on tablet/desktop, 360px on mobile — see .home-hero in index.css */}
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}
+        className="home-hero"
+      >
+        <img src={heroBannerImg} alt="" />
+      </motion.div>
 
       {/* ── HOW IT WORKS ── */}
       <div id="how-it-works" style={{ padding: '96px 24px', backgroundColor: 'var(--background)' }}>
