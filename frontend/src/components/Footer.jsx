@@ -23,7 +23,7 @@ function Footer() {
 
   const contactInfo = [
     { icon: <MapPin size={16} weight="fill" />, text: '123 Samaj Nagar, Rajasthan, India' },
-    { icon: <Phone size={16} weight="fill" />, text: '+91 98765 43210' },
+    { icon: <Phone size={16} weight="fill" />, text: '+91 97699 22866' },
     { icon: <Envelope size={16} weight="fill" />, text: 'info@dharamshala.com' },
   ]
 

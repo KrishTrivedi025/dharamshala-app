@@ -53,7 +53,7 @@ const getCalendarData = () => {
 
 const contactItems = [
   { icon: <MapPin size={28} weight="duotone" />, label: 'Address', value: '123 Samaj Nagar, Rajasthan, India', color: 'var(--primary)' },
-  { icon: <Phone size={28} weight="duotone" />, label: 'Phone', value: '+91 98765 43210', color: 'var(--maroon)' },
+  { icon: <Phone size={28} weight="duotone" />, label: 'Phone', value: '+91 97699 22866', color: 'var(--maroon)' },
   { icon: <Envelope size={28} weight="duotone" />, label: 'Email', value: 'info@dharamshala.com', color: 'var(--secondary)' },
 ]
 
@@ -109,12 +109,32 @@ function Home() {
       <Navbar />
 
       {/* ── HERO ── */}
-      {/* Height: 800px on tablet/desktop, 360px on mobile — see .home-hero in index.css */}
+      {/* Height/crop are responsive — see .home-hero in index.css */}
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}
         className="home-hero"
       >
         <img src={heroBannerImg} alt="" />
+        <motion.div
+          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.3 }}
+          className="home-hero-content"
+        >
+          <p className="home-hero-eyebrow">Welcome</p>
+          <h1 className="home-hero-title">Shree Mahalaxmi Shreemali Brahman Seva Sansthan</h1>
+          <p className="home-hero-desc">
+            A sacred home for your family's most cherished occasions. Request the hall online for weddings,
+            pujas and celebrations, get approved by our trustees, and confirm your date with a simple,
+            transparent payment — all without a single phone call.
+          </p>
+          <motion.button
+            whileHover={{ scale: 1.04, boxShadow: '0 16px 40px rgba(255,107,53,0.5), 0 4px 10px rgba(139,26,26,0.3)' }}
+            whileTap={{ scale: 0.97 }}
+            onClick={handleCreateAccount}
+            className="home-hero-cta"
+          >
+            Book Now <ArrowRight size={17} weight="bold" />
+          </motion.button>
+        </motion.div>
       </motion.div>
 
       {/* ── HOW IT WORKS ── */}

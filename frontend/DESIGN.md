@@ -21,6 +21,10 @@ typography:
     fontSize: "13px"
     fontWeight: 500
     lineHeight: 1.4
+  display:
+    fontFamily: "'Cinzel', 'Segoe UI', serif"
+    fontWeight: 700
+    note: "Intentional brand addition (Google Font, self-hosted via index.html link). Reserved for the trust's formal name where it appears as a headline — currently the Home hero title only. Not the body/label voice."
 rounded:
   sm: "8px"
   md: "12px"

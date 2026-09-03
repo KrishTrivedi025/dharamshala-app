@@ -125,19 +125,84 @@ body {
   width: 100%;
   height: 800px;
   overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 .home-hero img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   display: block;
   object-fit: cover;
   object-position: 100% center;
 }
+
+/* Hero copy block — left side, over the blank sky. A plain flex child
+   (not absolute + transform:translateY) so Framer Motion's own transform
+   on the entrance animation has nothing to fight for vertical centering. */
+.home-hero-content {
+  position: relative;
+  z-index: 2;
+  margin-left: 7%;
+  max-width: 560px;
+}
+.home-hero-eyebrow {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin: 0 0 14px;
+}
+.home-hero-title {
+  font-family: 'Cinzel', 'Segoe UI', serif;
+  font-weight: 700;
+  font-size: clamp(30px, 3.6vw, 46px);
+  line-height: 1.28;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--maroon);
+  margin: 0 0 22px;
+  text-wrap: balance;
+}
+.home-hero-desc {
+  font-size: 17px;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  max-width: 460px;
+  margin: 0 0 32px;
+}
+.home-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 17px 40px;
+  border-radius: var(--radius-full);
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: white;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--maroon) 100%);
+  box-shadow: 0 12px 32px rgba(255, 107, 53, 0.4), 0 4px 10px rgba(139, 26, 26, 0.25);
+}
+
 @media (max-width: 767px) {
-  .home-hero { height: 480px; }
+  .home-hero { height: 800px; }
   /* Horizontal crop position, 0-100. 0 = show the image's left edge
      (all blank sky, deity cut off), 100 = show the right edge (deity
      hugs the edge, empty strip beyond her still shows). Currently 78 —
      tell me a new number and I'll swap it in. */
   .home-hero img { object-position: 78% center; }
+
+  /* Baseline only — full mobile pass comes once desktop is approved. */
+  .home-hero-content { margin-left: 6%; margin-right: 6%; max-width: none; }
+  .home-hero-eyebrow { font-size: 12px; letter-spacing: 2px; margin-bottom: 8px; }
+  .home-hero-title { font-size: clamp(22px, 6.5vw, 28px); margin-bottom: 12px; }
+  .home-hero-desc { font-size: 14px; line-height: 1.6; max-width: none; margin-bottom: 20px; }
+  .home-hero-cta { padding: 13px 28px; font-size: 14px; }
 }
