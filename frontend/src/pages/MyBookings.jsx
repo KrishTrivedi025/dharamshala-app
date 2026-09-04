@@ -416,12 +416,12 @@ function MyBookings() {
             <div style={{ padding: '24px 28px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 16, borderBottom: '1px dashed #f5ede0' }}>
                 <div>
-                  <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Receipt No.</div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: '#8B1A1A', fontFamily: 'monospace' }}>{downloadingReceipt.receiptNumber || 'DH-PENDING'}</div>
+                  <div style={{ fontSize: 12, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Receipt No.</div>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: '#8B1A1A', fontFamily: 'monospace' }}>{downloadingReceipt.receiptNumber || 'DH-PENDING'}</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Date</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#374151' }}>{new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                  <div style={{ fontSize: 12, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>Date</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#374151' }}>{new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
                 </div>
               </div>
               {[
@@ -432,13 +432,13 @@ function MyBookings() {
                 { label: 'Dates', value: [new Date(downloadingReceipt.eventDate), ...(downloadingReceipt.additionalDates || []).map(d => new Date(d))].map(d => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })).join(', ') + ' ' + new Date(downloadingReceipt.eventDate).getFullYear() },
               ].map((row, i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f9fafb' }}>
-                  <span style={{ fontSize: 13, color: '#9ca3af', fontWeight: 600 }}>{row.label}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#374151', maxWidth: '65%', textAlign: 'right' }}>{row.value}</span>
+                  <span style={{ fontSize: 15, color: '#9ca3af', fontWeight: 600 }}>{row.label}</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: '#374151', maxWidth: '65%', textAlign: 'right' }}>{row.value}</span>
                 </div>
               ))}
-              <div style={{ marginTop: 22, padding: '18px 22px', borderRadius: 14, background: 'rgba(22,163,74,0.06)', border: '1.5px solid rgba(22,163,74,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 16, fontWeight: 800, color: '#16a34a', lineHeight: 1 }}>Total Amount Paid</span>
-                <span style={{ fontSize: 24, fontWeight: 900, color: '#16a34a', lineHeight: 1 }}>₹{downloadingReceipt.totalAmount?.toLocaleString()}</span>
+              <div style={{ marginTop: 22, padding: '18px 22px', borderRadius: 14, background: 'rgba(22,163,74,0.06)', border: '1.5px solid rgba(22,163,74,0.2)', display: 'table', width: '100%' }}>
+                <span style={{ display: 'table-cell', verticalAlign: 'middle', fontSize: 16, fontWeight: 800, color: '#16a34a' }}>Total Amount Paid</span>
+                <span style={{ display: 'table-cell', verticalAlign: 'middle', textAlign: 'right', fontSize: 24, fontWeight: 900, color: '#16a34a' }}>₹{downloadingReceipt.totalAmount?.toLocaleString()}</span>
               </div>
               <div style={{ textAlign: 'center', marginTop: 28 }}>
                 <div style={{ fontSize: 22, marginBottom: 8 }}>🙏</div>

@@ -1502,12 +1502,12 @@ function Cashbook() {
               <div style={{ padding: '24px 28px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 16, borderBottom: '1px dashed #f5ede0' }}>
                   <div>
-                    <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Receipt No.</div>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: '#8B1A1A', fontFamily: 'monospace' }}>{downloadingReceipt.receiptNumber}</div>
+                    <div style={{ fontSize: 13, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Receipt No.</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: '#8B1A1A', fontFamily: 'monospace' }}>{downloadingReceipt.receiptNumber}</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Date</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#374151' }}>
+                    <div style={{ fontSize: 13, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Date</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#374151' }}>
                       {downloadingReceipt.paymentDate ? new Date(downloadingReceipt.paymentDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </div>
                   </div>
@@ -1520,13 +1520,16 @@ function Cashbook() {
                   { label: 'Category', value: 'Annual Ritual (Pooja Shulk)' },
                 ].map((row, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f5ede0' }}>
-                    <span style={{ fontSize: 13, color: '#9ca3af', fontWeight: 600 }}>{row.label}</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#374151', maxWidth: '60%', textAlign: 'right' }}>{row.value}</span>
+                    <span style={{ fontSize: 15, color: '#9ca3af', fontWeight: 600 }}>{row.label}</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#374151', maxWidth: '60%', textAlign: 'right' }}>{row.value}</span>
                   </div>
                 ))}
-                <div style={{ marginTop: 20, padding: '16px 20px', borderRadius: 14, background: 'linear-gradient(135deg, rgba(22,163,74,0.08), rgba(22,163,74,0.04))', border: '1.5px solid rgba(22,163,74,0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 16, fontWeight: 800, color: '#16a34a', lineHeight: 1 }}>Amount Paid</span>
-                  <span style={{ fontSize: 24, fontWeight: 900, color: '#16a34a', lineHeight: 1 }}>₹{(downloadingReceipt.amount||annualFee).toLocaleString()}</span>
+                {/* table/table-cell, not flex — html2canvas doesn't reliably
+                    center flex items of different font sizes, so the label
+                    and amount ended up sitting at different heights. */}
+                <div style={{ marginTop: 20, padding: '16px 20px', borderRadius: 14, background: 'linear-gradient(135deg, rgba(22,163,74,0.08), rgba(22,163,74,0.04))', border: '1.5px solid rgba(22,163,74,0.2)', display: 'table', width: '100%' }}>
+                  <span style={{ display: 'table-cell', verticalAlign: 'middle', fontSize: 16, fontWeight: 800, color: '#16a34a' }}>Amount Paid</span>
+                  <span style={{ display: 'table-cell', verticalAlign: 'middle', textAlign: 'right', fontSize: 24, fontWeight: 900, color: '#16a34a' }}>₹{(downloadingReceipt.amount||annualFee).toLocaleString()}</span>
                 </div>
                 <div style={{ textAlign: 'center', marginTop: 24, padding: '12px' }}>
                   <div style={{ fontSize: 20, marginBottom: 8 }}>🙏</div>

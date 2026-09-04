@@ -15,16 +15,19 @@ export function ReceiptHeader({ badge, subtitle }) {
         alt=""
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
       />
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 26px' }}>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', padding: '14px 26px 0 16px' }}>
+        {/* text-indent pushes only the FIRST line clear of the logo emblem;
+            wrapped lines fall back to the block's own left edge, flush with
+            where the logo starts. */}
         <div style={{
           fontFamily: "'Cinzel', 'Segoe UI', serif", fontWeight: 700,
           fontSize: 19, lineHeight: 1.3, letterSpacing: '0.2px',
-          color: '#8B1A1A', maxWidth: '62%',
+          color: '#8B1A1A', maxWidth: '60%', textIndent: '58px',
         }}>
           {SANSTHAN_NAME}
         </div>
         {subtitle && (
-          <div style={{ fontSize: 11, fontWeight: 600, color: '#6b4040', marginTop: 6, lineHeight: 1.5, maxWidth: '62%' }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#6b4040', marginTop: 6, lineHeight: 1.5, maxWidth: '60%' }}>
             {subtitle}
           </div>
         )}
