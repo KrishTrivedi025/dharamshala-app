@@ -15,14 +15,14 @@ export function ReceiptHeader({ badge, subtitle }) {
         alt=""
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
       />
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', padding: '14px 26px 0 16px' }}>
-        {/* text-indent pushes only the FIRST line clear of the logo emblem;
-            wrapped lines fall back to the block's own left edge, flush with
-            where the logo starts. */}
+      {/* Name sits below the logo entirely (not beside it) — the logo
+          emblem occupies roughly the top-left ~70px of this banner, so the
+          text block starts clear of it instead of overlapping. */}
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', padding: '70px 26px 0' }}>
         <div style={{
           fontFamily: "'Cinzel', 'Segoe UI', serif", fontWeight: 700,
-          fontSize: 19, lineHeight: 1.3, letterSpacing: '0.2px',
-          color: '#8B1A1A', maxWidth: '60%', textIndent: '58px',
+          fontSize: 18, lineHeight: 1.25, letterSpacing: '0.2px',
+          color: '#8B1A1A', maxWidth: '60%',
         }}>
           {SANSTHAN_NAME}
         </div>

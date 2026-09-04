@@ -430,9 +430,9 @@ function DaanPeti() {
                       </div>
                     ))}
 
-                    <div style={{ marginTop: 20, padding: '16px 20px', borderRadius: 14, background: 'linear-gradient(135deg, rgba(22,163,74,0.08), rgba(22,163,74,0.04))', border: '1.5px solid rgba(22,163,74,0.2)', display: 'table', width: '100%' }}>
-                      <span style={{ display: 'table-cell', verticalAlign: 'middle', fontSize: 16, fontWeight: 800, color: '#16a34a' }}>Amount Donated</span>
-                      <span style={{ display: 'table-cell', verticalAlign: 'middle', textAlign: 'right', fontSize: 24, fontWeight: 900, color: '#16a34a' }}>₹{receipt.amount.toLocaleString()}</span>
+                    <div style={{ position: 'relative', height: 54, marginTop: 20, padding: '0 20px', borderRadius: 14, background: 'linear-gradient(135deg, rgba(22,163,74,0.08), rgba(22,163,74,0.04))', border: '1.5px solid rgba(22,163,74,0.2)' }}>
+                      <span style={{ position: 'absolute', left: 20, top: '50%', marginTop: -9, fontSize: 16, fontWeight: 800, color: '#16a34a' }}>Amount Donated</span>
+                      <span style={{ position: 'absolute', right: 20, top: '50%', marginTop: -13, fontSize: 24, fontWeight: 900, color: '#16a34a' }}>₹{receipt.amount.toLocaleString()}</span>
                     </div>
 
                     <div style={{ textAlign: 'center', marginTop: 20, padding: '12px' }}>

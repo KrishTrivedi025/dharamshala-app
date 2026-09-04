@@ -1524,12 +1524,12 @@ function Cashbook() {
                     <span style={{ fontSize: 15, fontWeight: 700, color: '#374151', maxWidth: '60%', textAlign: 'right' }}>{row.value}</span>
                   </div>
                 ))}
-                {/* table/table-cell, not flex — html2canvas doesn't reliably
-                    center flex items of different font sizes, so the label
-                    and amount ended up sitting at different heights. */}
-                <div style={{ marginTop: 20, padding: '16px 20px', borderRadius: 14, background: 'linear-gradient(135deg, rgba(22,163,74,0.08), rgba(22,163,74,0.04))', border: '1.5px solid rgba(22,163,74,0.2)', display: 'table', width: '100%' }}>
-                  <span style={{ display: 'table-cell', verticalAlign: 'middle', fontSize: 16, fontWeight: 800, color: '#16a34a' }}>Amount Paid</span>
-                  <span style={{ display: 'table-cell', verticalAlign: 'middle', textAlign: 'right', fontSize: 24, fontWeight: 900, color: '#16a34a' }}>₹{(downloadingReceipt.amount||annualFee).toLocaleString()}</span>
+                {/* Absolute + top:50%/margin-top, not flex or table — neither
+                    reliably centers items of different font sizes once
+                    html2canvas rasterizes this, so pin both by hand instead. */}
+                <div style={{ position: 'relative', height: 54, marginTop: 20, padding: '0 20px', borderRadius: 14, background: 'linear-gradient(135deg, rgba(22,163,74,0.08), rgba(22,163,74,0.04))', border: '1.5px solid rgba(22,163,74,0.2)' }}>
+                  <span style={{ position: 'absolute', left: 20, top: '50%', marginTop: -9, fontSize: 16, fontWeight: 800, color: '#16a34a' }}>Amount Paid</span>
+                  <span style={{ position: 'absolute', right: 20, top: '50%', marginTop: -13, fontSize: 24, fontWeight: 900, color: '#16a34a' }}>₹{(downloadingReceipt.amount||annualFee).toLocaleString()}</span>
                 </div>
                 <div style={{ textAlign: 'center', marginTop: 24, padding: '12px' }}>
                   <div style={{ fontSize: 20, marginBottom: 8 }}>🙏</div>
