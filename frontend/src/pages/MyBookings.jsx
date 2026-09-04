@@ -412,7 +412,7 @@ function MyBookings() {
       {downloadingReceipt && (
         <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
           <div ref={receiptRef} style={{ width: '500px', borderRadius: 24, overflow: 'hidden', background: 'white', border: '1.5px solid #ede8e0', textAlign: 'left', fontFamily: 'sans-serif' }}>
-            <ReceiptHeader badge="HALL BOOKING RECEIPT" />
+            <ReceiptHeader />
             <div style={{ padding: '24px 28px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 16, borderBottom: '1px dashed #f5ede0' }}>
                 <div>
@@ -436,9 +436,9 @@ function MyBookings() {
                   <span style={{ fontSize: 15, fontWeight: 700, color: '#374151', maxWidth: '65%', textAlign: 'right' }}>{row.value}</span>
                 </div>
               ))}
-              <div style={{ position: 'relative', height: 58, marginTop: 22, padding: '0 22px', borderRadius: 14, background: 'rgba(22,163,74,0.06)', border: '1.5px solid rgba(22,163,74,0.2)' }}>
-                <span style={{ position: 'absolute', left: 22, top: '50%', marginTop: -9, fontSize: 16, fontWeight: 800, color: '#16a34a' }}>Total Amount Paid</span>
-                <span style={{ position: 'absolute', right: 22, top: '50%', marginTop: -13, fontSize: 24, fontWeight: 900, color: '#16a34a' }}>₹{downloadingReceipt.totalAmount?.toLocaleString()}</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 22, padding: '18px 22px', borderRadius: 14, background: 'rgba(22,163,74,0.06)', border: '1.5px solid rgba(22,163,74,0.2)' }}>
+                <span style={{ fontSize: 16, fontWeight: 800, color: '#16a34a' }}>Total Amount Paid</span>
+                <span style={{ fontSize: 24, fontWeight: 900, color: '#16a34a' }}>₹{downloadingReceipt.totalAmount?.toLocaleString()}</span>
               </div>
               <div style={{ textAlign: 'center', marginTop: 28 }}>
                 <div style={{ fontSize: 22, marginBottom: 8 }}>🙏</div>

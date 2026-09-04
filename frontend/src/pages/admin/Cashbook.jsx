@@ -1524,12 +1524,12 @@ function Cashbook() {
                     <span style={{ fontSize: 15, fontWeight: 700, color: '#374151', maxWidth: '60%', textAlign: 'right' }}>{row.value}</span>
                   </div>
                 ))}
-                {/* Absolute + top:50%/margin-top, not flex or table — neither
-                    reliably centers items of different font sizes once
-                    html2canvas rasterizes this, so pin both by hand instead. */}
-                <div style={{ position: 'relative', height: 54, marginTop: 20, padding: '0 20px', borderRadius: 14, background: 'linear-gradient(135deg, rgba(22,163,74,0.08), rgba(22,163,74,0.04))', border: '1.5px solid rgba(22,163,74,0.2)' }}>
-                  <span style={{ position: 'absolute', left: 20, top: '50%', marginTop: -9, fontSize: 16, fontWeight: 800, color: '#16a34a' }}>Amount Paid</span>
-                  <span style={{ position: 'absolute', right: 20, top: '50%', marginTop: -13, fontSize: 24, fontWeight: 900, color: '#16a34a' }}>₹{(downloadingReceipt.amount||annualFee).toLocaleString()}</span>
+                {/* flex + align-items:baseline — measured pixel-for-pixel
+                    against the actual html2canvas output; center/table/
+                    absolute all landed a few px off, baseline lands within 1px. */}
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 20, padding: '16px 20px', borderRadius: 14, background: 'linear-gradient(135deg, rgba(22,163,74,0.08), rgba(22,163,74,0.04))', border: '1.5px solid rgba(22,163,74,0.2)' }}>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: '#16a34a' }}>Amount Paid</span>
+                  <span style={{ fontSize: 24, fontWeight: 900, color: '#16a34a' }}>₹{(downloadingReceipt.amount||annualFee).toLocaleString()}</span>
                 </div>
                 <div style={{ textAlign: 'center', marginTop: 24, padding: '12px' }}>
                   <div style={{ fontSize: 20, marginBottom: 8 }}>🙏</div>

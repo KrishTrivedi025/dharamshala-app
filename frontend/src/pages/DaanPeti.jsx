@@ -377,18 +377,20 @@ function DaanPeti() {
                 style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
                 <div style={{
-                  borderRadius: 20, padding: '24px',
+                  borderRadius: 14, padding: '14px 18px',
                   background: 'var(--success-subtle)',
                   border: '1.5px solid rgba(5,150,105,0.25)',
-                  textAlign: 'center',
+                  display: 'flex', alignItems: 'center', gap: 12,
                 }}>
-                  <CheckCircle size={48} weight="duotone" color="var(--success)" style={{ marginBottom: 8 }} />
-                  <h3 style={{ fontSize: 22, fontWeight: 900, color: 'var(--success-text)', marginBottom: 4 }}>
-                    Donation Successful!
-                  </h3>
-                  <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
-                    Thank you for your generous contribution. 🙏 May God bless you always.
-                  </p>
+                  <CheckCircle size={30} weight="duotone" color="var(--success)" style={{ flexShrink: 0 }} />
+                  <div>
+                    <h3 style={{ fontSize: 15, fontWeight: 900, color: 'var(--success-text)', marginBottom: 1 }}>
+                      Donation Successful!
+                    </h3>
+                    <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                      Thank you for your generous contribution. 🙏 May God bless you always.
+                    </p>
+                  </div>
                 </div>
 
                 {/* E-Receipt */}
@@ -397,10 +399,7 @@ function DaanPeti() {
                   boxShadow: '0 20px 60px rgba(139,26,26,0.12)',
                   border: '1.5px solid rgba(255,107,53,0.1)',
                 }}>
-                  <ReceiptHeader
-                    badge="DONATION RECEIPT"
-                    subtitle={`${DHARAMSHALA_INFO.address} · ${DHARAMSHALA_INFO.phone} | ${DHARAMSHALA_INFO.email}`}
-                  />
+                  <ReceiptHeader />
 
                   <div style={{ padding: '24px 28px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 16, borderBottom: '1px dashed #f5ede0' }}>
@@ -430,9 +429,9 @@ function DaanPeti() {
                       </div>
                     ))}
 
-                    <div style={{ position: 'relative', height: 54, marginTop: 20, padding: '0 20px', borderRadius: 14, background: 'linear-gradient(135deg, rgba(22,163,74,0.08), rgba(22,163,74,0.04))', border: '1.5px solid rgba(22,163,74,0.2)' }}>
-                      <span style={{ position: 'absolute', left: 20, top: '50%', marginTop: -9, fontSize: 16, fontWeight: 800, color: '#16a34a' }}>Amount Donated</span>
-                      <span style={{ position: 'absolute', right: 20, top: '50%', marginTop: -13, fontSize: 24, fontWeight: 900, color: '#16a34a' }}>₹{receipt.amount.toLocaleString()}</span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 20, padding: '16px 20px', borderRadius: 14, background: 'linear-gradient(135deg, rgba(22,163,74,0.08), rgba(22,163,74,0.04))', border: '1.5px solid rgba(22,163,74,0.2)' }}>
+                      <span style={{ fontSize: 16, fontWeight: 800, color: '#16a34a' }}>Amount Donated</span>
+                      <span style={{ fontSize: 24, fontWeight: 900, color: '#16a34a' }}>₹{receipt.amount.toLocaleString()}</span>
                     </div>
 
                     <div style={{ textAlign: 'center', marginTop: 20, padding: '12px' }}>

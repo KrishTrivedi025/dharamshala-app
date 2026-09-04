@@ -84,11 +84,11 @@ function ReceiptDownloader({ receipt, onClose }) {
               </div>
             ))}
             <div style={{
-              position: 'relative', height: 54, marginTop: 20, padding: '0 20px', borderRadius: 14,
+              display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 20, padding: '16px 20px', borderRadius: 14,
               background: 'rgba(22,163,74,0.06)', border: '1.5px solid rgba(22,163,74,0.2)',
             }}>
-              <span style={{ position: 'absolute', left: 20, top: '50%', marginTop: -9, fontSize: 16, fontWeight: 800, color: '#16a34a' }}>Amount Paid</span>
-              <span style={{ position: 'absolute', right: 20, top: '50%', marginTop: -13, fontSize: 24, fontWeight: 900, color: '#16a34a' }}>₹{receipt.amount?.toLocaleString()}</span>
+              <span style={{ fontSize: 16, fontWeight: 800, color: '#16a34a' }}>Amount Paid</span>
+              <span style={{ fontSize: 24, fontWeight: 900, color: '#16a34a' }}>₹{receipt.amount?.toLocaleString()}</span>
             </div>
             <div style={{ textAlign: 'center', marginTop: 24, padding: '12px' }}>
               <div style={{ fontSize: 20, marginBottom: 8 }}>🙏</div>
