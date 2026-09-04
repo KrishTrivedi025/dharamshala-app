@@ -121,11 +121,36 @@ export const verifyDonationPayment = async (req, res) => {
     // Mint the real "DH-YYYY-####" receipt number now that payment is
     // actually confirmed — this is the only point a number is consumed
     // from the shared CashbookEntry sequence, so nothing gets orphaned.
+    // generateReceiptNumber() only scans CashbookEntry, so it can still
+    // hand back a number already sitting on an old orphaned pending
+    // DaanPetiDonation (e.g. from before this fix shipped) or lose a race
+    // with a concurrent donation — either way the unique index on
+    // receiptNumber will reject the save, so retry past it with the
+    // database as ground truth instead of trusting the scan blindly.
     const now = new Date()
-    donation.receiptNumber = await CashbookEntry.generateReceiptNumber(now.getFullYear())
-    donation.paymentId = razorpay_payment_id
-    donation.status = 'completed'
-    await donation.save()
+    const year = now.getFullYear()
+    let receiptNumber = await CashbookEntry.generateReceiptNumber(year)
+    let saved = false
+    for (let attempt = 0; attempt < 30 && !saved; attempt++) {
+      donation.receiptNumber = receiptNumber
+      donation.paymentId = razorpay_payment_id
+      donation.status = 'completed'
+      try {
+        await donation.save()
+        saved = true
+      } catch (err) {
+        if (err.code === 11000 && /receiptNumber/.test(err.message)) {
+          const parts = receiptNumber.split('-')
+          const nextSerial = parseInt(parts[2], 10) + 1
+          receiptNumber = `DH-${year}-${String(nextSerial).padStart(4, '0')}`
+        } else {
+          throw err
+        }
+      }
+    }
+    if (!saved) {
+      return res.status(500).json({ success: false, message: 'Could not allocate a receipt number, please try again' })
+    }
 
     // Auto-create cashbook entry
     const cashbookEntry = await CashbookEntry.create({

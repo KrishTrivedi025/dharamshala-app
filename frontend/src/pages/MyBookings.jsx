@@ -152,15 +152,15 @@ function MyBookings() {
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: isMobile ? '20px 14px 48px' : '28px 28px 60px' }}>
 
-        {/* Filter tabs */}
+        {/* Filter tabs — horizontal slider, one row, swipeable (scrollbar hidden globally) */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-          style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 24, padding: '5px', borderRadius: 'var(--radius-lg)', background: 'var(--surface-solid)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+          style={{ display: 'flex', gap: 6, flexWrap: 'nowrap', overflowX: 'auto', WebkitOverflowScrolling: 'touch', marginBottom: 24, padding: '5px', borderRadius: 'var(--radius-lg)', background: 'var(--surface-solid)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
           {FILTERS.map((filter) => {
             const count = filter === 'All' ? bookings.length : (counts[filter.toLowerCase()] || 0)
             return (
               <motion.button key={filter} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
                 onClick={() => { setActiveFilter(filter); setCurrentPage(1) }}
-                style={{ padding: '9px 18px', borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s', background: activeFilter === filter ? 'linear-gradient(135deg, var(--primary), var(--maroon))' : 'transparent', color: activeFilter === filter ? 'white' : 'var(--text-secondary)', boxShadow: activeFilter === filter ? '0 4px 12px var(--primary-border)' : 'none', fontFamily: 'inherit' }}>
+                style={{ flexShrink: 0, padding: '9px 18px', borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, transition: 'all 0.2s', background: activeFilter === filter ? 'linear-gradient(135deg, var(--primary), var(--maroon))' : 'transparent', color: activeFilter === filter ? 'white' : 'var(--text-secondary)', boxShadow: activeFilter === filter ? '0 4px 12px var(--primary-border)' : 'none', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                 {filter}
                 {count > 0 && <span style={{ padding: '1px 7px', borderRadius: 'var(--radius-full)', fontSize: 'var(--text-xs)', fontWeight: 800, background: activeFilter === filter ? 'rgba(255,255,255,0.25)' : 'var(--neutral-200)', color: activeFilter === filter ? 'white' : 'var(--text-muted)' }}>{count}</span>}
               </motion.button>
@@ -226,12 +226,12 @@ function MyBookings() {
                       <div style={{ height: 4, background: `linear-gradient(90deg, ${sc.color}, ${sc.color}70)` }} />
 
                       <div style={{ padding: '20px 24px' }}>
-                        {/* Main row */}
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+                        {/* Main row — event info only; price/actions live in their own footer below */}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
                           <div style={{ width: 52, height: 52, borderRadius: 'var(--radius-md)', flexShrink: 0, background: `${sc.bg}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: sc.color, border: `1px solid ${sc.color}20` }}>
                             {eventIcon}
                           </div>
-                          <div style={{ flex: 1, minWidth: 190 }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 5, flexWrap: 'wrap' }}>
                               <h3 style={{ fontSize: 'var(--text-md)', fontWeight: 800, color: 'var(--maroon)', margin: 0 }}>{booking.eventName}</h3>
                               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 'var(--radius-full)', background: sc.bg, color: sc.color, fontSize: 'var(--text-xs)', fontWeight: 700 }}>
@@ -249,9 +249,25 @@ function MyBookings() {
                               </div>
                             )}
                           </div>
+                        </div>
 
-                          {/* Right — price + actions */}
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 7, minWidth: 130 }}>
+                        {/* Footer — left: More/Cancel, right: amount above Receipt/Pay */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap', marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+                          <div style={{ display: 'flex', gap: 7 }}>
+                            <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }}
+                              onClick={() => setExpandedId(isExpanded ? null : booking._id)}
+                              style={{ padding: '6px 13px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)', background: 'var(--surface-solid)', fontFamily: 'inherit' }}>
+                              {isExpanded ? '▲ Less' : '▼ More'}
+                            </motion.button>
+                            {canCancel && (
+                              <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} onClick={() => setShowCancelModal(booking)}
+                                style={{ padding: '6px 13px', borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--error-text)', background: 'var(--error-subtle)', fontFamily: 'inherit' }}>
+                                Cancel
+                              </motion.button>
+                            )}
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 7 }}>
                             <div style={{ fontSize: 'var(--text-xl)', fontWeight: 900, color: booking.totalAmount ? 'var(--maroon)' : 'var(--text-muted)' }}>
                               {booking.totalAmount ? `₹${booking.totalAmount.toLocaleString()}` : t.myBookings.price_tbd}
                             </div>
@@ -269,19 +285,6 @@ function MyBookings() {
                                 {downloadingReceipt?._id === booking._id ? (<><motion.span animate={{ rotate: 360 }} transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}><CircleNotch size={13} weight="bold" /></motion.span> Preparing…</>) : (<><DownloadSimple size={13} weight="bold" /> Receipt</>)}
                               </motion.button>
                             )}
-                            <div style={{ display: 'flex', gap: 7 }}>
-                              <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.92 }}
-                                onClick={() => setExpandedId(isExpanded ? null : booking._id)}
-                                style={{ padding: '6px 13px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--text-secondary)', background: 'var(--surface-solid)', fontFamily: 'inherit' }}>
-                                {isExpanded ? '▲ Less' : '▼ More'}
-                              </motion.button>
-                              {canCancel && (
-                                <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} onClick={() => setShowCancelModal(booking)}
-                                  style={{ padding: '6px 13px', borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--error-text)', background: 'var(--error-subtle)', fontFamily: 'inherit' }}>
-                                  Cancel
-                                </motion.button>
-                              )}
-                            </div>
                           </div>
                         </div>
 
