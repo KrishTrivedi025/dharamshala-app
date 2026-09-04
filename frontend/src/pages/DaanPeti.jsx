@@ -84,7 +84,7 @@ function DaanPeti() {
         purpose: form.purpose.trim(),
         amount: finalAmount,
       })
-      const { orderId, amount, currency, donationId: dId, receiptNumber, keyId } = orderRes.data
+      const { orderId, amount, currency, donationId: dId, keyId } = orderRes.data
       const options = {
         key: keyId, amount, currency,
         name: DHARAMSHALA_INFO.name,
@@ -99,14 +99,14 @@ function DaanPeti() {
         handler: async (response) => {
           setStep('processing')
           try {
-            await daanPetiAPI.verifyPayment({
+            const verifyRes = await daanPetiAPI.verifyPayment({
               donationId: dId,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             })
             setReceipt({
-              receiptNumber,
+              receiptNumber: verifyRes.data.receiptNumber,
               donorName: form.donorName.trim(),
               donorPhone: form.donorPhone.trim(),
               donorEmail: form.donorEmail.trim(),

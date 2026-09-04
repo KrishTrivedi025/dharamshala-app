@@ -1,3 +1,4 @@
+import mongoose from 'mongoose'
 import DaanPetiDonation from '../models/DaanPetiDonation.js'
 import CashbookEntry from '../models/CashbookEntry.js'
 import Razorpay from 'razorpay'
@@ -35,12 +36,18 @@ export const createDonationOrder = async (req, res) => {
       })
     }
 
-    const now = new Date()
-    const yr = now.getFullYear()
-    const receiptNumber = await CashbookEntry.generateReceiptNumber(yr)
-
-    // Create donation record
+    // Don't reserve a real "DH-YYYY-####" number yet — that sequence is
+    // scanned from CashbookEntry only, and this donation doesn't become a
+    // CashbookEntry until payment is verified. Reserving one here and the
+    // user abandoning checkout (very common) permanently orphans that
+    // number: the next attempt recomputes the exact same "next" number,
+    // collides with this pending record's unique receiptNumber, and every
+    // retry fails with the same error. Use a placeholder that's unique by
+    // construction instead, and only mint the real number once payment
+    // actually completes (see verifyDonationPayment).
+    const _id = new mongoose.Types.ObjectId()
     const donation = await DaanPetiDonation.create({
+      _id,
       donorName,
       donorPhone,
       donorEmail: donorEmail || '',
@@ -48,7 +55,7 @@ export const createDonationOrder = async (req, res) => {
       purpose,
       amount: parseFloat(amount),
       paymentMode: 'online',
-      receiptNumber,
+      receiptNumber: `PENDING-${_id}`,
       status: 'pending'
     })
 
@@ -76,7 +83,6 @@ export const createDonationOrder = async (req, res) => {
         amount: order.amount,
         currency: order.currency,
         donationId: donation._id,
-        receiptNumber: donation.receiptNumber,
         keyId: process.env.RAZORPAY_KEY_ID
       }
     })
@@ -112,13 +118,16 @@ export const verifyDonationPayment = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Payment verification failed' })
     }
 
-    // Update donation
+    // Mint the real "DH-YYYY-####" receipt number now that payment is
+    // actually confirmed — this is the only point a number is consumed
+    // from the shared CashbookEntry sequence, so nothing gets orphaned.
+    const now = new Date()
+    donation.receiptNumber = await CashbookEntry.generateReceiptNumber(now.getFullYear())
     donation.paymentId = razorpay_payment_id
     donation.status = 'completed'
     await donation.save()
 
     // Auto-create cashbook entry
-    const now = new Date()
     const cashbookEntry = await CashbookEntry.create({
       entryDate: now,
       paymentDate: now,
