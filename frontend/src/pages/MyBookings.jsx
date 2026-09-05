@@ -8,7 +8,7 @@ import {
   Diamond, Confetti, Gift, Briefcase, Users, Sparkle, Building,
   CreditCard, DownloadSimple, WarningCircle, CircleNotch,
   ArrowRight, Tag, BookOpen, Phone, Envelope, CalendarBlank,
-  ClipboardText,
+  ClipboardText, ChatCircleDots,
 } from '@phosphor-icons/react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
@@ -35,6 +35,18 @@ const EVENT_ICONS = {
 }
 
 const FILTERS = ['All', 'Pending', 'Approved', 'Rejected', 'Cancelled', 'Completed']
+
+// Compact "Booked for" label for a booking's date list — spells out up to 6
+// dates, then collapses the rest ("+N more") so a long multi-day booking
+// doesn't blow up the card.
+const formatBookedDates = (dates) => {
+  const sorted = [...dates].sort((a, b) => a - b)
+  const MAX_SHOWN = 6
+  const shown = sorted.slice(0, MAX_SHOWN).map(d => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }))
+  const extra = sorted.length - MAX_SHOWN
+  const year = sorted[sorted.length - 1].getFullYear()
+  return `${shown.join(', ')}${extra > 0 ? ` +${extra} more` : ''} ${year}`
+}
 
 const _to12h = (t) => {
   if (!t) return ''
@@ -138,12 +150,12 @@ function MyBookings() {
             </div>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
-            style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
+            style={{ display: 'flex', gap: isMobile ? 6 : 10, marginTop: 20, flexWrap: 'nowrap' }}>
             {[{ label: t.myBookings.submitted, count: counts.pending || 0, color: 'var(--secondary)' }, { label: t.dashboard.approved, count: counts.approved || 0, color: '#22c55e' }, { label: t.booking.status_confirmed, count: counts.completed || 0, color: '#a78bfa' }].map(s => (
-              <div key={s.label} style={{ padding: '9px 16px', borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', gap: 9 }}>
-                <div style={{ width: 7, height: 7, borderRadius: '50%', background: s.color }} />
-                <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'rgba(255,255,255,0.65)' }}>{s.label}</span>
-                <span style={{ fontSize: 'var(--text-base)', fontWeight: 800, color: 'white' }}>{s.count}</span>
+              <div key={s.label} style={{ flex: 1, minWidth: 0, padding: isMobile ? '8px 10px' : '9px 16px', borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.07)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: isMobile ? 6 : 9 }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: s.color }} />
+                <span style={{ fontSize: isMobile ? 11 : 'var(--text-sm)', fontWeight: 600, color: 'rgba(255,255,255,0.65)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.label}</span>
+                <span style={{ fontSize: isMobile ? 13 : 'var(--text-base)', fontWeight: 800, color: 'white', flexShrink: 0 }}>{s.count}</span>
               </div>
             ))}
           </motion.div>
@@ -211,8 +223,17 @@ function MyBookings() {
             ) : (
               <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {currentBookings.map((booking, i) => {
-                  const sc = STATUS_CONFIG[booking.status] || STATUS_CONFIG.pending
-                  const canCancel = ['pending', 'approved'].includes(booking.status)
+                  const allDates = [new Date(booking.eventDate), ...(booking.additionalDates || []).map(d => new Date(d))]
+                  const latestEventDate = allDates.reduce((max, d) => (d > max ? d : max), allDates[0])
+                  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+                  // A booking only counts as "completed" once its last booked day has
+                  // fully passed — the day of, it's still ongoing. Only an approved
+                  // (i.e. actually confirmed) booking can become completed; pending/
+                  // rejected/cancelled ones just stay whatever they are.
+                  const isPastEvent = latestEventDate < todayStart
+                  const isCompleted = booking.status === 'approved' && isPastEvent
+                  const sc = STATUS_CONFIG[isCompleted ? 'completed' : booking.status] || STATUS_CONFIG.pending
+                  const canCancel = ['pending', 'approved'].includes(booking.status) && !isPastEvent
                   const needsPayment = booking.status === 'approved' && booking.paymentStatus !== 'paid' && booking.totalAmount > 0
                   const isPaid = booking.paymentStatus === 'paid'
                   const isExpanded = expandedId === booking._id
@@ -239,9 +260,12 @@ function MyBookings() {
                               </span>
                               {isPaid && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '3px 10px', borderRadius: 'var(--radius-full)', background: 'var(--success-subtle)', color: 'var(--success)', fontSize: 'var(--text-xs)', fontWeight: 700 }}><CreditCard size={11} weight="bold" /> Paid</span>}
                             </div>
-                            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><CalendarBlank size={12} weight="fill" />{[new Date(booking.eventDate), ...(booking.additionalDates || []).map(d => new Date(d))].map(d => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })).join(', ')} {new Date(booking.eventDate).getFullYear()}</span>
-                              {booking.expectedGuests > 0 && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Users size={12} weight="fill" />{booking.expectedGuests} guests</span>}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 11px', borderRadius: 'var(--radius-full)', background: 'var(--primary-subtle)', border: '1px solid var(--primary-border)' }}>
+                                <CalendarBlank size={12} weight="fill" color="var(--primary)" />
+                                <span style={{ fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--maroon)' }}>Booked for {formatBookedDates(allDates)}</span>
+                              </span>
+                              {booking.expectedGuests > 0 && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}><Users size={12} weight="fill" />{booking.expectedGuests} guests</span>}
                             </div>
                             {booking.rejectionReason && (
                               <div style={{ marginTop: 7, display: 'flex', alignItems: 'flex-start', gap: 6, padding: '7px 11px', borderRadius: 'var(--radius-sm)', background: 'var(--error-subtle)', border: '1px solid var(--error)', fontSize: 'var(--text-xs)', color: 'var(--error-text)', fontWeight: 600 }}>
@@ -263,6 +287,14 @@ function MyBookings() {
                               <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} onClick={() => setShowCancelModal(booking)}
                                 style={{ padding: '6px 13px', borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 700, color: 'var(--error-text)', background: 'var(--error-subtle)', fontFamily: 'inherit' }}>
                                 Cancel
+                              </motion.button>
+                            )}
+                            {isCompleted && (
+                              // Demo only — feedback form comes later, this button doesn't do anything yet.
+                              <motion.button whileHover={{ scale: 1.04, boxShadow: '0 6px 16px rgba(247,201,72,0.4)' }} whileTap={{ scale: 0.97 }}
+                                onClick={() => {}}
+                                style={{ padding: '6px 14px', borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer', fontSize: 'var(--text-xs)', fontWeight: 700, color: '#7a5b00', background: 'linear-gradient(135deg, var(--secondary), #f0b429)', display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'inherit' }}>
+                                <ChatCircleDots size={13} weight="fill" /> Feedback
                               </motion.button>
                             )}
                           </div>
