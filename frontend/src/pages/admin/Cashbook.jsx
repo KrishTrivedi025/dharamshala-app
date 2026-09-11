@@ -1617,7 +1617,16 @@ function Cashbook() {
                 {[
                   { label: 'Name', value: downloadingLedgerReceipt.name || '-' },
                   { label: 'Phone', value: downloadingLedgerReceipt.phone || '-' },
-                  { label: 'Category', value: downloadingLedgerReceipt.category || '-' },
+                  // Daan Peti entries store the donor's stated purpose (e.g. "Ramji") in the
+                  // `category` field — show that as Purpose and label the entry itself with
+                  // the fixed "Daan Peti Donation" category, instead of showing the purpose
+                  // text under the "Category" heading.
+                  ...(downloadingLedgerReceipt.source === 'daan_peti'
+                    ? [
+                        { label: 'Purpose', value: downloadingLedgerReceipt.category || '-' },
+                        { label: 'Category', value: 'Daan Peti Donation' },
+                      ]
+                    : [{ label: 'Category', value: downloadingLedgerReceipt.category || '-' }]),
                   { label: 'Payment Mode', value: downloadingLedgerReceipt.paymentMode === 'online' ? 'Online (Razorpay)' : 'Cash' },
                 ].map((row, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f5ede0' }}>
