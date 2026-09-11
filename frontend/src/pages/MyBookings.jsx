@@ -463,6 +463,7 @@ function MyBookings() {
                 { label: 'Name', value: downloadingReceipt.contactName },
                 { label: 'Phone', value: downloadingReceipt.contactPhone },
                 { label: 'Event', value: downloadingReceipt.eventName },
+                { label: 'Category', value: `Hall Booking - ${downloadingReceipt.eventType ? downloadingReceipt.eventType.charAt(0).toUpperCase() + downloadingReceipt.eventType.slice(1) : downloadingReceipt.eventName}` },
                 { label: 'Payment ID', value: downloadingReceipt.paymentId || '-' },
                 { label: 'Dates', value: [new Date(downloadingReceipt.eventDate), ...(downloadingReceipt.additionalDates || []).map(d => new Date(d))].map(d => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })).join(', ') + ' ' + new Date(downloadingReceipt.eventDate).getFullYear() },
               ].map((row, i) => (

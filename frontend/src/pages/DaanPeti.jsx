@@ -420,6 +420,7 @@ function DaanPeti() {
                       { label: 'Phone', value: receipt.donorPhone },
                       ...(receipt.donorEmail ? [{ label: 'Email', value: receipt.donorEmail }] : []),
                       { label: 'Purpose', value: receipt.purpose },
+                      { label: 'Category', value: 'Donation' },
                       { label: 'Payment Mode', value: receipt.paymentMode },
                       ...(receipt.paymentId ? [{ label: 'Transaction ID', value: receipt.paymentId }] : []),
                     ].map((row, i) => (

@@ -26,6 +26,19 @@ const SOURCES = ['All','booking','daan_peti','annual_ritual','manual']
 const SOURCE_LABELS = { booking:'Hall Booking', daan_peti:'Daan Peti', annual_ritual:'Annual Ritual', manual:'Manual' }
 const yearRange = (dateStr) => String(new Date(dateStr).getFullYear())
 
+// Infer the ledger `source` (used by the Source filter) from the free-typed
+// category text, so a manually-added entry categorized e.g. "Daan Peti Donation"
+// or "Hall Booking" still shows up under that Source filter instead of silently
+// falling back to 'manual'. Returns null when the category doesn't match any
+// known source, so the caller can fall back to the existing/default source.
+const detectSourceFromCategory = (category) => {
+  const c = category || ''
+  if (/annual\s*ritual/i.test(c)) return 'annual_ritual'
+  if (/daan\s*peti/i.test(c)) return 'daan_peti'
+  if (/hall\s*booking/i.test(c)) return 'booking'
+  return null
+}
+
 // Status badge colors: completed = green, pending = dark yellow, not_paid = red.
 // Labels stay as-is in markup — textTransform:'uppercase' below renders them ALL CAPS.
 const STATUS_STYLES = {
@@ -91,6 +104,8 @@ function Cashbook() {
   const [feeSaving, setFeeSaving] = useState(false)
   const [downloadingReceipt, setDownloadingReceipt] = useState(null)
   const ritualReceiptRef = useRef(null)
+  const [downloadingLedgerReceipt, setDownloadingLedgerReceipt] = useState(null)
+  const ledgerReceiptRef = useRef(null)
   const [exportModal, setExportModal] = useState(null)
   const [exportTarget, setExportTarget] = useState(null)
   const [exportRange, setExportRange] = useState({ from: '', to: '' })
@@ -252,8 +267,7 @@ function Cashbook() {
     }
     try {
       setSaving(true); setError(null)
-      const source = /annual\s*ritual/i.test(formData.category || '')
-        ? 'annual_ritual' : (editEntry ? editEntry.source : 'manual')
+      const source = detectSourceFromCategory(formData.category) || (editEntry ? editEntry.source : 'manual')
       const payload = { ...formData, entryDate: formData.entryDate ? `${formData.entryDate}-01-01` : '', source }
       if (!payload.receiptNumber) delete payload.receiptNumber
       if (editEntry) await cashbookAPI.updateEntry(editEntry._id, payload)
@@ -331,6 +345,24 @@ function Cashbook() {
         link.href = canvas.toDataURL('image/png'); link.click()
       } catch (err) { console.error('Download error:', err) }
       finally { setDownloadingReceipt(null) }
+    }, 100)
+  }
+
+  // Generic receipt download for any completed Ledger entry — hall booking,
+  // daan peti, annual ritual, or manual — used by the per-row "Receipt" button
+  // so admins can pull a receipt straight from the ledger regardless of source.
+  const downloadLedgerReceipt = (entry) => {
+    setDownloadingLedgerReceipt(entry)
+    setTimeout(async () => {
+      try {
+        if (!ledgerReceiptRef.current) return
+        await document.fonts.ready
+        const canvas = await html2canvas(ledgerReceiptRef.current, { scale: 2, backgroundColor: '#fff', logging: false })
+        const link = document.createElement('a')
+        link.download = `Receipt_${entry.receiptNumber}_${(entry.name || 'entry').replace(/\s+/g, '_')}.png`
+        link.href = canvas.toDataURL('image/png'); link.click()
+      } catch (err) { console.error('Download error:', err) }
+      finally { setDownloadingLedgerReceipt(null) }
     }, 100)
   }
 
@@ -770,6 +802,15 @@ function Cashbook() {
                         Bal ₹{e.runningBalance.toLocaleString()}
                       </span>
                     </div>
+                    {e.displayStatus==='completed' && e.receiptNumber && (
+                      <div style={{ display:'flex', justifyContent:'flex-end', marginTop:8 }}>
+                        <motion.button whileHover={{scale:1.03}} whileTap={{scale:0.95}}
+                          onClick={()=>downloadLedgerReceipt(e)}
+                          style={{ ...adminBtn('linear-gradient(135deg,var(--success),#166534)'), padding:'6px 12px', fontSize:11 }}>
+                          <DownloadSimple size={12} /> Receipt
+                        </motion.button>
+                      </div>
+                    )}
                   </motion.div>
                 ))}
               </div>
@@ -837,6 +878,13 @@ function Cashbook() {
                                 </>
                               ) : (
                                 <>
+                                  {e.displayStatus==='completed' && e.receiptNumber && (
+                                    <motion.button whileHover={{scale:1.05}} whileTap={{scale:0.95}}
+                                      onClick={()=>downloadLedgerReceipt(e)} title="Download Receipt"
+                                      style={{ ...adminBtn('linear-gradient(135deg,var(--success),#166534)'), padding:'6px 12px', fontSize:11 }}>
+                                      <DownloadSimple size={12} /> Receipt
+                                    </motion.button>
+                                  )}
                                   <button onClick={()=>openEdit(e)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--primary)' }} title="Edit">
                                     <PencilSimple size={16} weight="duotone" />
                                   </button>
@@ -1534,6 +1582,56 @@ function Cashbook() {
                 <div style={{ textAlign: 'center', marginTop: 24, padding: '12px' }}>
                   <div style={{ fontSize: 20, marginBottom: 8 }}>🙏</div>
                   <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6, marginBottom: 4 }}>Thank you for your annual contribution to</p>
+                  <p style={{ fontFamily: "'Cinzel', 'Segoe UI', serif", fontWeight: 700, fontSize: 15, color: '#8B1A1A', lineHeight: 1.4 }}>{SANSTHAN_NAME}</p>
+                  <div style={{ marginTop: 16, fontSize: 11, color: '#d1d5db', fontStyle: 'italic' }}>This is a computer-generated receipt and does not require a signature.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Hidden Html2Canvas Receipt for any Ledger entry (Hall Booking / Daan Peti / Annual Ritual / Manual) */}
+        {downloadingLedgerReceipt && (
+          <div style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}>
+            <div ref={ledgerReceiptRef} style={{
+              width: '500px', borderRadius: 20, overflow: 'hidden', background: 'white',
+              boxShadow: '0 20px 60px rgba(139,26,26,0.12)', border: '1.5px solid rgba(255,107,53,0.1)',
+              textAlign: 'left', fontFamily: 'sans-serif'
+            }}>
+              <ReceiptHeader />
+              <div style={{ padding: '24px 28px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingBottom: 16, borderBottom: '1px dashed #f5ede0' }}>
+                  <div>
+                    <div style={{ fontSize: 13, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Receipt No.</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: '#8B1A1A', fontFamily: 'monospace' }}>{downloadingLedgerReceipt.receiptNumber}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 13, color: '#9ca3af', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Date</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: '#374151' }}>
+                      {downloadingLedgerReceipt.paymentDate
+                        ? new Date(downloadingLedgerReceipt.paymentDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+                        : new Date(downloadingLedgerReceipt.entryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </div>
+                  </div>
+                </div>
+                {[
+                  { label: 'Name', value: downloadingLedgerReceipt.name || '-' },
+                  { label: 'Phone', value: downloadingLedgerReceipt.phone || '-' },
+                  { label: 'Category', value: downloadingLedgerReceipt.category || '-' },
+                  { label: 'Payment Mode', value: downloadingLedgerReceipt.paymentMode === 'online' ? 'Online (Razorpay)' : 'Cash' },
+                ].map((row, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f5ede0' }}>
+                    <span style={{ fontSize: 15, color: '#9ca3af', fontWeight: 600 }}>{row.label}</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: '#374151', maxWidth: '60%', textAlign: 'right' }}>{row.value}</span>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 20, padding: '16px 20px', borderRadius: 14, background: 'linear-gradient(135deg, rgba(22,163,74,0.08), rgba(22,163,74,0.04))', border: '1.5px solid rgba(22,163,74,0.2)' }}>
+                  <span style={{ fontSize: 16, fontWeight: 800, color: '#16a34a' }}>{downloadingLedgerReceipt.type === 'debit' ? 'Amount' : 'Amount Paid'}</span>
+                  <span style={{ fontSize: 24, fontWeight: 900, color: '#16a34a' }}>₹{downloadingLedgerReceipt.amount?.toLocaleString()}</span>
+                </div>
+                <div style={{ textAlign: 'center', marginTop: 24, padding: '12px' }}>
+                  <div style={{ fontSize: 20, marginBottom: 8 }}>🙏</div>
+                  <p style={{ fontSize: 14, color: '#6b7280', lineHeight: 1.6, marginBottom: 4 }}>Thank you for your contribution to</p>
                   <p style={{ fontFamily: "'Cinzel', 'Segoe UI', serif", fontWeight: 700, fontSize: 15, color: '#8B1A1A', lineHeight: 1.4 }}>{SANSTHAN_NAME}</p>
                   <div style={{ marginTop: 16, fontSize: 11, color: '#d1d5db', fontStyle: 'italic' }}>This is a computer-generated receipt and does not require a signature.</div>
                 </div>
