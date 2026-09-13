@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { AdminLayout, useIsMobile } from './AdminDashboard'
-import { adminAPI } from '../../utils/api'
-import { MagnifyingGlass, Users, Crown, User } from '@phosphor-icons/react'
-import { cardStyleSolid } from '../../styles/theme'
+import { adminAPI, cashbookAPI } from '../../utils/api'
+import { MagnifyingGlass, Users, Crown, User, Ticket } from '@phosphor-icons/react'
+import { cardStyleSolid, modalOverlay, modalContent } from '../../styles/theme'
 import { ButtonSpinner } from '../../components/ButtonSpinner'
 
 const PAGE_SIZE_UM = 10
@@ -16,6 +16,9 @@ function UserManagement() {
   const [togglingId, setTogglingId] = useState(null)
   const [focused, setFocused] = useState(false)
   const [page, setPage] = useState(1)
+  const [pendingModalUser, setPendingModalUser] = useState(null)
+  const [confirming, setConfirming] = useState(false)
+  const [confirmError, setConfirmError] = useState(null)
 
   const fetchUsers = async () => {
     try {
@@ -40,6 +43,22 @@ function UserManagement() {
       alert(err.message || 'Failed to toggle user status')
     } finally {
       setTogglingId(null)
+    }
+  }
+
+  const handleConfirmPayment = async () => {
+    if (!pendingModalUser?.pendingRitualPayment) return
+    try {
+      setConfirming(true); setConfirmError(null)
+      await cashbookAPI.updateRitualPayment(pendingModalUser.pendingRitualPayment.entryId, {
+        status: 'completed', paymentMode: 'cash'
+      })
+      await fetchUsers()
+      setPendingModalUser(null)
+    } catch (err) {
+      setConfirmError(err.message || 'Failed to confirm payment')
+    } finally {
+      setConfirming(false)
     }
   }
 
@@ -122,7 +141,7 @@ function UserManagement() {
                   borderRadius: 12, padding: isMobile ? '10px 12px' : '12px 16px',
                   background: 'var(--surface-solid)', border: '1px solid var(--border)',
                   boxShadow: 'var(--shadow-sm)',
-                  display: 'flex', alignItems: 'center', gap: 10,
+                  display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', rowGap: 6,
                   transition: 'box-shadow 0.2s ease',
                 }}>
                 {/* Avatar */}
@@ -158,6 +177,20 @@ function UserManagement() {
                 }}>
                   {user.isActive ? 'Active' : 'Inactive'}
                 </div>
+                {/* Pending Annual Ritual cash-payment request */}
+                {user.pendingRitualPayment && (
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setPendingModalUser(user)}
+                    style={{
+                      padding: '3px 8px', borderRadius: 99, fontSize: 10, fontWeight: 700, flexShrink: 0,
+                      background: 'var(--warning-subtle)', color: 'var(--warning-text)', border: 'none', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: 3,
+                    }}>
+                    <Ticket size={9} weight="fill" />
+                    {user.pendingRitualPayment.pendingCount > 1 ? `${user.pendingRitualPayment.pendingCount} Pending` : 'Payment Pending'}
+                  </motion.button>
+                )}
                 {/* Toggle button */}
                 <motion.button
                   whileTap={{ scale: 0.95 }}
@@ -195,6 +228,66 @@ function UserManagement() {
             )}
           </div>
         )}
+
+        {/* Confirm cash payment received — Annual Ritual */}
+        <AnimatePresence>
+          {pendingModalUser && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              style={modalOverlay} onClick={() => !confirming && setPendingModalUser(null)}>
+              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                onClick={e => e.stopPropagation()}
+                style={{ ...modalContent, maxWidth: 420 }}>
+                <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                  <Ticket size={44} weight="duotone" color="var(--warning)" style={{ marginBottom: 10 }} />
+                  <h3 style={{ fontSize: 19, fontWeight: 800, color: 'var(--maroon)', marginBottom: 6 }}>Confirm Cash Payment</h3>
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                    {pendingModalUser.name} requested to pay the Annual Ritual fee (Pooja Shulk) by cash at the office. Only confirm once the cash has actually been received.
+                  </p>
+                </div>
+
+                <div style={{ background: 'var(--neutral-50)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[
+                    { label: 'Name', value: pendingModalUser.name },
+                    { label: 'Phone', value: pendingModalUser.phone || '—' },
+                    { label: 'Year', value: pendingModalUser.pendingRitualPayment?.year },
+                    { label: 'Amount', value: `₹${(pendingModalUser.pendingRitualPayment?.amount || 0).toLocaleString()}` },
+                    { label: 'Requested', value: pendingModalUser.pendingRitualPayment?.requestedAt ? new Date(pendingModalUser.pendingRitualPayment.requestedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—' },
+                  ].map((row, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                      <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{row.label}</span>
+                      <span style={{ color: 'var(--text)', fontWeight: 700 }}>{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {pendingModalUser.pendingRitualPayment?.pendingCount > 1 && (
+                  <div style={{ padding: '10px 14px', borderRadius: 10, background: 'var(--warning-subtle)', color: 'var(--warning-text)', fontSize: 12, fontWeight: 600, marginBottom: 16, lineHeight: 1.4 }}>
+                    This user has {pendingModalUser.pendingRitualPayment.pendingCount} pending requests — confirming will only resolve the {pendingModalUser.pendingRitualPayment.year} one shown above.
+                  </div>
+                )}
+
+                {confirmError && (
+                  <div style={{ padding: '10px 14px', borderRadius: 10, background: 'var(--error-subtle)', color: 'var(--error-text)', fontSize: 13, fontWeight: 600, marginBottom: 16 }}>
+                    {confirmError}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <button onClick={() => !confirming && setPendingModalUser(null)} disabled={confirming}
+                    style={{ flex: 1, padding: 12, borderRadius: 12, border: '2px solid var(--border)', cursor: confirming ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 700, color: 'var(--text-secondary)', background: 'white', opacity: confirming ? 0.5 : 1 }}>
+                    Cancel
+                  </button>
+                  <button onClick={handleConfirmPayment} disabled={confirming}
+                    style={{ flex: 1, padding: 12, borderRadius: 12, border: 'none', cursor: confirming ? 'not-allowed' : 'pointer', fontSize: 14, fontWeight: 700, color: 'white',
+                      background: confirming ? 'var(--neutral-300)' : 'linear-gradient(135deg,var(--success),#166534)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    {confirming ? <><ButtonSpinner /> <span>Confirming…</span></> : 'Payment Received'}
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
   </AdminLayout>
   )

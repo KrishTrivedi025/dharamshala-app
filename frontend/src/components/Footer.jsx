@@ -1,6 +1,5 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { useAuth } from '../context/AuthContext'
 import { useIsMobile } from '../pages/admin/AdminDashboard'
 import {
   MapPin, Phone, Envelope, Globe, FacebookLogo, InstagramLogo,
@@ -9,8 +8,6 @@ import {
 
 function Footer() {
   const currentYear = new Date().getFullYear()
-  const { isLoggedIn } = useAuth()
-  const navigate = useNavigate()
   const isMobile = useIsMobile()
 
   const quickLinks = [
@@ -33,14 +30,6 @@ function Footer() {
     { icon: <InstagramLogo size={16} weight="bold" />, label: 'Instagram' },
   ]
 
-  const handleCTA = () => {
-    if (isLoggedIn) {
-      navigate('/booking')
-    } else {
-      navigate('/signup')
-    }
-  }
-
   return (
     <footer style={{
       background: 'linear-gradient(160deg, #1a0000 0%, #5a0e0e 50%, var(--maroon) 100%)',
@@ -49,9 +38,8 @@ function Footer() {
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 32px' }}>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: isMobile ? 28 : 48, paddingBottom: isMobile ? 28 : 48,
-          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          gridTemplateColumns: isMobile ? '1fr' : 'minmax(260px, 1.3fr) minmax(180px, 1fr)',
+          gap: isMobile ? 28 : 40, paddingBottom: isMobile ? 24 : 32,
         }}>
 
           {/* Brand */}
@@ -63,7 +51,7 @@ function Footer() {
                 <div style={{ fontSize: 'var(--text-xs)', color: 'var(--primary)', fontWeight: 600, letterSpacing: '1px' }}>BOOKING</div>
               </div>
             </div>
-            <p style={{ fontSize: 'var(--text-sm)', color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, maxWidth: 260 }}>
+            <p style={{ fontSize: 'var(--text-sm)', color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, maxWidth: 320 }}>
               Your trusted community hall booking platform. Book for weddings, celebrations, meetings and more.
             </p>
             <div style={{ marginTop: 20, display: 'flex', gap: 10 }}>
@@ -114,56 +102,30 @@ function Footer() {
               ))}
             </div>
           </div>
+        </div>
 
-          {/* Contact */}
-          <div>
-            <h4 style={{
-              fontSize: 'var(--text-xs)', fontWeight: 700, color: 'rgba(255,255,255,0.9)',
-              marginBottom: 20, letterSpacing: '1px', textTransform: 'uppercase',
-            }}>
-              Contact Us
-            </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {contactInfo.map(({ icon, text }, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                  <span style={{ color: 'var(--primary)', flexShrink: 0, marginTop: 3 }}>{icon}</span>
-                  <span style={{ fontSize: 'var(--text-sm)', color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>{text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* CTA */}
-          <div>
-            <h4 style={{
-              fontSize: 'var(--text-xs)', fontWeight: 700, color: 'rgba(255,255,255,0.9)',
-              marginBottom: 20, letterSpacing: '1px', textTransform: 'uppercase',
-            }}>
-              Book Now
-            </h4>
-            <p style={{ fontSize: 'var(--text-sm)', color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, marginBottom: 20 }}>
-              {isLoggedIn
-                ? 'Book your dates and host your perfect event with us.'
-                : 'Create an account and book your dates today.'}
-            </p>
-            <motion.button
-              whileHover={{ scale: 1.04, boxShadow: '0 10px 30px rgba(255,107,53,0.5)' }}
-              whileTap={{ scale: 0.97 }}
-              onClick={handleCTA}
-              style={{
-                padding: '12px 24px', borderRadius: 'var(--radius-md)', border: 'none',
-                cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 700, color: 'white',
-                background: 'linear-gradient(135deg, var(--primary) 0%, var(--maroon) 100%)',
-                boxShadow: '0 6px 20px rgba(255,107,53,0.35)', width: '100%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                fontFamily: 'inherit',
-              }}
-            >
-              {isLoggedIn ? 'Book Hall' : 'Create Account'}
-              <ArrowRight size={15} weight="bold" />
-            </motion.button>
+        {/* Contact — full width, below the two columns above */}
+        <div style={{
+          paddingTop: isMobile ? 20 : 26, paddingBottom: isMobile ? 24 : 32,
+          borderTop: '1px solid rgba(255,255,255,0.08)',
+        }}>
+          <h4 style={{
+            fontSize: 'var(--text-xs)', fontWeight: 700, color: 'rgba(255,255,255,0.9)',
+            marginBottom: 16, letterSpacing: '1px', textTransform: 'uppercase',
+          }}>
+            Contact Us
+          </h4>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: isMobile ? 14 : 36 }}>
+            {contactInfo.map(({ icon, text }, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, maxWidth: 320 }}>
+                <span style={{ color: 'var(--primary)', flexShrink: 0, marginTop: 2 }}>{icon}</span>
+                <span style={{ fontSize: 'var(--text-sm)', color: 'rgba(255,255,255,0.55)', lineHeight: 1.6 }}>{text}</span>
+              </div>
+            ))}
           </div>
         </div>
+
+        <div style={{ borderTop: '1px dashed rgba(255,255,255,0.12)' }} />
 
         {/* Bottom Bar */}
         <div style={{

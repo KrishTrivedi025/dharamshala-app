@@ -7,6 +7,7 @@ import {
 import { ritualAPI } from '../utils/api'
 import html2canvas from 'html2canvas'
 import { ReceiptHeader, SANSTHAN_NAME } from './ReceiptHeader'
+import RitualProgressSteps from './RitualProgressSteps'
 
 function ReceiptDownloader({ receipt, onClose }) {
   const receiptRef = useRef(null)
@@ -324,6 +325,9 @@ function RitualPaymentModal({ isOpen, onClose, ritualStatus, onPaymentSuccess })
                   <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.6 }}>
                     Your cash payment request has been submitted. A receipt will be generated once the amount is <strong>confirmed by the admin</strong>.
                   </p>
+                  <div style={{ marginBottom: 18 }}>
+                    <RitualProgressSteps step={2} />
+                  </div>
                   <div style={{
                     padding: '12px 16px', borderRadius: 'var(--radius-md)', marginBottom: 18,
                     background: 'var(--warning-subtle)', border: '1px solid rgba(217,119,6,0.3)',

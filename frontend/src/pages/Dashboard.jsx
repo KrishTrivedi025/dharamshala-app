@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext'
 import { useLanguage } from '../context/LanguageContext'
 import { bookingAPI, ritualAPI, authAPI } from '../utils/api'
 import RitualPaymentModal from '../components/RitualPaymentModal'
+import RitualProgressSteps from '../components/RitualProgressSteps'
 import { STATUS_COLORS, cardStyle, modalOverlay, modalContent } from '../styles/theme'
 
 function Dashboard() {
@@ -114,17 +115,25 @@ function Dashboard() {
               /* Mobile: two-row stacked layout */
               <div>
                 {/* Row 1: icon + text + dismiss */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
-                  <span style={{ fontSize: 20, flexShrink: 0, marginTop: 2 }}>
-                    {ritualStatus.hasPaid ? '✓' : ritualStatus.isPending ? '⏳' : '🪔'}
-                  </span>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: ritualStatus.isPending ? 4 : 10 }}>
+                  {!ritualStatus.isPending && (
+                    <span style={{ fontSize: 20, flexShrink: 0, marginTop: 2 }}>
+                      {ritualStatus.hasPaid ? '✓' : '🪔'}
+                    </span>
+                  )}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: 'white', lineHeight: 1.3 }}>
-                      {ritualStatus.hasPaid ? `Annual Paid! (${ritualStatus.year})` : ritualStatus.isPending ? 'Cash Payment Pending' : `Annual Ritual Due — ${ritualStatus.year}`}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>
-                      {ritualStatus.hasPaid ? 'Payment confirmed.' : ritualStatus.isPending ? 'Awaiting admin approval.' : `₹${(ritualStatus.fee || 1200).toLocaleString()} — Pooja Shulk`}
-                    </div>
+                    {ritualStatus.isPending ? (
+                      <RitualProgressSteps step={2} dark />
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: 'white', lineHeight: 1.3 }}>
+                          {ritualStatus.hasPaid ? `Annual Paid! (${ritualStatus.year})` : `Annual Ritual Due — ${ritualStatus.year}`}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>
+                          {ritualStatus.hasPaid ? 'Payment confirmed.' : `₹${(ritualStatus.fee || 1200).toLocaleString()} — Pooja Shulk`}
+                        </div>
+                      </>
+                    )}
                   </div>
                   {/* Dismiss button */}
                   <motion.button whileTap={{ scale: 0.9 }} onClick={() => setBannerDismissed(true)}
@@ -154,18 +163,24 @@ function Dashboard() {
             ) : (
               /* Desktop: original single-row layout */
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span style={{ fontSize: 22 }}>
-                    {ritualStatus.hasPaid ? '✓' : ritualStatus.isPending ? '' : '🪔'}
-                  </span>
-                  <div>
-                    <div style={{ fontSize: 'var(--text-base)', fontWeight: 800, color: 'white' }}>
-                      {ritualStatus.hasPaid ? `Annual Paid! (${ritualStatus.year})` : ritualStatus.isPending ? 'Cash Payment Pending Admin Approval' : `Annual Ritual Payment Due — ${ritualStatus.year}`}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: ritualStatus.isPending ? '1 1 320px' : 'initial' }}>
+                  {!ritualStatus.isPending && (
+                    <span style={{ fontSize: 22 }}>
+                      {ritualStatus.hasPaid ? '✓' : '🪔'}
+                    </span>
+                  )}
+                  {ritualStatus.isPending ? (
+                    <RitualProgressSteps step={2} dark />
+                  ) : (
+                    <div>
+                      <div style={{ fontSize: 'var(--text-base)', fontWeight: 800, color: 'white' }}>
+                        {ritualStatus.hasPaid ? `Annual Paid! (${ritualStatus.year})` : `Annual Ritual Payment Due — ${ritualStatus.year}`}
+                      </div>
+                      <div style={{ fontSize: 'var(--text-sm)', color: 'rgba(255,255,255,0.65)' }}>
+                        {ritualStatus.hasPaid ? 'Payment confirmed! Download your receipt below.' : `₹${(ritualStatus.fee || 1200).toLocaleString()} — Pooja Shulk for ${ritualStatus.year}`}
+                      </div>
                     </div>
-                    <div style={{ fontSize: 'var(--text-sm)', color: 'rgba(255,255,255,0.65)' }}>
-                      {ritualStatus.hasPaid ? 'Payment confirmed! Download your receipt below.' : ritualStatus.isPending ? 'Your cash payment request is being reviewed.' : `₹${(ritualStatus.fee || 1200).toLocaleString()} — Pooja Shulk for ${ritualStatus.year}`}
-                    </div>
-                  </div>
+                  )}
                 </div>
                 {!ritualStatus.isPending && !ritualStatus.hasPaid && (
                   <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}

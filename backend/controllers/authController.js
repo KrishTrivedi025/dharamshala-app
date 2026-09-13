@@ -200,10 +200,40 @@ export const deleteMyAccount = async (req, res) => {
 export const getAllUsers = async (req, res) => {
   try {
     const users = await User.find({ role: 'user' }).sort({ createdAt: -1 })
+
+    // Attach each user's oldest unresolved Annual Ritual cash request, if any, so
+    // User Management can surface it — scanning all years (not just the current
+    // one) since a request from a past year an admin never confirmed should still
+    // show up here even though it won't read as "pending" on that user's own
+    // current-year Dashboard status.
+    const pendingEntries = await CashbookEntry.find({
+      source: 'annual_ritual', status: 'pending', userId: { $in: users.map(u => u._id) }
+    }).select('userId year amount createdAt').sort({ year: 1 })
+
+    const pendingByUser = new Map()
+    for (const entry of pendingEntries) {
+      if (!entry.userId) continue
+      const key = entry.userId.toString()
+      if (!pendingByUser.has(key)) {
+        pendingByUser.set(key, {
+          entryId: entry._id, year: entry.year, amount: entry.amount,
+          requestedAt: entry.createdAt, pendingCount: 1
+        })
+      } else {
+        pendingByUser.get(key).pendingCount += 1
+      }
+    }
+
+    const usersWithPending = users.map(u => {
+      const obj = u.toObject()
+      obj.pendingRitualPayment = pendingByUser.get(u._id.toString()) || null
+      return obj
+    })
+
     res.status(200).json({
       success: true,
-      count: users.length,
-      data: users
+      count: usersWithPending.length,
+      data: usersWithPending
     })
   } catch (error) {
     console.error('Get all users error:', error)
