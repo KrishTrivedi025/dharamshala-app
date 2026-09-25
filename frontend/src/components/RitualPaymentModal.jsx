@@ -77,7 +77,7 @@ function ReceiptDownloader({ receipt, onClose }) {
               { label: 'Year', value: receipt.year },
               { label: 'Payment Mode', value: receipt.paymentMode === 'online' ? 'Online (Razorpay)' : 'Cash' },
               { label: 'Status', value: 'PAID ✓' },
-              { label: 'Category', value: 'Annual Ritual (Pooja Shulk)' },
+              { label: 'Category', value: 'Annual Ritual Payment (Pooja Shulk)' },
             ].map((row, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f5ede0' }}>
                 <span style={{ fontSize: 15, color: '#9ca3af', fontWeight: 600 }}>{row.label}</span>

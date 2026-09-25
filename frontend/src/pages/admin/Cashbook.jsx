@@ -1565,7 +1565,7 @@ function Cashbook() {
                   { label: 'Phone', value: downloadingReceipt.phone || '-' },
                   { label: 'Year', value: downloadingReceipt.year || ritualYear },
                   { label: 'Payment Mode', value: downloadingReceipt.paymentMode === 'online' ? 'Online (Razorpay)' : 'Cash' },
-                  { label: 'Category', value: 'Annual Ritual (Pooja Shulk)' },
+                  { label: 'Category', value: 'Annual Ritual Payment (Pooja Shulk)' },
                 ].map((row, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f5ede0' }}>
                     <span style={{ fontSize: 15, color: '#9ca3af', fontWeight: 600 }}>{row.label}</span>
@@ -1627,6 +1627,12 @@ function Cashbook() {
                         { label: 'Category', value: 'Daan Peti Donation' },
                       ]
                     : [{ label: 'Category', value: downloadingLedgerReceipt.category || '-' }]),
+                  // Annual ritual entries are a per-year obligation, so the ledger's
+                  // generic receipt (unlike the dedicated ritual one) needs to say
+                  // which year this payment was for.
+                  ...(downloadingLedgerReceipt.source === 'annual_ritual'
+                    ? [{ label: 'Year', value: downloadingLedgerReceipt.year || '-' }]
+                    : []),
                   { label: 'Payment Mode', value: downloadingLedgerReceipt.paymentMode === 'online' ? 'Online (Razorpay)' : 'Cash' },
                 ].map((row, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f5ede0' }}>
