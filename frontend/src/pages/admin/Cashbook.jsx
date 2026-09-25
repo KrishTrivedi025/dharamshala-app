@@ -410,11 +410,14 @@ function Cashbook() {
           const headerImg = await getReceiptHeaderDataUrl()
           const imgW = pageWidth - margin * 2, imgH = imgW / RECEIPT_HEADER_RATIO, imgY = 12
           doc.addImage(headerImg, 'PNG', margin, imgY, imgW, imgH)
+          doc.setFont('times', 'bold'); doc.setFontSize(22); doc.setTextColor(139, 26, 26)
+          doc.text(SANSTHAN_NAME, margin + imgW * 0.15, imgY + imgH * 0.30 + 6, { maxWidth: imgW * 0.55 })
+          doc.setFont('helvetica', 'normal'); doc.setTextColor(0, 0, 0)
           const lineY = imgY + imgH + 8
           doc.setDrawColor(139, 26, 26); doc.setLineWidth(0.6); doc.line(margin, lineY, pageWidth - margin, lineY)
           contentStartY = lineY + 8
         } catch {
-          doc.setFontSize(18); doc.text('Shri Dharamshala Trust', margin, 18)
+          doc.setFontSize(18); doc.text(SANSTHAN_NAME, margin, 18)
           doc.setFontSize(11); doc.text(exportTarget === 'ledger' ? `Cashbook - ${titleSuffix}` : `Annual Rituals - ${titleSuffix}`, margin, 26)
         }
         let rows = [], head = [], statusColIndex = 0, statusRaw = []
@@ -450,11 +453,11 @@ function Cashbook() {
         doc.save(`${exportTarget}_${Date.now()}.pdf`)
       } else if (exportModal === 'doc') {
         const headerImg = await getReceiptHeaderDataUrl().catch(() => null)
-        let html = `<html><head><meta charset="utf-8"><style>table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:6px 8px;font-size:18px}th{background:#8B1A1A;color:white}</style></head><body>`
+        let html = `<html><head><meta charset="utf-8"><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap" rel="stylesheet"><style>table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:6px 8px;font-size:18px}th{background:#8B1A1A;color:white}</style></head><body>`
         if (headerImg) {
-          html += `<div style="margin:0 0 18px"><img src="${headerImg}" style="width:100%;display:block" /></div><hr style="border:none;border-top:2px solid #8B1A1A;margin:0 0 18px" />`
+          html += `<div style="position:relative;margin:0 0 18px"><img src="${headerImg}" style="width:100%;display:block" /><div style="position:absolute;top:30%;left:15%;max-width:55%;font-family:'Cinzel','Segoe UI',serif;font-weight:700;font-size:34px;line-height:1.3;letter-spacing:0.3px;color:#8B1A1A">${SANSTHAN_NAME}</div></div><hr style="border:none;border-top:2px solid #8B1A1A;margin:0 0 18px" />`
         } else {
-          html += `<h2 style="color:#8B1A1A">Shri Dharamshala Trust</h2><p>${exportTarget === 'ledger' ? 'Cashbook' : 'Annual Rituals'} - ${titleSuffix}</p>`
+          html += `<h2 style="color:#8B1A1A">${SANSTHAN_NAME}</h2><p>${exportTarget === 'ledger' ? 'Cashbook' : 'Annual Rituals'} - ${titleSuffix}</p>`
         }
         if (exportTarget === 'ledger') {
           html += `<table><tr><th>Date</th><th>Name</th><th>Category</th><th>Payment Date</th><th>Receipt No.</th><th>Mode</th><th>Type</th><th>Amount</th><th>Status</th><th>Balance</th></tr>`
@@ -477,9 +480,9 @@ function Cashbook() {
           contentHtml = `<table><tr>${ritualYear === 'all' ? '<th>Year</th>' : ''}<th>Name</th><th>Phone</th><th>Amount</th><th>Status</th><th>Payment Date</th><th>Mode</th><th>Receipt No.</th></tr>${rowsHtml}</table>`
         }
         const headerHtml = headerImg
-          ? `<img src="${headerImg}" style="width:100%;display:block;margin-bottom:18px" /><hr style="border:none;border-top:2px solid #8B1A1A;margin:0 0 18px" />`
-          : `<h2>Shri Dharamshala Trust — ${exportTarget === 'ledger' ? 'Cashbook' : 'Annual Rituals'}</h2><div class="summary">${titleSuffix}</div>`
-        win.document.write(`<html><head><title>${exportTarget.toUpperCase()}</title><style>body{font-family:Arial,sans-serif;padding:20px}table{width:100%;border-collapse:collapse;font-size:18px}th,td{border:1px solid #ddd;padding:8px 10px;text-align:left}th{background:#8B1A1A;color:white}h2{color:#8B1A1A}.summary{margin-bottom:10px;font-size:13px}</style></head><body>${headerHtml}${contentHtml}</body></html>`)
+          ? `<div style="position:relative;container-type:inline-size;margin-bottom:18px"><img src="${headerImg}" style="width:100%;display:block" /><div style="position:absolute;top:30%;left:15%;max-width:55%;font-family:'Cinzel','Segoe UI',serif;font-weight:700;font-size:2.8vw;font-size:3.6cqw;line-height:1.3;letter-spacing:0.3px;color:#8B1A1A">${SANSTHAN_NAME}</div></div><hr style="border:none;border-top:2px solid #8B1A1A;margin:0 0 18px" />`
+          : `<h2>${SANSTHAN_NAME} — ${exportTarget === 'ledger' ? 'Cashbook' : 'Annual Rituals'}</h2><div class="summary">${titleSuffix}</div>`
+        win.document.write(`<html><head><title>${exportTarget.toUpperCase()}</title><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap" rel="stylesheet"><style>body{font-family:Arial,sans-serif;padding:20px}table{width:100%;border-collapse:collapse;font-size:18px}th,td{border:1px solid #ddd;padding:8px 10px;text-align:left}th{background:#8B1A1A;color:white}h2{color:#8B1A1A}.summary{margin-bottom:10px;font-size:13px}</style></head><body>${headerHtml}${contentHtml}</body></html>`)
         win.document.close(); win.print()
       }
       setExportModal(null)
