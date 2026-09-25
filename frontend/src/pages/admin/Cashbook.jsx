@@ -418,8 +418,8 @@ function Cashbook() {
           } catch {
             doc.setFont('times', 'bold')
           }
-          doc.setFontSize(24); doc.setTextColor(139, 26, 26)
-          doc.text(SANSTHAN_NAME, margin + imgW * 0.15, imgY + imgH * 0.30 + 6, { maxWidth: imgW * 0.55 })
+          doc.setFontSize(26); doc.setTextColor(139, 26, 26)
+          doc.text(SANSTHAN_NAME, margin + imgW * 0.06, imgY + imgH * 0.50 + 6, { maxWidth: imgW * 0.60 })
           doc.setFont('helvetica', 'normal'); doc.setTextColor(0, 0, 0)
           const lineY = imgY + imgH + 8
           doc.setDrawColor(139, 26, 26); doc.setLineWidth(0.6); doc.line(margin, lineY, pageWidth - margin, lineY)
@@ -463,7 +463,7 @@ function Cashbook() {
         const headerImg = await getReceiptHeaderDataUrl().catch(() => null)
         let html = `<html><head><meta charset="utf-8"><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap" rel="stylesheet"><style>table{border-collapse:collapse;width:100%}th,td{border:1px solid #999;padding:6px 8px;font-size:18px}th{background:#8B1A1A;color:white}</style></head><body>`
         if (headerImg) {
-          html += `<div style="position:relative;margin:0 0 18px"><img src="${headerImg}" style="width:100%;display:block" /><div style="position:absolute;top:30%;left:15%;max-width:55%;font-family:'Cinzel','Segoe UI',serif;font-weight:700;font-size:34px;line-height:1.3;letter-spacing:0.3px;color:#8B1A1A">${SANSTHAN_NAME}</div></div><hr style="border:none;border-top:2px solid #8B1A1A;margin:0 0 18px" />`
+          html += `<div style="position:relative;margin:0 0 18px"><img src="${headerImg}" style="width:100%;display:block" /><div style="position:absolute;top:50%;left:6%;max-width:60%;font-family:'Cinzel','Segoe UI',serif;font-weight:700;font-size:38px;line-height:1.3;letter-spacing:0.3px;color:#8B1A1A">${SANSTHAN_NAME}</div></div><hr style="border:none;border-top:2px solid #8B1A1A;margin:0 0 18px" />`
         } else {
           html += `<h2 style="color:#8B1A1A">${SANSTHAN_NAME}</h2><p>${exportTarget === 'ledger' ? 'Cashbook' : 'Annual Rituals'} - ${titleSuffix}</p>`
         }
@@ -488,7 +488,7 @@ function Cashbook() {
           contentHtml = `<table><tr>${ritualYear === 'all' ? '<th>Year</th>' : ''}<th>Name</th><th>Phone</th><th>Amount</th><th>Status</th><th>Payment Date</th><th>Mode</th><th>Receipt No.</th></tr>${rowsHtml}</table>`
         }
         const headerHtml = headerImg
-          ? `<div style="position:relative;container-type:inline-size;margin-bottom:18px"><img src="${headerImg}" style="width:100%;display:block" /><div style="position:absolute;top:30%;left:15%;max-width:55%;font-family:'Cinzel','Segoe UI',serif;font-weight:700;font-size:2.8vw;font-size:3.6cqw;line-height:1.3;letter-spacing:0.3px;color:#8B1A1A">${SANSTHAN_NAME}</div></div><hr style="border:none;border-top:2px solid #8B1A1A;margin:0 0 18px" />`
+          ? `<div style="position:relative;container-type:inline-size;margin-bottom:18px"><img src="${headerImg}" style="width:100%;display:block" /><div style="position:absolute;top:50%;left:6%;max-width:60%;font-family:'Cinzel','Segoe UI',serif;font-weight:700;font-size:3.1vw;font-size:4cqw;line-height:1.3;letter-spacing:0.3px;color:#8B1A1A">${SANSTHAN_NAME}</div></div><hr style="border:none;border-top:2px solid #8B1A1A;margin:0 0 18px" />`
           : `<h2>${SANSTHAN_NAME} — ${exportTarget === 'ledger' ? 'Cashbook' : 'Annual Rituals'}</h2><div class="summary">${titleSuffix}</div>`
         win.document.write(`<html><head><title>${exportTarget.toUpperCase()}</title><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap" rel="stylesheet"><style>body{font-family:Arial,sans-serif;padding:20px}table{width:100%;border-collapse:collapse;font-size:18px}th,td{border:1px solid #ddd;padding:8px 10px;text-align:left}th{background:#8B1A1A;color:white}h2{color:#8B1A1A}.summary{margin-bottom:10px;font-size:13px}</style></head><body>${headerHtml}${contentHtml}</body></html>`)
         win.document.close(); win.print()
