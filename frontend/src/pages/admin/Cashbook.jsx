@@ -11,7 +11,7 @@ import {
 import { cashbookAPI, settingsAPI, memberAPI, adminAPI } from '../../utils/api'
 import { cardStyleSolid, modalOverlay, modalContent, inputStyle as themeInput } from '../../styles/theme'
 import { ReceiptHeader, SANSTHAN_NAME } from '../../components/ReceiptHeader'
-import { getReceiptHeaderDataUrl, RECEIPT_HEADER_RATIO } from '../../utils/receiptAssets'
+import { getReceiptHeaderDataUrl, getCinzelBoldFontBase64, RECEIPT_HEADER_RATIO } from '../../utils/receiptAssets'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import autoTable from 'jspdf-autotable'
@@ -410,7 +410,15 @@ function Cashbook() {
           const headerImg = await getReceiptHeaderDataUrl()
           const imgW = pageWidth - margin * 2, imgH = imgW / RECEIPT_HEADER_RATIO, imgY = 12
           doc.addImage(headerImg, 'PNG', margin, imgY, imgW, imgH)
-          doc.setFont('times', 'bold'); doc.setFontSize(22); doc.setTextColor(139, 26, 26)
+          try {
+            const fontBase64 = await getCinzelBoldFontBase64()
+            doc.addFileToVFS('Cinzel-Bold.ttf', fontBase64)
+            doc.addFont('Cinzel-Bold.ttf', 'Cinzel', 'bold')
+            doc.setFont('Cinzel', 'bold')
+          } catch {
+            doc.setFont('times', 'bold')
+          }
+          doc.setFontSize(24); doc.setTextColor(139, 26, 26)
           doc.text(SANSTHAN_NAME, margin + imgW * 0.15, imgY + imgH * 0.30 + 6, { maxWidth: imgW * 0.55 })
           doc.setFont('helvetica', 'normal'); doc.setTextColor(0, 0, 0)
           const lineY = imgY + imgH + 8

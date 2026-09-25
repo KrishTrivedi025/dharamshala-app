@@ -1,4 +1,5 @@
 import laxmiJiHeaderImg from '../assets/laxmi-ji-header.png'
+import cinzelBoldFontUrl from '../assets/fonts/Cinzel-Bold.ttf'
 
 // Native pixel dimensions of laxmi-ji-header.png — keep every header sized to
 // this ratio so the deity artwork is never stretched or squashed.
@@ -20,4 +21,23 @@ export async function getReceiptHeaderDataUrl() {
     reader.readAsDataURL(blob)
   })
   return cachedDataUrl
+}
+
+let cachedFontBase64 = null
+
+// jsPDF only ships helvetica/times/courier — it can't render the Cinzel web
+// font used everywhere else, so the sansthan name has to be embedded as an
+// actual font file (VFS + addFont) to look the same as the on-screen receipts.
+export async function getCinzelBoldFontBase64() {
+  if (cachedFontBase64) return cachedFontBase64
+  const res = await fetch(cinzelBoldFontUrl)
+  const blob = await res.blob()
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
+  cachedFontBase64 = dataUrl.split(',')[1]
+  return cachedFontBase64
 }
